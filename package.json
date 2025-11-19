@@ -1,0 +1,44 @@
+{
+  "name": "bucket",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.0.9",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.0",
+    "@xmldom/xmldom": "^0.8.11",
+    "child-process": "^1.0.2",
+    "child-process-promise": "^2.1.3",
+    "graphql": "^16.12.0",
+    "jsonwebtoken": "^9.0.2",
+    "next": "16.0.1",
+    "next-auth": "^4.24.13",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/jsdom": "^27.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/xmldom": "^0.1.34",
+    "daisyui": "^5.3.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.1",
+    "jsdom": "^27.1.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
