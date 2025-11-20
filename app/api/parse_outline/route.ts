@@ -73,8 +73,11 @@ function parse_html(content: string) {
 
         if (sectionType === "schedule-info") {
           if (header === "Course") {
-            rowData["Section"] = cell.getElementsByClassName("section")[0].textContent.split(" ")[0].trim() || "Unknown Section";
-            rowData["Component"] = cell.getElementsByClassName("class-type")[0].textContent.replace(/\]|\[/g, "").trim();
+            const sectionEl = cell.getElementsByClassName("section")[0];
+            const classTypeEl = cell.getElementsByClassName("class-type")[0];
+            
+            rowData["Section"] = sectionEl ? sectionEl.textContent.split(" ")[0].trim() : "Unknown Section";
+            rowData["Component"] = classTypeEl ? classTypeEl.textContent.replace(/\]|\[/g, "").trim() : "Unknown Component";
             continue;
           } else if (header === "Meet Days") {
             rowData["Meet Dates"] = [];
@@ -82,7 +85,11 @@ function parse_html(content: string) {
             const year = parseInt(term.split(" ")[1], 10);
             const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const days = cell.getElementsByClassName("days-visual")[0].textContent.replace(/\s+/g, "").split(",");
+            
+            const daysVisualEl = cell.getElementsByClassName("days-visual")[0];
+            if (!daysVisualEl) continue;
+
+            const days = daysVisualEl.textContent.replace(/\s+/g, "").split(",");
             let daysActive = [];
 
             for (let day of days) {
@@ -95,7 +102,10 @@ function parse_html(content: string) {
               continue;
             }
 
-            const dateRanges = cell.getElementsByClassName("date-range")[0].children;
+            const dateRangeEl = cell.getElementsByClassName("date-range")[0];
+            if (!dateRangeEl) continue;
+
+            const dateRanges = dateRangeEl.children;
 
             for (let range of dateRanges) {
               const startEnd = range.textContent.split(" - ");
@@ -205,6 +215,7 @@ export async function POST(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error processing request:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
   }
 }
