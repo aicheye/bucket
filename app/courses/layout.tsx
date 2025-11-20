@@ -26,31 +26,47 @@ function Sidebar() {
     const file = input.files[0];
     const text = await file.text();
 
-    const res = await fetch("/api/parse_outline", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ html_text: text }),
-    });
+    try {
+      const res = await fetch("/api/parse_outline", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ html_text: text }),
+      });
 
-    const data = await res.json();
-
-    const existingCourse = courses.find(
-      (c) => c.code === data.code && c.term === data.term
-    );
-
-    if (existingCourse) {
-      alert(`Course ${data.code} (${data.term}) already exists.`);
-      input.value = "";
-      return;
-    }
-
-    if (session?.user?.id) {
-      const newCourseId = await addCourse(data.code, data.term, data.data, session.user.id);
-      if (newCourseId) {
-        router.push(`/courses/${newCourseId}`);
+      if (!res.ok) {
+        let errorMessage = `Error: ${res.status} ${res.statusText}`;
+        try {
+          const errorData = await res.json();
+          if (errorData.error) errorMessage = errorData.error;
+        } catch (e) {
+          // ignore json parse error
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await res.json();
+
+      const existingCourse = courses.find(
+        (c) => c.code === data.code && c.term === data.term
+      );
+
+      if (existingCourse) {
+        alert(`Course ${data.code} (${data.term}) already exists.`);
+        input.value = "";
+        return;
+      }
+
+      if (session?.user?.id) {
+        const newCourseId = await addCourse(data.code, data.term, data.data, session.user.id);
+        if (newCourseId) {
+          router.push(`/courses/${newCourseId}`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to upload course:", error);
+      alert(error instanceof Error ? error.message : "Failed to upload course");
     }
     
     // Clear the input so the same file can be selected again if needed
