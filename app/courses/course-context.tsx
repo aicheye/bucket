@@ -24,6 +24,7 @@ interface CourseContextType {
   deleteCourse: (id: string) => Promise<void>;
   updateSections: (courseId: string, component: string, section: string) => Promise<void>;
   updateMarkingSchemes: (courseId: string, newSchemes: any[][]) => Promise<void>;
+  loading: boolean;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -31,68 +32,76 @@ const CourseContext = createContext<CourseContextType | undefined>(undefined);
 export function CourseProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(false);
 
   async function fetchCourses() {
     if (!session?.user?.id) return;
+    setLoading(true);
 
-    const query = `query GetCourses($owner_id: String!) {
-      courses(where: {owner_id: {_eq: $owner_id}}) {
-        id
-        code
-        term
-        data
-        sections
-      }
-    }`;
-
-    const res = await fetch("/api/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: query,
-        variables: {
-          owner_id: session.user.id,
-        },
-      }),
-    });
-
-    const json = await res.json();
-    if (json.data?.courses) {
-      const seasonOrder: Record<string, number> = {
-        "Winter": 1,
-        "Spring": 2,
-        "Summer": 3,
-        "Fall": 4
-      };
-
-      const sortedCourses = json.data.courses.sort((a: Course, b: Course) => {
-        const partsA = a.term.split(" ");
-        const partsB = b.term.split(" ");
-
-        if (partsA.length === 2 && partsB.length === 2) {
-          const [seasonA, yearA] = partsA;
-          const [seasonB, yearB] = partsB;
-
-          const yA = parseInt(yearA);
-          const yB = parseInt(yearB);
-
-          if (yA !== yB) return yA - yB;
-
-          const sA = seasonOrder[seasonA] || 99;
-          const sB = seasonOrder[seasonB] || 99;
-
-          if (sA !== sB) return sA - sB;
+    try {
+      const query = `query GetCourses($owner_id: String!) {
+        courses(where: {owner_id: {_eq: $owner_id}}) {
+          id
+          code
+          term
+          data
+          sections
         }
-        
-        if (a.term !== b.term) return a.term.localeCompare(b.term);
-        return a.code.localeCompare(b.code);
+      }`;
+
+      const res = await fetch("/api/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: {
+            owner_id: session.user.id,
+          },
+        }),
       });
 
-      setCourses(sortedCourses);
-    } else {
-      console.error("Failed to fetch courses", json);
+      const json = await res.json();
+      if (json.data?.courses) {
+        const seasonOrder: Record<string, number> = {
+          "Winter": 1,
+          "Spring": 2,
+          "Summer": 3,
+          "Fall": 4
+        };
+
+        const sortedCourses = json.data.courses.sort((a: Course, b: Course) => {
+          const partsA = a.term.split(" ");
+          const partsB = b.term.split(" ");
+
+          if (partsA.length === 2 && partsB.length === 2) {
+            const [seasonA, yearA] = partsA;
+            const [seasonB, yearB] = partsB;
+
+            const yA = parseInt(yearA);
+            const yB = parseInt(yearB);
+
+            if (yA !== yB) return yA - yB;
+
+            const sA = seasonOrder[seasonA] || 99;
+            const sB = seasonOrder[seasonB] || 99;
+
+            if (sA !== sB) return sA - sB;
+          }
+          
+          if (a.term !== b.term) return a.term.localeCompare(b.term);
+          return a.code.localeCompare(b.code);
+        });
+
+        setCourses(sortedCourses);
+      } else {
+        console.error("Failed to fetch courses", json);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -103,39 +112,46 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   async function addCourse(code: string, term: string, data: object, owner_id: string) {
-    const mutation = `mutation InsertCourses($data: jsonb, $code: String, $owner_id: String, $term: String) {
-      insert_courses(objects: {data: $data, code: $code, owner_id: $owner_id, term: $term}) {
-        affected_rows
-        returning {
-          data
-          code
-          owner_id
-          term
-          id
+    setLoading(true);
+    try {
+      const mutation = `mutation InsertCourses($data: jsonb, $code: String, $owner_id: String, $term: String) {
+        insert_courses(objects: {data: $data, code: $code, owner_id: $owner_id, term: $term}) {
+          affected_rows
+          returning {
+            data
+            code
+            owner_id
+            term
+            id
+          }
         }
-      }
-    }`;
+      }`;
 
-    const res = await fetch("/api/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          code: code,
-          term: term,
-          data: data,
-          owner_id: owner_id,
+      const res = await fetch("/api/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            code: code,
+            term: term,
+            data: data,
+            owner_id: owner_id,
+          },
+        }),
+      });
 
-    const json = await res.json();
-    console.log("Add course response:", json);
-    await fetchCourses();
-    return json.data?.insert_courses?.returning?.[0]?.id;
+      const json = await res.json();
+      console.log("Add course response:", json);
+      await fetchCourses();
+      return json.data?.insert_courses?.returning?.[0]?.id;
+    } catch (error) {
+      console.error("Error adding course:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function deleteCourse(id: string) {
@@ -241,7 +257,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <CourseContext.Provider value={{ courses, fetchCourses, addCourse, deleteCourse, updateSections, updateMarkingSchemes }}>
+    <CourseContext.Provider value={{ courses, fetchCourses, addCourse, deleteCourse, updateSections, updateMarkingSchemes, loading }}>
       {children}
     </CourseContext.Provider>
   );

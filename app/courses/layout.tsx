@@ -10,7 +10,7 @@ import Navbar from "../components/navbar";
 import { CourseProvider, useCourses } from "./course-context";
 
 function Sidebar() {
-  const { courses, addCourse } = useCourses();
+  const { courses, addCourse, loading } = useCourses();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -78,6 +78,7 @@ function Sidebar() {
       <input onChange={fileChange} type="file" id="outlineInput" accept=".html" style={{ display: "none" }} />
       <div className="flex justify-between items-center mb-2">
         <h2 className="font-bold text-lg">Courses</h2>
+        {loading && <span className="loading loading-spinner loading-sm"></span>}
         <button onClick={buttonClick} className="btn btn-sm btn-circle btn-primary" title="Add Course">
           <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
         </button>
@@ -106,6 +107,28 @@ function Sidebar() {
   );
 }
 
+function InnerLayout({ children }: { children: React.ReactNode }) {
+  const { loading, courses } = useCourses();
+
+  return (
+    <div className="flex flex-col h-screen">
+      <Navbar />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 overflow-y-auto p-8">
+          {loading && courses.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
+          ) : (
+            children
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CoursesLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
 
@@ -123,15 +146,7 @@ export default function CoursesLayout({ children }: { children: React.ReactNode 
 
   return (
     <CourseProvider>
-      <div className="flex flex-col h-screen">
-        <Navbar />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
-          <div className="flex-1 overflow-y-auto p-8">
-            {children}
-          </div>
-        </div>
-      </div>
+      <InnerLayout>{children}</InnerLayout>
     </CourseProvider>
   );
 }
