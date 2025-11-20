@@ -1,9 +1,9 @@
-import { JSDOM } from "jsdom";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import authOptions from "../../../lib/nextauth";
 
-function parse_html(content: string) {
+async function parse_html(content: string) {
+  const { JSDOM } = await import("jsdom");
   const doc = new JSDOM(content).window.document;
 
   const code: string = doc.getElementsByClassName("outline-courses")[0]?.textContent.trim() || "Unknown Code";
@@ -210,7 +210,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const data = parse_html(body.html_text);
+    const data = await parse_html(body.html_text);
 
     return NextResponse.json(data);
   } catch (error) {
