@@ -95,8 +95,8 @@ export default function CourseDetailPage() {
     if (!selectedCourse) {
         return (
             <div className="flex h-full flex-col items-center justify-center">
-                <h2 className="text-2xl font-bold text-gray-400">Course not found</h2>
-                <p className="text-gray-500">The course you are looking for does not exist or you do not have permission to view it.</p>
+                <h2 className="text-2xl font-bold text-base-content/70">Course not found</h2>
+                <p className="text-base-content/60">The course you are looking for does not exist or you do not have permission to view it.</p>
                 <button className="btn btn-primary mt-4" onClick={() => router.push("/courses")}>Back to Courses</button>
             </div>
         );

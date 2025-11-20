@@ -20,13 +20,13 @@ export default function Footer() {
                 </a>
             </div>
             <div className="self-center justify-self-end text-base-content/70 flex flex-row gap-4">
-                <p>Copyright © {new Date().getFullYear()} Sean Yang <a className="underline" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">
+                <p>Copyright © {new Date().getFullYear()} Sean Yang <a className="link" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">
                     MIT License</a>
-                    , Icons from FontAwesome <a className="underline" href="https://scripts.sil.org/OFL" target="_blank" rel="noopener noreferrer">
+                    , Icons from FontAwesome <a className="link" href="https://scripts.sil.org/OFL" target="_blank" rel="noopener noreferrer">
                         SIL OFL 1.1</a>
                 </p>
-                <p>Read our <a target="_blank" href="/legal/privacy" className="underline" rel="noopener noreferrer">
-                    Privacy Policy</a> & <a target="_blank" href="/legal/terms" className="underline" rel="noopener noreferrer">
+                <p>Read our <a target="_blank" href="/legal/privacy" className="link" rel="noopener noreferrer">
+                    Privacy Policy</a> & <a target="_blank" href="/legal/terms" className="link" rel="noopener noreferrer">
                         Terms of Service
                     </a>
                 </p>

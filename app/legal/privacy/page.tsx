@@ -42,7 +42,7 @@ export default function PrivacyPage() {
                     </p>
                     <h2 className="text-2xl font-bold">User Rights</h2>
                     <p>
-                        You have the right to access, modify, or delete your personal data at any time by contacting us at <a href="mailto:sean@seanyang.me" className="underline">sean@seanyang.me</a>.
+                        You have the right to access, modify, or delete your personal data at any time by contacting us at <a href="mailto:sean@seanyang.me" className="link link-primary">sean@seanyang.me</a>.
                     </p>
                     <p>
                         Upon account deletion, all your personal data and associated courses will be permanently removed from our systems. This process is irreversible.
