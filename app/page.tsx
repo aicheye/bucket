@@ -14,7 +14,9 @@ export default function Home() {
         }
     }, [session, router]);
 
-    return (
-        (!session) && <AuthScreen />
-    );
+    if (!session) {
+        return <AuthScreen />;
+    }
+
+    return null;
 }
