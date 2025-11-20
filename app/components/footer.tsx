@@ -18,13 +18,6 @@ export default function Footer() {
                     <FontAwesomeIcon icon={faGlobe} className="w-4 h-4" />
                     Website
                 </a>
-                <a href="https://app.netlify.com/projects/funny-praline-5f06aa/deploys" target="_blank" rel="noopener noreferrer" className="self-center">
-                    <img
-                        src="https://api.netlify.com/api/v1/badges/b83d6e45-ba8f-4939-bd61-921d1ea8e046/deploy-status"
-                        alt="Netlify Status Badge"
-                        className="h-6"
-                    />
-                </a>
             </div>
             <div className="self-center justify-self-end text-base-content/70 flex flex-row gap-4">
                 <p>Copyright © {new Date().getFullYear()} Sean Yang <a className="underline" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">
