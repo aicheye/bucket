@@ -1,3 +1,0 @@
-api.bucket.seanyang.me {
-    reverse_proxy hasura:8080
-}

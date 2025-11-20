@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   postgres:
     image: postgres:16
@@ -23,24 +25,11 @@ services:
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
     networks:
       - backend
-
-  caddy:
-    image: caddy:latest
-    restart: always
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - backend
+      - "8080:8080"
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
 
 networks:
   backend:
