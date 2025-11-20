@@ -3,6 +3,16 @@
   themes: light --default, dark --prefersdark;
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --font-serif: var(--font-lora);
+  --font-display: var(--font-playfair);
 }
+
+body {
+  font-family: var(--font-serif);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
