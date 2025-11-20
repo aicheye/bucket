@@ -13,7 +13,7 @@ export default function CoursesPage() {
                     <p className="text-gray-500">Select a course from the sidebar or add a new one.</p>
                 </div>
             ) : (
-                <div className="text-left max-w-3xl">
+                <div className="text-left max-w-3xl justify-center">
                     <AddCourseHelp />
                 </div>
             )}

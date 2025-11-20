@@ -100,7 +100,7 @@ function Sidebar() {
             ))}
             {courses.length === 0 && (
                 <div className="text-center text-sm opacity-50 mt-4">
-                    No courses yet. Click + to add one. Not sure how? See the <a href="/help" className="underline">help page</a>.
+                    No courses yet. Click + to add one. Not sure how? See the <a target="_blank" href="/help" className="underline">help page</a>.
                 </div>
             )}
         </div>
