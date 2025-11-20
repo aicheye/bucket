@@ -25,17 +25,18 @@ interface CourseContextType {
     updateSections: (courseId: string, component: string, section: string) => Promise<void>;
     updateMarkingSchemes: (courseId: string, newSchemes: any[][]) => Promise<void>;
     loading: boolean;
-}
-
-const CourseContext = createContext<CourseContextType | undefined>(undefined);
+}const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
 export function CourseProvider({ children }: { children: ReactNode }) {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
 
     async function fetchCourses() {
-        if (!session?.user?.id) return;
+        if (!session?.user?.id) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
 
         try {
@@ -106,10 +107,15 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
+        if (status === "loading") return;
+        if (status === "unauthenticated") {
+            setLoading(false);
+            return;
+        }
         if (session) {
             fetchCourses();
         }
-    }, [session]);
+    }, [session, status]);
 
     async function addCourse(code: string, term: string, data: object, owner_id: string) {
         setLoading(true);
@@ -261,9 +267,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
             {children}
         </CourseContext.Provider>
     );
-}
-
-export function useCourses() {
+} export function useCourses() {
     const context = useContext(CourseContext);
     if (context === undefined) {
         throw new Error("useCourses must be used within a CourseProvider");

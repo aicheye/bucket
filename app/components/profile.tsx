@@ -2,19 +2,26 @@
 
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import { useState } from "react";
 import AuthComponent from "./auth-button";
+import Modal from "./modal";
 
 export default function Profile() {
     const { data: session, status } = useSession();
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string }>({
+        isOpen: false,
+        message: "",
+    });
 
-    if (status === "loading") return <div className="loading loading-spinner loading-lg"></div>;
+    if (status === "loading") return null;
     if (!session?.user) return <AuthComponent />;
 
-    const deleteAccount = async () => {
-        if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-            return;
-        }
+    const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
+    const closeConfirm = () => setShowDeleteConfirm(false);
 
+    const deleteAccount = async () => {
+        setShowDeleteConfirm(false);
         try {
             const mutation = `
         mutation DeleteUserAndCourses($id: String!) {
@@ -44,19 +51,40 @@ export default function Profile() {
 
             if (result.errors) {
                 console.error("Error deleting account:", result.errors);
-                alert("Failed to delete account. Please try again.");
+                setAlertState({ isOpen: true, message: "Failed to delete account. Please try again." });
                 return;
             }
 
             await signOut({ callbackUrl: "/" });
         } catch (error) {
             console.error("Error deleting account:", error);
-            alert("An error occurred. Please try again.");
+            setAlertState({ isOpen: true, message: "An error occurred. Please try again." });
         }
     };
 
     return (
         <div className="dropdown dropdown-end">
+            <Modal
+                isOpen={showDeleteConfirm}
+                onClose={closeConfirm}
+                title="Delete Account"
+                actions={
+                    <>
+                        <button className="btn" onClick={closeConfirm}>Cancel</button>
+                        <button className="btn btn-error" onClick={deleteAccount}>Delete</button>
+                    </>
+                }
+            >
+                <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+            </Modal>
+            <Modal
+                isOpen={alertState.isOpen}
+                onClose={closeAlert}
+                title="Error"
+                actions={<button className="btn" onClick={closeAlert}>Close</button>}
+            >
+                <p>{alertState.message}</p>
+            </Modal>
             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
                 <div className="w-10 rounded-full">
                     <Image
@@ -81,7 +109,7 @@ export default function Profile() {
                         <a onClick={() => signOut({ callbackUrl: "/" })}>Sign out</a>
                     </li>
                     <li>
-                        <a onClick={deleteAccount} className="text-error">
+                        <a onClick={() => setShowDeleteConfirm(true)} className="text-error">
                             Delete Account
                         </a>
                     </li>

@@ -5,13 +5,28 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useCourses } from "../courses/course-context";
+import Modal from "./modal";
 
 export default function Sidebar() {
     const { courses, addCourse, loading } = useCourses();
     const { data: session } = useSession();
     const router = useRouter();
     const pathname = usePathname();
+    const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string }>({
+        isOpen: false,
+        message: "",
+    });
+    const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+
+    function toggleFolder(folder: string) {
+        setExpandedFolders(prev => ({ ...prev, [folder]: !prev[folder] }));
+    }
+
+    function closeAlert() {
+        setAlertState((prev) => ({ ...prev, isOpen: false }));
+    }
 
     function buttonClick() {
         document.getElementById("outlineInput")?.click();
@@ -51,7 +66,7 @@ export default function Sidebar() {
             );
 
             if (existingCourse) {
-                alert(`Course ${data.code} (${data.term}) already exists.`);
+                setAlertState({ isOpen: true, message: `Course ${data.code} (${data.term}) already exists.` });
                 input.value = "";
                 return;
             }
@@ -64,15 +79,65 @@ export default function Sidebar() {
             }
         } catch (error) {
             console.error("Failed to upload course:", error);
-            alert(error instanceof Error ? error.message : "Failed to upload course");
+            setAlertState({ isOpen: true, message: error instanceof Error ? error.message : "Failed to upload course" });
         }
 
         // Clear the input so the same file can be selected again if needed
         input.value = "";
     }
 
+    // Group courses by folder
+    const groupedCourses: Record<string, typeof courses> = {};
+    const uncategorizedCourses: typeof courses = [];
+
+    courses.forEach(course => {
+        const folder = course.term;
+        if (folder) {
+            if (!groupedCourses[folder]) groupedCourses[folder] = [];
+            groupedCourses[folder].push(course);
+        } else {
+            uncategorizedCourses.push(course);
+        }
+    });
+
+    const seasonOrder: Record<string, number> = {
+        "Winter": 1,
+        "Spring": 2,
+        "Summer": 3,
+        "Fall": 4
+    };
+
+    const sortedFolders = Object.keys(groupedCourses).sort((a, b) => {
+        const partsA = a.split(" ");
+        const partsB = b.split(" ");
+
+        if (partsA.length === 2 && partsB.length === 2) {
+            const [seasonA, yearA] = partsA;
+            const [seasonB, yearB] = partsB;
+
+            const yA = parseInt(yearA);
+            const yB = parseInt(yearB);
+
+            if (yA !== yB) return yB - yA; // Descending year
+
+            const sA = seasonOrder[seasonA] || 99;
+            const sB = seasonOrder[seasonB] || 99;
+
+            return sB - sA; // Descending season
+        }
+        return b.localeCompare(a); // Fallback to string compare descending
+    });
+
     return (
         <div className="w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10">
+            <Modal
+                isOpen={alertState.isOpen}
+                onClose={closeAlert}
+                title="Notice"
+                actions={<button className="btn" onClick={closeAlert}>Close</button>}
+            >
+                <p>{alertState.message}</p>
+            </Modal>
             <input onChange={fileChange} type="file" id="outlineInput" accept=".html" style={{ display: "none" }} />
             <div className="flex justify-between items-center mb-2">
                 <h2 className="font-bold text-lg">Courses</h2>
@@ -87,20 +152,51 @@ export default function Sidebar() {
                     ))}
                 </div>
             ) : (
-                courses.map((course) => (
-                    <Link
-                        key={course.id}
-                        href={`/courses/${course.id}`}
-                        className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname === `/courses/${course.id}` ? "btn-primary bg-primary" : ""
-                            }`}
-                    >
-                        <div className="text-left w-full text-primary-content">
-                            <div className="font-bold">{course.code}</div>
-                            <div className="text-xs opacity-70">{course.term}</div>
+                <>
+                    {sortedFolders.map(folder => (
+                        <div key={folder} className="collapse collapse-arrow border border-base-content/10 rounded-box mb-2">
+                            <input
+                                type="checkbox"
+                                checked={expandedFolders[folder] ?? true}
+                                onChange={() => toggleFolder(folder)}
+                                className="min-h-0 p-0"
+                            />
+                            <div className="collapse-title bg-base-300 text-sm font-bold min-h-0 py-2 px-4 flex items-center gap-2">
+                                {folder}
+                            </div>
+                            <div className="collapse-content bg-base-100 p-0">
+                                <div className="flex flex-col gap-2 p-2">
+                                    {groupedCourses[folder].map(course => (
+                                        <Link
+                                            key={course.id}
+                                            href={`/courses/${course.id}`}
+                                            className={`btn btn-sm justify-start h-auto py-2 font-normal ${pathname === `/courses/${course.id}` ? "btn-primary" : "btn-ghost bg-base-200 hover:bg-base-300"
+                                                }`}
+                                        >
+                                            <div className="text-left w-full">
+                                                <div className="font-bold text-xs">{course.code}</div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                    </Link>
+                    ))}
 
-                ))
+                    {uncategorizedCourses.map((course) => (
+                        <Link
+                            key={course.id}
+                            href={`/courses/${course.id}`}
+                            className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname === `/courses/${course.id}` ? "btn-primary bg-primary" : ""
+                                }`}
+                        >
+                            <div className="text-left w-full text-primary-content">
+                                <div className="font-bold">{course.code}</div>
+                                <div className="text-xs opacity-70">{course.term}</div>
+                            </div>
+                        </Link>
+                    ))}
+                </>
             )}
             {!loading && courses.length === 0 && (
                 <div className="text-center text-sm opacity-50 mt-4">

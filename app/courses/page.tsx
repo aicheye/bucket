@@ -6,12 +6,10 @@ import { useCourses } from "./course-context";
 
 export default function CoursesPage() {
     const { status } = useSession();
-    const { courses, loading } = useCourses();
+    const { courses } = useCourses();
 
-    if (loading) {
-        return <div className="flex h-full items-center justify-center">
-            <span className="loading loading-spinner loading-lg"></span>
-        </div>;
+    if (status === "loading") {
+        return null;
     }
 
     if (status === "unauthenticated") {

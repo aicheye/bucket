@@ -1,9 +1,10 @@
 "use client";
 
-import { faExternalLinkAlt, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faExternalLinkAlt, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Modal from "../../components/modal";
 import { useCourses } from "../course-context";
 
 function formatTime(time: { hours: number; minutes: number }) {
@@ -61,27 +62,42 @@ function processSchedule(schedule: any[]) {
 export default function CourseDetailPage() {
     const { id } = useParams();
     const router = useRouter();
-    const { courses, deleteCourse, updateSections, updateMarkingSchemes } = useCourses();
+    const { courses, deleteCourse, updateSections, updateMarkingSchemes, loading } = useCourses();
 
     const selectedCourse = courses.find((c) => c.id === id);
 
     const [isEditingSections, setIsEditingSections] = useState(false);
     const [isEditingMarkingSchemes, setIsEditingMarkingSchemes] = useState(false);
     const [tempMarkingSchemes, setTempMarkingSchemes] = useState<any[][]>([]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showSectionConfirm, setShowSectionConfirm] = useState(false);
+    const [missingComponents, setMissingComponents] = useState<string[]>([]);
 
     // Reset editing states when course changes
     useEffect(() => {
         setIsEditingSections(false);
         setIsEditingMarkingSchemes(false);
         setTempMarkingSchemes([]);
+        setShowDeleteConfirm(false);
+        setShowSectionConfirm(false);
     }, [id]);
 
-    if (!selectedCourse) {
+    if (loading) {
         return (
             <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
                 <div className="skeleton h-8 w-1/3 mb-4"></div>
                 <div className="skeleton h-64 w-full rounded-box"></div>
                 <div className="skeleton h-64 w-full rounded-box"></div>
+            </div>
+        );
+    }
+
+    if (!selectedCourse) {
+        return (
+            <div className="flex h-full flex-col items-center justify-center">
+                <h2 className="text-2xl font-bold text-gray-400">Course not found</h2>
+                <p className="text-gray-500">The course you are looking for does not exist or you do not have permission to view it.</p>
+                <button className="btn btn-primary mt-4" onClick={() => router.push("/courses")}>Back to Courses</button>
             </div>
         );
     }
@@ -97,14 +113,19 @@ export default function CourseDetailPage() {
     function handleSectionEditToggle() {
         if (isEditingSections) {
             const uniqueComponents = Array.from(new Set(processedSchedule.map((item: any) => item.Component)));
-            const missingComponents = uniqueComponents.filter(comp => !selectedCourse?.sections?.[comp]);
+            const missing = uniqueComponents.filter(comp => !selectedCourse?.sections?.[comp]);
 
-            if (missingComponents.length > 0) {
-                if (!confirm(`You haven't selected a section for: ${missingComponents.join(", ")}. Continue anyway?`)) {
-                    return;
-                }
+            if (missing.length > 0) {
+                setMissingComponents(missing);
+                setShowSectionConfirm(true);
+                return;
             }
         }
+        setIsEditingSections(!isEditingSections);
+    }
+
+    function confirmSectionEdit() {
+        setShowSectionConfirm(false);
         setIsEditingSections(!isEditingSections);
     }
 
@@ -139,7 +160,7 @@ export default function CourseDetailPage() {
 
     function updateWeight(schemeIndex: number, componentIndex: number, value: string) {
         const newSchemes = [...tempMarkingSchemes];
-        newSchemes[schemeIndex][componentIndex].Weight = parseFloat(value) || 0;
+        newSchemes[schemeIndex][componentIndex].Weight = value;
         setTempMarkingSchemes(newSchemes);
     }
 
@@ -152,24 +173,57 @@ export default function CourseDetailPage() {
     }
 
     async function handleDelete() {
-        if (!confirm("Are you sure you want to delete this course?")) return;
+        setShowDeleteConfirm(true);
+    }
+
+    async function confirmDelete() {
+        setShowDeleteConfirm(false);
         await deleteCourse(selectedCourse!.id);
         router.push("/courses");
     }
 
     return (
-        <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-            <div className="prose max-w-none flex items-center gap-2">
+        <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+            <Modal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                title="Delete Course"
+                actions={
+                    <>
+                        <button className="btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+                        <button className="btn btn-error" onClick={confirmDelete}>Delete</button>
+                    </>
+                }
+            >
+                <p>Are you sure you want to delete this course?</p>
+            </Modal>
+
+            <Modal
+                isOpen={showSectionConfirm}
+                onClose={() => setShowSectionConfirm(false)}
+                title="Missing Sections"
+                actions={
+                    <>
+                        <button className="btn" onClick={() => setShowSectionConfirm(false)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={confirmSectionEdit}>Continue</button>
+                    </>
+                }
+            >
+                <p>You haven't selected a section for: {missingComponents.join(", ")}. Continue anyway?</p>
+            </Modal>
+
+            <div className="prose max-w-none flex items-center gap-4">
                 <h1 className="lead text-xl font-bold mb-0">{selectedCourse.data.description}</h1>
+                <h2 className="text-lg text-base-content/70">{selectedCourse.code} ({selectedCourse.term})</h2>
                 {selectedCourse.data.outline_url && (
                     <a
                         href={selectedCourse.data.outline_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-ghost btn-sm btn-circle"
+                        className="btn btn-soft btn-info btn-sm btn-circle"
                         title="View Original Outline"
                     >
-                        <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4 text-gray-500" />
+                        <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
                     </a>
                 )}
             </div>
@@ -181,15 +235,15 @@ export default function CourseDetailPage() {
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="card-title">Schedule</h2>
                             <button
-                                className="btn btn-sm btn-soft"
+                                className={"btn btn-sm btn-soft" + (isEditingSections ? " btn-success" : "")}
                                 onClick={handleSectionEditToggle}
                             >
                                 {selectedCourse.sections && Object.keys(selectedCourse.sections).length > 0
                                     ? isEditingSections
-                                        ? "Done"
+                                        ? <>Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" /></>
                                         : "Edit Sections"
                                     : isEditingSections
-                                        ? "Done"
+                                        ? <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
                                         : "Choose Sections"}
                             </button>
                         </div>
@@ -260,10 +314,11 @@ export default function CourseDetailPage() {
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="card-title">Marking Schemes</h2>
                             <button
-                                className="btn btn-sm btn-soft"
+                                className={"btn btn-sm btn-soft" + (isEditingMarkingSchemes ? " btn-success" : "")}
                                 onClick={toggleMarkingSchemesEdit}
                             >
-                                {isEditingMarkingSchemes ? "Done" : "Edit"}
+                                {isEditingMarkingSchemes ?
+                                    <>Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" /></> : "Edit Schemes"}
                             </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -283,7 +338,7 @@ export default function CourseDetailPage() {
                                             onClick={resetToDefault}
                                             title="Reset to default"
                                         >
-                                            <FontAwesomeIcon icon={faRotateRight} className="w-3 h-3 text-gray-500" />
+                                            <FontAwesomeIcon icon={faRotateRight} className="w-3 h-3 text-base-content/50" />
                                         </button>
                                     )}
                                     <div className="overflow-x-auto rounded border border-base-content/10">
@@ -302,15 +357,14 @@ export default function CourseDetailPage() {
                                                             {isEditingMarkingSchemes ? (
                                                                 <div className="flex justify-end items-center gap-1">
                                                                     <input
-                                                                        type="number"
-                                                                        className="input input-sm text-sm input-bordered w-16 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                        className="input input-sm text-sm input-bordered w-24 text-right"
                                                                         value={item.Weight}
                                                                         onChange={(e) => updateWeight(i, j, e.target.value)}
                                                                     />
-                                                                    <span>%</span>
+                                                                    <span className="w-4">{!isNaN(Number(item.Weight)) && item.Weight !== "" ? "%" : ""}</span>
                                                                 </div>
                                                             ) : (
-                                                                `${item.Weight}%`
+                                                                !isNaN(Number(item.Weight)) && item.Weight !== "" ? `${item.Weight}%` : item.Weight
                                                             )}
                                                         </td>
                                                     </tr>
