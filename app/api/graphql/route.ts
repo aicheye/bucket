@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { executeHasuraQuery } from "../../../lib/hasura";
 import authOptions from "../../../lib/nextauth"; // adjust path
 
 export async function GET(req: NextRequest) {
@@ -8,37 +8,29 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // Optional: block if not signed in
-  const session = await getServerSession(authOptions);
-  if (!session) return new NextResponse("Unauthorized", { status: 401 });
+  let userId: string | undefined;
 
-  const body = await req.json();
-
-  const payload = {
-    "https://hasura.io/jwt/claims": {
-      "x-hasura-default-role": "authenticated",
-      "x-hasura-allowed-roles": ["authenticated"],
-      "x-hasura-user-id": String(session.user?.id || ""),
-    },
+  const serviceSecret = req.headers.get("x-service-secret");
+  if (serviceSecret && serviceSecret === process.env.GRAPHQL_SERVICE_SECRET) {
+    userId = req.headers.get("x-user-id") || undefined;
+  } else {
+    const session = await getServerSession(authOptions);
+    if (!session) return new NextResponse("Unauthorized", { status: 401 });
+    userId = session.user?.id;
   }
 
-  const token = jwt.sign(payload, process.env.GRAPHQL_SERVICE_SECRET!, {
-    algorithm: "HS256",
-    expiresIn: "1h",
-  });
+  if (!userId) {
+    return new NextResponse("Unauthorized: No User ID", { status: 401 });
+  }
 
-  const res = await fetch(process.env.GRAPHQL_URL!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const body = await req.json();
+  const { query, variables } = body;
 
-  const text = await res.text();
-  return new NextResponse(text, {
-    status: res.status,
-    headers: { "Content-Type": "application/json" },
-  });
+  try {
+    const result = await executeHasuraQuery(query, variables, userId);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("GraphQL proxy error:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
 }

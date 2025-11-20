@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-base-300 flex min-h-screen items-center justify-center font-sans">
+      <body className="bg-base-300 min-h-screen font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>

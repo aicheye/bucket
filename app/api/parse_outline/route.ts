@@ -13,6 +13,11 @@ function parse_html(content: string) {
 
   data["description"] = doc.getElementsByClassName("outline-title-full")[0]?.textContent.trim() || "Unknown Description";
 
+  const firstAnchor = doc.getElementsByTagName("a")[0];
+  if (firstAnchor) {
+    data["outline_url"] = firstAnchor.getAttribute("href");
+  }
+
   const tables = doc.getElementsByTagName("table");
 
   for (let i = 0; i < tables.length; i++) {
