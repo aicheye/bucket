@@ -7,9 +7,9 @@ export default function AuthScreen() {
             <div className="flex flex-col flex-1 gap-8 items-center justify-center max-w-3xl mx-auto py-12 px-4 w-full">
                 <AuthComponent />
                 <p className="text-base-content max-w-s text-md text-center">
-                    By signing up, you agree to our <a href="/legal#privacy-policy" className="underline">
+                    By signing up, you agree to our <a href="/legal/privacy" className="underline">
                         Privacy Policy
-                    </a> and <a href="/legal#terms-of-service" className="underline">
+                    </a> and <a href="/legal/terms" className="underline">
                         Terms of Service </a>.<br />
                     We encourage you to read them carefully. They aren't long!
                 </p>
