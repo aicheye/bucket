@@ -14,7 +14,7 @@ export default function Profile() {
         message: "",
     });
 
-    if (status === "loading") return null;
+    if (status === "loading") return <div className="loading loading-spinner loading-lg"></div>;
     if (!session?.user) return <AuthComponent />;
 
     const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
