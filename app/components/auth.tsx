@@ -3,16 +3,14 @@
 import { useSession } from "next-auth/react";
 import AuthComponent from "./auth-button";
 import Footer from "./footer";
-import ThemeToggle from "./theme-toggle";
+import Navbar from "./navbar";
 
 export default function AuthScreen() {
     const { data: session, status } = useSession();
 
     return (
         <div className="flex flex-col min-h-screen">
-            <div className="navbar bg-base-200 border-b border-base-content/10 px-4 justify-end">
-                <ThemeToggle />
-            </div>
+            <Navbar showProfile={false} />
             <div className="flex flex-col flex-1 gap-8 items-center justify-center max-w-3xl mx-auto py-12 px-4 w-full">
                 {status === "loading" ? <div className="loading loading-spinner loading-lg"></div> : (
                     <>

@@ -370,6 +370,17 @@ export default function CourseDetailPage() {
                                                     </tr>
                                                 ))}
                                             </tbody>
+                                            <tfoot>
+                                                <tr className="bg-base-200">
+                                                    <td className="font-bold">Total</td>
+                                                    <td className="text-right font-bold">
+                                                        {scheme.reduce((acc, item) => {
+                                                            const weight = Number(item.Weight);
+                                                            return !isNaN(weight) && item.Weight !== "" ? acc + weight : acc;
+                                                        }, 0)}%
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 </div>

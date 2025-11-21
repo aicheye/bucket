@@ -2,11 +2,7 @@ import Link from "next/link";
 import Profile from "./profile";
 import ThemeToggle from "./theme-toggle";
 
-interface NavbarProps {
-    // No props needed for now
-}
-
-export default function Navbar({ }: NavbarProps) {
+export default function Navbar({ showProfile = true }: { showProfile?: boolean }) {
     return (
         <div className="navbar bg-base-200 border-b border-base-content/10 px-4">
             <div className="flex-1">
@@ -14,7 +10,7 @@ export default function Navbar({ }: NavbarProps) {
             </div>
             <div className="flex flex-row gap-4">
                 <ThemeToggle />
-                <Profile />
+                {showProfile && <Profile />}
             </div>
         </div>
     );
