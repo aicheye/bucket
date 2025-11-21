@@ -11,11 +11,11 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();
 
     return (
-        <div className="h-screen flex flex-col">
-            <Navbar showMenuButton={true} />
+        <div className="min-h-screen flex flex-col">
+            <Navbar showMenuButton={true} className="sticky top-0 z-30" />
             <div className="drawer lg:drawer-open flex-1 min-h-0">
                 <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
-                <div className="drawer-content flex flex-col h-full">
+                <div className="drawer-content flex flex-col">
                     <main className="p-4 sm:p-8">
                         <div className="max-w-5xl mx-auto w-full">
                             {status === "loading" && !session ? (
@@ -33,8 +33,8 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
                         <Footer />
                     </div>
                 </div>
-                <div className="drawer-side z-20">
-                    <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label>
+                <div className="drawer-side z-20 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)]">
+                    <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay h-full"></label>
                     <Sidebar />
                 </div>
             </div>

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendTelemetry } from "../../lib/telemetry";
 import { useCourses } from "../courses/course-context";
+import GradeBadge from "./grade-badge";
 import Modal from "./modal";
 
 export default function Sidebar() {
@@ -141,7 +142,7 @@ export default function Sidebar() {
     });
 
     return (
-        <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10">
+        <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10 mt-14 sm:mt-0">
             <Modal
                 isOpen={alertState.isOpen}
                 onClose={closeAlert}
@@ -193,30 +194,19 @@ export default function Sidebar() {
                         const avgMax = countMinMax > 0 ? totalMax / countMinMax : null;
 
                         return (
-                            <div key={folder} className="collapse collapse-arrow border border-base-content/10 rounded-box mb-2">
+                            <div key={folder} className="collapse collapse-arrow border border-base-content/10 rounded-box">
                                 <input
                                     type="checkbox"
                                     checked={expandedFolders[folder] ?? true}
                                     onChange={() => toggleFolder(folder)}
                                     className="min-h-0 p-0"
                                 />
-                                <div className="collapse-title bg-base-300 text-sm font-bold min-h-0 py-2 px-4 flex flex-col justify-center">
-                                    <div className="flex items-center gap-2">
+                                <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex items-center align-center gap-2">
+                                    <div className="flex items-center gap-2 text-md">
                                         {folder}
                                     </div>
                                     {(avgCurrent !== null) && (
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            {avgCurrent !== null && (
-                                                <div className={`badge ${avgCurrent >= 80 ? 'badge-success text-success-content' : avgCurrent >= 60 ? 'badge-warning text-warning-content' : 'badge-error text-error-content'} text-sm font-bold border-none`}>
-                                                    {avgCurrent.toFixed(1)}%
-                                                </div>
-                                            )}
-                                            {avgMin !== null && avgMax !== null && (
-                                                <div className="text-xs opacity-60 font-normal">
-                                                    {avgMin.toFixed(1)}% - {avgMax.toFixed(1)}%
-                                                </div>
-                                            )}
-                                        </div>
+                                        <GradeBadge grade={avgCurrent} size="sm" />
                                     )}
                                 </div>
                                 <div className="collapse-content bg-base-100 p-0">
@@ -226,11 +216,11 @@ export default function Sidebar() {
                                                 key={course.id}
                                                 href={`/courses/${course.id}${linkSuffix}`}
                                                 onClick={closeDrawer}
-                                                className={`btn btn-sm justify-start h-auto py-2 font-normal ${pathname === `/courses/${course.id}` || pathname?.startsWith(`/courses/${course.id}/`) ? "btn-primary" : "btn-ghost bg-base-200 hover:bg-base-300"
+                                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname === `/courses/${course.id}` || pathname?.startsWith(`/courses/${course.id}/`) ? "btn-primary" : "btn-base"
                                                     }`}
                                             >
                                                 <div className="text-left w-full">
-                                                    <div className="font-bold text-xs">{course.code}</div>
+                                                    <div className="font-bold text-[14px]">{course.code}</div>
                                                 </div>
                                             </Link>
                                         ))}

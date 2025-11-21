@@ -180,7 +180,7 @@ export default function Profile() {
             </div>
             <div
                 tabIndex={0}
-                className="mt-2 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 overflow-y-auto border border-base-content/10"
+                className="mt-1 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 overflow-y-auto border border-base-content/10"
             >
                 <div className="flex px-4 py-2 mt-2 flex-col gap-1">
                     <span className="font-bold text-base text-base-content">{session.user.name}</span>

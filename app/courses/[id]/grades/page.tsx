@@ -10,7 +10,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { calculateSchemeGradeDetails } from "../../../../lib/grade-utils";
 import { sendTelemetry } from "../../../../lib/telemetry";
+import GoalInput from "../../../components/goal-input";
+import GradeBadge from "../../../components/grade-badge";
 import Modal from "../../../components/modal";
+import RangeBadge from "../../../components/range-badge";
+import ReqAvgBadge from "../../../components/req-avg-badge";
 import { getCategoryColor, Item, useCourses } from "../../course-context";
 
 interface ParsedItem {
@@ -655,23 +659,14 @@ export default function CourseGradesPage() {
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
                             <div className="flex items-center gap-2">
                                 <h2 className="card-title text-2xl">Grades</h2>
-                                <Link href="/help#grade-calculation" className="text-base opacity-30 hover:opacity-100 transition-opacity" title="How are grades calculated?">
-                                    <FontAwesomeIcon icon={faInfoCircle} />
-                                </Link>
-                            </div>
-                            <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto">
-                                <span className="text-xs font-bold uppercase tracking-wider text-base-content/50 ml-2">Goal</span>
-                                <div className="relative flex items-center flex-1 sm:flex-none justify-end">
-                                    <input
-                                        type="number"
-                                        className="input input-md w-24 text-right pr-6 bg-base-100 border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
-                                        placeholder="-"
-                                        value={targetGrade}
-                                        onChange={(e) => setTargetGrade(e.target.value)}
-                                        onBlur={handleSaveTargetGrade}
-                                    />
-                                    <span className="absolute right-2 text-sm opacity-50 pointer-events-none">%</span>
+                                <div className="tooltip tooltip-up" data-tip={"How are grades calculated?"}>
+                                    <Link href="/help#grade-calculation" className="text-base opacity-30 hover:opacity-100 transition-opacity">
+                                        <FontAwesomeIcon icon={faInfoCircle} />
+                                    </Link>
                                 </div>
+                            </div>
+                            <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
+                                <GoalInput handleSaveTargetGrade={handleSaveTargetGrade} targetGrade={targetGrade} />
                             </div>
                         </div>
 
@@ -690,7 +685,7 @@ export default function CourseGradesPage() {
 
                     {selectedCourse.data["marking-schemes"]?.length > 0 && displayItems.length > 0 && (
                         <div className="bg-base-200/40 card p-4 mb-6 border border-base-content/5 shadow-sm">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-4xl">
                                 {selectedCourse.data["marking-schemes"]
                                     .map((scheme: any[], idx: number) => ({
                                         scheme,
@@ -707,12 +702,6 @@ export default function CourseGradesPage() {
                                         const max = details.currentScore + (details.totalSchemeWeight - details.totalWeightGraded);
                                         const required = calculateRequired(scheme);
 
-                                        let gradeColor = "text-error";
-                                        if (details.currentGrade >= 80) gradeColor = "text-success";
-                                        else if (details.currentGrade >= 60) gradeColor = "text-warning";
-
-                                        if (!isHighest) gradeColor = "text-base-content/50";
-
                                         return (
                                             <div key={originalIndex} className="relative group w-full">
                                                 <div className={`flex flex-row justify-between items-center p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full cursor-default ${!isHighest ? "opacity-60 grayscale" : ""}`}>
@@ -723,34 +712,38 @@ export default function CourseGradesPage() {
                                                         </div>
 
                                                         <div className="flex items-baseline gap-1">
-                                                            <span className={`text-4xl font-black tracking-tighter ${gradeColor}`}>{details.currentGrade.toFixed(1)}</span>
-                                                            <span className="text-lg font-bold opacity-40">%</span>
+                                                            {(!isHighest) ? (
+                                                                <GradeBadge grade={details.currentGrade!} disabled={true} />
+                                                            ) : (
+                                                                <GradeBadge grade={details.currentGrade!} />)}
                                                         </div>
                                                     </div>
 
                                                     {required === null ? (
-                                                        <div className={`flex w-full flex-col items-end gap-2 text-sm justify-end`}>
-                                                            <span className="opacity-60">Range</span>
-                                                            <span className="font-medium opacity-80 font-mo">{min.toFixed(1)} - {max.toFixed(1)}%</span>
+                                                        <div className="flex items-end h-full self-end">
+                                                            {
+                                                                min !== null && max !== null && (
+                                                                    <RangeBadge rangeMin={min} rangeMax={max} />
+                                                                )
+                                                            }
                                                         </div>
                                                     ) : (
-                                                        <div className="flex flex-col items-end gap-2 min-w-[140px] text-sm">
-                                                            <div className={`flex justify-between w-full items-center gap-2`}>
-                                                                <span className="opacity-60">Range</span>
-                                                                <span className="font-medium opacity-80">{min.toFixed(1)} - {max.toFixed(1)}%</span>
-                                                            </div>
-
-                                                            <div className={`flex justify-between w-full items-center gap-2 ${required !== null ? "" : "invisible"}`}>
-                                                                <span className="opacity-60">Req. to Goal</span>
-                                                                <span className={`font-bold ${required !== null && required > 100 ? "text-error" : required !== null && required < 0 ? "text-success" : required !== null && required < details.currentGrade ? "text-info" : "text-warning"}`}>
-                                                                    {required !== null ? required.toFixed(1) : "0.0"}%
-                                                                </span>
-                                                            </div>
+                                                        <div className="flex flex-col items-end gap-2 min-w-[140px] text-sm self-end">
+                                                            {
+                                                                required !== null && (
+                                                                    <ReqAvgBadge requiredAverage={required} average={details.currentGrade} showTooltip={isHighest} />
+                                                                )
+                                                            }
+                                                            {
+                                                                min !== null && max !== null && (
+                                                                    <RangeBadge rangeMin={min} rangeMax={max} />
+                                                                )
+                                                            }
                                                         </div>)
                                                     }
                                                 </div>
 
-                                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
+                                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[1] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
                                                     <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">Scheme Breakdown</div>
                                                     <div className="flex flex-col gap-2">
                                                         {scheme.map((s: any, i: number) => (
@@ -823,7 +816,7 @@ export default function CourseGradesPage() {
                                                     <div className="flex items-center gap-2">
                                                         <span className={isDropped ? "line-through decoration-base-content/50" : ""}>{item.data.name}</span>
                                                         {isGreyedOut && (
-                                                            <div className="tooltip tooltip-right z-50" data-tip={reason}>
+                                                            <div className="tooltip tooltip-right z-[1]" data-tip={reason}>
                                                                 <FontAwesomeIcon icon={faInfoCircle} className="text-xs opacity-50 hover:opacity-100 cursor-help" />
                                                             </div>
                                                         )}

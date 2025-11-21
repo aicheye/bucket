@@ -1,6 +1,6 @@
 "use client";
 
-import { faCalendarDay, faClock, faInfoCircle, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarDay, faClock, faInfoCircle, faPencil, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -9,12 +9,16 @@ import { formatTime } from "../../lib/format-utils";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendTelemetry } from "../../lib/telemetry";
 import AddCourseHelp from "../components/add-course-help";
+import GoalInput from "../components/goal-input";
+import GradeBadge from "../components/grade-badge";
 import Modal from "../components/modal";
-import { useCourses } from "./course-context";
+import RangeBadge from "../components/range-badge";
+import ReqAvgBadge from "../components/req-avg-badge";
+import { Item, useCourses } from "./course-context";
 
 export default function CoursesPage() {
     const { data: session, status } = useSession();
-    const { courses, loading, items, addItem } = useCourses();
+    const { courses, loading, items, addItem, updateItem, deleteItem } = useCourses();
     const [termGoal, setTermGoal] = useState<string>("");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [userData, setUserData] = useState<any>({});
@@ -48,9 +52,10 @@ export default function CoursesPage() {
         }
     }, [status, session]);
 
-    const [isAddingItem, setIsAddingItem] = useState(false);
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<Item | null>(null);
     const [addingItemCourseId, setAddingItemCourseId] = useState<string | null>(null);
-    const [itemData, setItemData] = useState({ name: "", type: "Assignment", grade: "", max_grade: "", due_date: "", isPlaceholder: false });
+    const [itemData, setItemData] = useState({ course_id: "", name: "", type: "Assignment", grade: "", max_grade: "", due_date: "", isPlaceholder: false });
 
     function getCourseTypes(courseId: string) {
         const course = courses.find(c => c.id === courseId);
@@ -61,22 +66,53 @@ export default function CoursesPage() {
         return types;
     }
 
-    function openAddItem(courseId: string) {
+    function openAddItem(courseId: string | null) {
+        setEditingItem(null);
         setAddingItemCourseId(courseId);
-        const types = getCourseTypes(courseId);
-        setItemData({ name: "", type: types[0] || "Assignment", grade: "", max_grade: "", due_date: "", isPlaceholder: false });
-        setIsAddingItem(true);
+        const types = courseId ? getCourseTypes(courseId) : ["Assignment", "Exam", "Quiz", "Project", "Other"];
+        setItemData({ course_id: courseId || "", name: "", type: types[0] || "Assignment", grade: "", max_grade: "", due_date: "", isPlaceholder: false });
+        setIsItemModalOpen(true);
+    }
+
+    function handleOpenEditItem(item: Item) {
+        setEditingItem(item);
+        setAddingItemCourseId(item.course_id);
+        setItemData({
+            course_id: item.course_id,
+            name: (item.data as any)?.name ?? "",
+            type: (item.data as any)?.type ?? "Assignment",
+            grade: (item.data as any)?.grade ?? "",
+            max_grade: (item.data as any)?.max_grade ?? "",
+            due_date: (item.data as any)?.due_date ?? "",
+            isPlaceholder: (item.data as any)?.isPlaceholder ?? false
+        });
+        setIsItemModalOpen(true);
+    }
+
+    function handleDeleteItem(itemId: string) {
+        if (window.confirm("Are you sure you want to delete this item?")) {
+            deleteItem(itemId);
+        }
     }
 
     async function handleSaveItem() {
-        if (!status || !addingItemCourseId) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const user = (session as any)?.user;
-        if (!user?.id) return;
+        if (!session?.user?.id) return;
 
-        await addItem(addingItemCourseId, itemData, user.id);
-        setIsAddingItem(false);
-        setAddingItemCourseId(null);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { course_id, ...dataToSave } = itemData;
+
+        if (editingItem) {
+            await updateItem(editingItem.id, dataToSave);
+        } else {
+            const courseId = addingItemCourseId || course_id;
+            if (!courseId) {
+                alert("Please select a course.");
+                return;
+            }
+            await addItem(courseId, dataToSave, session.user.id);
+        }
+        setIsItemModalOpen(false);
+        setEditingItem(null);
     }
 
     const gradeToGPA = (grade: number) => {
@@ -225,6 +261,9 @@ export default function CoursesPage() {
         let sumCurrentScore = 0;
         let sumRemainingWeight = 0;
 
+        let sumTotalWeightGraded = 0;
+        let sumTotalSchemeWeight = 0;
+
         currentCourses.forEach(c => {
             const details = getCourseGradeDetails(c, items);
             if (details) {
@@ -244,10 +283,12 @@ export default function CoursesPage() {
 
                 sumCurrentScore += details.currentScore;
                 sumRemainingWeight += (details.totalSchemeWeight - details.totalWeightGraded);
+                sumTotalWeightGraded += details.totalWeightGraded;
+                sumTotalSchemeWeight += details.totalSchemeWeight;
             }
         });
 
-        const termAverage = countCurrent > 0 ? totalCurrent / countCurrent : null;
+        const termAverage = countMinMax > 0 ? totalCurrent / countMinMax : null;
         const termGPA = countGPA > 0 ? totalGPA / countGPA : null;
         const termMin = countMinMax > 0 ? totalMin / countMinMax : null;
         const termMax = countMinMax > 0 ? totalMax / countMinMax : null;
@@ -270,6 +311,36 @@ export default function CoursesPage() {
 
         const cav = countCAV > 0 ? totalCAV / countCAV : null;
         const cgpa = countCGPA > 0 ? totalCGPA / countCGPA : null;
+
+        // Time progress calculation
+        let timeProgress = 0;
+        if (currentTerm) {
+            const [season, yearStr] = currentTerm.split(" ");
+            const year = parseInt(yearStr);
+            let startDate: Date, endDate: Date;
+
+            if (season === "Winter") {
+                startDate = new Date(year, 0, 1); // Jan 1
+                endDate = new Date(year, 3, 30);   // Apr 30
+            } else if (season === "Spring") {
+                startDate = new Date(year, 4, 1); // May 1
+                endDate = new Date(year, 7, 31);   // Aug 31
+            } else { // Fall
+                startDate = new Date(year, 8, 1); // Sep 1
+                endDate = new Date(year, 11, 31);  // Dec 31
+            }
+
+            const today = new Date();
+            const totalDays = (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+            const elapsedDays = (today.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+            let progress = (elapsedDays / totalDays) * 100;
+            if (progress < 0) progress = 0;
+            if (progress > 100) progress = 100;
+            timeProgress = progress;
+        }
+
+        const weightCompletedPercent = sumTotalSchemeWeight > 0 ? (sumTotalWeightGraded / sumTotalSchemeWeight) * 100 : 0;
+
 
         // Calculate required average
         let requiredAverage: number | null = null;
@@ -377,20 +448,45 @@ export default function CoursesPage() {
         upcomingDeliverables.sort((a, b) => new Date(a.data.due_date).getTime() - new Date(b.data.due_date).getTime());
 
         return (
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-grow">
                 <Modal
-                    isOpen={isAddingItem}
-                    onClose={() => setIsAddingItem(false)}
-                    title="Quick Add Item"
+                    isOpen={isItemModalOpen}
+                    onClose={() => {
+                        setIsItemModalOpen(false);
+                        setEditingItem(null);
+                    }}
+                    title={editingItem ? "Edit Item" : "Add Item"}
                     onConfirm={handleSaveItem}
                     actions={
                         <>
-                            <button className="btn" onClick={() => setIsAddingItem(false)}>Cancel</button>
+                            <button className="btn" onClick={() => {
+                                setIsItemModalOpen(false);
+                                setEditingItem(null);
+                            }}>Cancel</button>
                             <button className="btn btn-primary" onClick={handleSaveItem}>Save</button>
                         </>
                     }
                 >
                     <div className="flex flex-col gap-4">
+                        {editingItem === null && addingItemCourseId === null && currentCourses.length > 0 && (
+                            <div className="form-control w-full">
+                                <label className="label mb-2">
+                                    <span className="label-text">Course</span>
+                                </label>
+                                <select
+                                    className="select select-bordered w-full"
+                                    value={itemData.course_id}
+                                    onChange={(e) => {
+                                        const newCourseId = e.target.value;
+                                        const types = getCourseTypes(newCourseId);
+                                        setItemData({ ...itemData, course_id: newCourseId, type: types[0] || "Assignment" });
+                                    }}
+                                >
+                                    <option disabled value="">Select a course</option>
+                                    {currentCourses.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
+                                </select>
+                            </div>
+                        )}
                         <div className="form-control w-full">
                             <label className="label mb-2">
                                 <span className="label-text">Name</span>
@@ -411,7 +507,7 @@ export default function CoursesPage() {
                                 value={itemData.type}
                                 onChange={(e) => setItemData({ ...itemData, type: e.target.value })}
                             >
-                                {addingItemCourseId && getCourseTypes(addingItemCourseId).map((t: any) => <option key={t}>{t}</option>)}
+                                {(addingItemCourseId || itemData.course_id) && getCourseTypes(addingItemCourseId || itemData.course_id).map((t: any) => <option key={t}>{t}</option>)}
                             </select>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -445,111 +541,25 @@ export default function CoursesPage() {
                             <input
                                 type="date"
                                 className="input input-bordered w-full"
-                                value={itemData.due_date}
+                                value={itemData.due_date?.split('T')[0] ?? ''}
                                 onChange={(e) => setItemData({ ...itemData, due_date: e.target.value })}
                             />
                         </div>
                     </div>
                 </Modal>
-                <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 sm:gap-4">
                     <div>
                         <h1 className="text-2xl sm:text-3xl justify-center sm:justify-start font-bold mb-4 flex items-center gap-2 ">
                             {currentTerm} Dashboard
-                            <Link href="/help#grade-calculation" className="text-base opacity-30 hover:opacity-100 transition-opacity" title="How are grades calculated?">
-                                <FontAwesomeIcon icon={faInfoCircle} />
-                            </Link>
-                        </h1>
-                        {termAverage !== null ? (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex sm:flex-row flex-col items-center gap-6 justify-center sm:justify-start">
-                                    <div className="flex flex-row items-center justify-between sm:justify-start gap-6">
-                                        <div className="flex flex-col">
-                                            <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term Average</div>
-                                            <div className={"card card-xl bg-base-text-5xl font-black tracking-tighter leading-none" + (termAverage >= 80 ? " bg-success/70" : termAverage >= 60 ? " bg-warning/70" : " bg-error/70")}>
-                                                <div className={'flex card-body px-2 p-1 text-3xl text-center' + (termAverage >= 80 ? " text-success-content" : termAverage >= 60 ? " text-warning-content" : " text-error-content")}>
-                                                    <div>
-                                                        {termAverage.toFixed(1)}<span className="text-2xl opacity-50 ml-1">%</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="h-12 w-px bg-base-content/10"></div>
-
-                                        <div className="flex flex-col">
-                                            <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term GPA</div>
-                                            <div className="card card-xl bg-neutral/70 font-black tracking-tighter leading-none">
-                                                <div className="card-body px-2 p-1 text-neutral-content text-3xl text-center tracking-wide">
-                                                    {termGPA?.toFixed(2)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="hidden sm:block h-12 w-px bg-base-content/10"></div>
-
-                                    <div className="flex flex-row items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-2 card border border-base-content/5 w-fit sm:w-auto">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-base-content/50 mx-3">Goal</span>
-                                        <div className="relative flex items-center flex-1 sm:flex-none justify-end">
-                                            <input
-                                                type="number"
-                                                className="input input-lg text-2xl w-24 text-right pr-6 bg-base-100 border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
-                                                placeholder="-"
-                                                value={termGoal}
-                                                onChange={(e) => setTermGoal(e.target.value)}
-                                                onBlur={handleSaveGoal}
-                                            />
-                                            <span className="absolute right-2 text-sm opacity-50 pointer-events-none">%</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap gap-3 text-sm mt-1 justify-center sm:justify-start">
-                                    {termMin !== null && termMax !== null && (
-                                        <div className="flex gap-2 items-center bg-base-200/50 badge badge-lg border border-base-content/5">
-                                            <div className="flex gap-2 items-center justify-center">
-                                                <span className="opacity-50 font-bold uppercase tracking-wider text-sm">Range</span>
-                                                <span className="font-bold text-sm text-base-content/70">{termMin.toFixed(1)}% - {termMax.toFixed(1)}%</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {requiredAverage !== null && (
-                                        <div className="relative group">
-                                            <div className={`flex gap-2 items-center ${requiredAverage > 100 ? "bg-error/50 border-error-content/5" : requiredAverage < 0 ? "bg-success/50 border-success-content/5" : "bg-info/50 border-info-content/5"} badge badge-lg border cursor-help`}>
-                                                <span className="opacity-50 font-bold uppercase tracking-wider text-sm">Req. Avg</span>
-                                                <span className={`font-bold text-sm ${requiredAverage > 100 ? "text-error-content/70" : requiredAverage < 0 ? "text-success-content/70" : "text-info-content/70"}`}>
-                                                    {requiredAverage.toFixed(1)}%
-                                                </span>
-                                            </div>
-                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50 w-48 p-3 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
-                                                <div className="font-bold mb-2 border-b border-base-content/10 pb-1">Legend</div>
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 rounded-full bg-success"></div>
-                                                        <span>Goal Achieved</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 rounded-full bg-info"></div>
-                                                        <span>Achievable</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 rounded-full bg-error"></div>
-                                                        <span>Impossible (&gt;100%)</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="tooltip tooltip-right flex items-center" data-tip={"How are grades calculated?"}>
+                                <Link href="/help#grade-calculation" className="text-base opacity-30 hover:opacity-100 transition-opacity">
+                                    <FontAwesomeIcon icon={faInfoCircle} />
+                                </Link>
                             </div>
-                        ) :
-                            <div className="text-sm mt-1 opacity-50 italic">
-                                No grades available yet.
-                            </div>}
+                        </h1>
                     </div>
                     {(cav !== null || cgpa !== null) && (
-                        <div className="flex gap-6 items-end">
+                        <div className="flex gap-6 items-start">
                             {cav !== null && (
                                 <div className="flex flex-col items-center sm:items-end">
                                     <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">Cumulative Avg</span>
@@ -572,124 +582,196 @@ export default function CoursesPage() {
                         </div>
                     )}
                 </div>
-                <div className="flex flex-col sm:flex-row gap-6">
-                    {/* Today's Classes */}
-                    <div className="flex-1 card bg-base-100 shadow-sm border border-base-content/10">
-                        <div className="card-body p-4">
-                            <h3 className="card-title text-sm uppercase opacity-70 mb-2">
-                                <FontAwesomeIcon icon={faClock} className="mr-2" />
-                                Today&apos;s Classes
-                            </h3>
-                            {todaysClasses.length > 0 ? (
-                                <div className="flex flex-col gap-2">
-                                    {todaysClasses.map((cls, i) => (
-                                        <Link href={`/courses/${cls.courseId}`} key={i} className="flex items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors">
-                                            <div className="flex-1">
-                                                <div className="font-bold text-sm">{cls.courseCode}</div>
-                                                <div className="text-xs opacity-70">{cls.Component} {cls.Section}</div>
-                                            </div>
-                                            <div className="text-right text-xs font-mono">
-                                                <div>{formatTime(cls["Start Time"])} - {formatTime(cls["End Time"])}</div>
-                                                <div className="opacity-50">{cls.Location}</div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-sm opacity-50 italic">No classes today.</div>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* Upcoming Deliverables */}
-                    <div className="flex-1 card bg-base-100 shadow-sm border border-base-content/10">
-                        <div className="card-body p-4">
-                            <h3 className="card-title text-sm uppercase opacity-70 mb-2">
-                                <FontAwesomeIcon icon={faCalendarDay} className="mr-2" />
-                                Upcoming Deliverables
-                            </h3>
-                            {upcomingDeliverables.length > 0 ? (
-                                <div className="flex flex-col gap-2">
-                                    {upcomingDeliverables.map((item, i) => (
-                                        <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-base-200/50">
-                                            <div className="flex-1">
-                                                <div className="font-bold text-sm">{item.courseCode}</div>
-                                                <div className="text-xs opacity-70">{item.data.name}</div>
-                                            </div>
-                                            <div className="text-right text-xs">
-                                                <div className="font-bold text-error">
-                                                    {new Date(item.data.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                                                </div>
-                                                <div className="opacity-50">
-                                                    {new Date(item.data.due_date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                                                </div>
-                                            </div>
+                {termAverage !== null ? (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* Column 1 */}
+                            <div className="flex flex-col gap-6">
+                                <div className="card bg-base-100 shadow-sm p-4 h-full items-center flex flex-col gap-4">
+                                    <div className="flex flex-row items-center justify-center gap-6">
+                                        <div className="flex flex-col">
+                                            <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term Average</div>
+                                            <GradeBadge grade={termAverage} />
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-sm opacity-50 italic">No upcoming deliverables.</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
 
-                <hr className="my-8 border border-base-content/10" />
+                                        <div className="h-12 w-px bg-base-content/10"></div>
 
-                {/* Current Courses */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {currentCourses.map(course => {
-                        const details = getCourseGradeDetails(course, items);
-                        const currentGrade = details?.currentGrade;
-                        const min = details ? details.currentScore : 0;
-                        const max = details ? details.currentScore + (details.totalSchemeWeight - details.totalWeightGraded) : 0;
+                                        <div className="flex flex-col">
+                                            <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term GPA</div>
+                                            <GradeBadge gpa={termGPA} />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-row items-center justify-between gap-2 bg-base-200 p-2 card w-full shadow-sm">
+                                        <GoalInput handleSaveTargetGrade={handleSaveGoal} targetGrade={termGoal} />
+                                    </div>
+                                    {termMin !== null && termMax !== null && (
+                                        <RangeBadge rangeMin={termMin!} rangeMax={termMax!} />
+                                    )}
 
-                        return (
-                            <Link key={course.id} href={`/courses/${course.id}`} className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm border border-base-content/10">
-                                <div className="card-body p-4">
-                                    <h2 className="card-title justify-between text-base">
-                                        {course.code}
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                className="btn btn-xs btn-circle btn-secondary hover:opacity-100"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    openAddItem(course.id);
-                                                }}
-                                                title="Quick Add Item"
-                                            >
-                                                <FontAwesomeIcon icon={faPlus} />
-                                            </button>
-                                            {currentGrade !== null && currentGrade !== undefined && (
-                                                <div className={`badge ${currentGrade >= 80 ? 'badge-success text-success-content' : currentGrade >= 60 ? 'badge-warning text-warning-content' : 'badge-error text-error-content'} font-bold text-xs`}>
-                                                    {currentGrade.toFixed(1)}%
-                                                </div>
-                                            )}
-                                        </div>
-                                    </h2>
-                                    {details ? (
-                                        <div className="mt-2">
-                                            <div className="flex justify-between text-xs opacity-60 mb-1">
-                                                <span>Min: {min.toFixed(1)}%</span>
-                                                <span>Max: {max.toFixed(1)}%</span>
-                                            </div>
-                                            <div className="flex flex-col gap-1 mt-2">
-                                                <progress className="progress progress-error opacity-60 w-full h-1" value={min || 0} max="100"></progress>
-                                                <progress className="progress progress-success opacity-60 w-full h-1" value={max || 0} max="100"></progress>
-                                                <progress className="progress progress-primary w-full h-3" value={currentGrade || 0} max="100"></progress>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="mt-2 text-sm italic opacity-50">
-                                            No grades available yet.
-                                        </div>
+                                    {requiredAverage !== null && termAverage !== null && (
+                                        <ReqAvgBadge requiredAverage={requiredAverage!} average={termAverage!} />
                                     )}
                                 </div>
-                            </Link>
-                        );
-                    })}
-                </div>
+                                <div className="flex justify-center items-center gap-8">
+                                    <div className="card bg-base-100 shadow-sm   flex flex-row items-center gap-2 w-full h-full p-4 justify-around">
+                                        <div className="flex flex-col justify-center items-center">
+                                            <div className="m-2 p-3 bg-primary card shadow-sm">
+                                                <div
+                                                    className="radial-progress text-primary-content"
+                                                    style={{ "--value": timeProgress, "--size": "6rem", "--thickness": "1rem" } as React.CSSProperties}
+                                                    role="progressbar"
+                                                >
+                                                    <span className="text-xl font-bold">{timeProgress.toFixed(0)}%</span>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs text-base-content/70 font-bold">Term Progress</span>
+                                        </div>
+                                        <div className="flex flex-col justify-center items-center">
+                                            <div className="m-2 p-3 bg-secondary card shadow-sm">
+                                                <div
+                                                    className="radial-progress text-secondary-content"
+                                                    style={{ "--value": weightCompletedPercent, "--size": "6rem", "--thickness": "1rem" } as React.CSSProperties}
+                                                    role="progressbar"
+                                                >
+                                                    <span className="text-xl font-bold">{weightCompletedPercent.toFixed(0)}%</span>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs text-base-content/70 font-bold">Weight Completed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Column 2 */}
+                            <div className="card bg-base-100 shadow-sm h-full">
+                                <div className="card-body p-4">
+                                    <h3 className="card-title text-sm uppercase opacity-70 mb-2">
+                                        <FontAwesomeIcon icon={faClock} className="mr-2" />
+                                        Today&apos;s Classes
+                                    </h3>
+                                    {todaysClasses.length > 0 ? (
+                                        <div className="flex flex-col gap-2">
+                                            {todaysClasses.slice(0, 6).map((cls, i) => (
+                                                <Link href={`/courses/${cls.courseId}`} key={i} className="flex items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm">
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-sm">{cls.courseCode}</div>
+                                                        <div className="text-xs opacity-70">{cls.Component} {cls.Section}</div>
+                                                    </div>
+                                                    <div className="text-right text-xs font-mono">
+                                                        <div>{formatTime(cls["Start Time"])} - {formatTime(cls["End Time"])}</div>
+                                                        <div className="opacity-50">{cls.Location}</div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm opacity-50 italic">No classes today.</div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Column 3 */}
+                            <div className="card bg-base-100 shadow-sm h-full">
+                                <div className="card-body p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="card-title text-sm uppercase opacity-70">
+                                            <FontAwesomeIcon icon={faCalendarDay} className="mr-2" />
+                                            Upcoming Deliverables
+                                        </h3>
+                                        <button className="btn btn-xs btn-circle btn-primary" onClick={() => openAddItem(null)} title="Add Deliverable">
+                                            <FontAwesomeIcon icon={faPlus} />
+                                        </button>
+                                    </div>
+                                    {upcomingDeliverables.length > 0 ? (
+                                        <div className="flex flex-col gap-2">
+                                            {upcomingDeliverables.slice(0, 6).map((item) => (
+                                                <div key={item.id} className="flex items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm">
+                                                    <Link href={`/courses/${item.course_id}/grades`} className="flex-1 flex items-center gap-3">
+                                                        <div className="flex-1">
+                                                            <div className="font-bold text-sm">{item.data.name}</div>
+                                                            <div className="text-xs opacity-70">{item.courseCode}</div>
+                                                        </div>
+                                                        <div className="text-right text-xs">
+                                                            <div className="font-bold text-error">
+                                                                {new Date(item.data.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                    <div className="flex gap-1">
+                                                        <button className="btn btn-xs btn-ghost" onClick={(e) => { e.preventDefault(); handleOpenEditItem(item); }}><FontAwesomeIcon icon={faPencil} /></button>
+                                                        <button className="btn btn-xs btn-ghost text-error" onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id); }}><FontAwesomeIcon icon={faTrash} /></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm opacity-50 italic">No upcoming deliverables.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="card bg-base-100 shadow-sm border border-base-content/10 col-span-1 md:col-span-3" key="courses-card">
+                            <div className="card-body p-4">
+                                <h3 className="card-title text-sm uppercase opacity-70 mb-2">Courses</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {/* Current Courses */}
+                                    {currentCourses.map(course => {
+                                        const details = getCourseGradeDetails(course, items);
+                                        const currentGrade = details?.currentGrade;
+                                        const min = details ? details.currentScore : 0;
+                                        const max = details ? details.currentScore + (details.totalSchemeWeight - details.totalWeightGraded) : 0;
+
+                                        return (
+                                            <Link key={course.id} href={`/courses/${course.id}`} className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm">
+                                                <div className="card-body p-4">
+                                                    <h2 className="card-title justify-between text-base">
+                                                        {course.code}
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                className="btn btn-xs btn-circle btn-secondary hover:opacity-100"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    openAddItem(course.id);
+                                                                }}
+                                                                title="Quick Add Item"
+                                                            >
+                                                                <FontAwesomeIcon icon={faPlus} />
+                                                            </button>
+                                                            {currentGrade !== null && (
+                                                                <GradeBadge grade={currentGrade} size="sm" />
+                                                            )}
+                                                        </div>
+                                                    </h2>
+                                                    {details ? (
+                                                        <div className="mt-2">
+                                                            <div className="flex justify-between text-xs opacity-60 mb-1">
+                                                                <span>Min: {min.toFixed(1)}%</span>
+                                                                <span>Max: {max.toFixed(1)}%</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 mt-2">
+                                                                <progress className="progress progress-error opacity-60 w-full h-1" value={min || 0} max="100"></progress>
+                                                                <progress className="progress progress-success opacity-60 w-full h-1" value={max || 0} max="100"></progress>
+                                                                <progress className="progress progress-primary w-full h-3" value={currentGrade || 0} max="100"></progress>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-2 text-sm italic opacity-50">
+                                                            No grades available yet.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-sm mt-1 opacity-50 italic">
+                        No grades available yet.
+                    </div>
+                )}
             </div >
         );
     }
