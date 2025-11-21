@@ -6,14 +6,16 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { useCourses } from "../courses/course-context";
 import Modal from "./modal";
 
 export default function Sidebar() {
-    const { courses, addCourse, loading } = useCourses();
+    const { courses, addCourse, loading, items } = useCourses();
     const { data: session } = useSession();
     const router = useRouter();
     const pathname = usePathname();
+    const linkSuffix = pathname?.endsWith("/grades") ? "/grades" : "";
     const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string }>({
         isOpen: false,
         message: "",
@@ -153,41 +155,84 @@ export default function Sidebar() {
                 </div>
             ) : (
                 <>
-                    {sortedFolders.map(folder => (
-                        <div key={folder} className="collapse collapse-arrow border border-base-content/10 rounded-box mb-2">
-                            <input
-                                type="checkbox"
-                                checked={expandedFolders[folder] ?? true}
-                                onChange={() => toggleFolder(folder)}
-                                className="min-h-0 p-0"
-                            />
-                            <div className="collapse-title bg-base-300 text-sm font-bold min-h-0 py-2 px-4 flex items-center gap-2">
-                                {folder}
-                            </div>
-                            <div className="collapse-content bg-base-100 p-0">
-                                <div className="flex flex-col gap-2 p-2">
-                                    {groupedCourses[folder].map(course => (
-                                        <Link
-                                            key={course.id}
-                                            href={`/courses/${course.id}`}
-                                            className={`btn btn-sm justify-start h-auto py-2 font-normal ${pathname === `/courses/${course.id}` ? "btn-primary" : "btn-ghost bg-base-200 hover:bg-base-300"
-                                                }`}
-                                        >
-                                            <div className="text-left w-full">
-                                                <div className="font-bold text-xs">{course.code}</div>
-                                            </div>
-                                        </Link>
-                                    ))}
+                    {sortedFolders.map(folder => {
+                        const folderCourses = groupedCourses[folder];
+                        let totalCurrent = 0;
+                        let countCurrent = 0;
+                        let totalMin = 0;
+                        let totalMax = 0;
+                        let countMinMax = 0;
+
+                        folderCourses.forEach(c => {
+                            const details = getCourseGradeDetails(c, items);
+                            if (details && details.currentGrade !== null) {
+                                totalCurrent += details.currentGrade;
+                                countCurrent++;
+
+                                const min = details.currentScore;
+                                const max = details.currentScore + (details.totalSchemeWeight - details.totalWeightGraded);
+                                totalMin += min;
+                                totalMax += max;
+                                countMinMax++;
+                            }
+                        });
+
+                        const avgCurrent = countCurrent > 0 ? totalCurrent / countCurrent : null;
+                        const avgMin = countMinMax > 0 ? totalMin / countMinMax : null;
+                        const avgMax = countMinMax > 0 ? totalMax / countMinMax : null;
+
+                        return (
+                            <div key={folder} className="collapse collapse-arrow border border-base-content/10 rounded-box mb-2">
+                                <input
+                                    type="checkbox"
+                                    checked={expandedFolders[folder] ?? true}
+                                    onChange={() => toggleFolder(folder)}
+                                    className="min-h-0 p-0"
+                                />
+                                <div className="collapse-title bg-base-300 text-sm font-bold min-h-0 py-2 px-4 flex flex-col justify-center">
+                                    <div className="flex items-center gap-2">
+                                        {folder}
+                                    </div>
+                                    {(avgCurrent !== null) && (
+                                        <div className="flex items-center gap-2 mt-1.5">
+                                            {avgCurrent !== null && (
+                                                <div className={`badge ${avgCurrent >= 80 ? 'badge-success text-success-content' : avgCurrent >= 60 ? 'badge-warning text-warning-content' : 'badge-error text-error-content'} text-sm font-bold border-none`}>
+                                                    {avgCurrent.toFixed(1)}%
+                                                </div>
+                                            )}
+                                            {avgMin !== null && avgMax !== null && (
+                                                <div className="text-xs opacity-60 font-normal">
+                                                    {avgMin.toFixed(1)}% - {avgMax.toFixed(1)}%
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="collapse-content bg-base-100 p-0">
+                                    <div className="flex flex-col gap-2 p-2">
+                                        {groupedCourses[folder].map(course => (
+                                            <Link
+                                                key={course.id}
+                                                href={`/courses/${course.id}${linkSuffix}`}
+                                                className={`btn btn-sm justify-start h-auto py-2 font-normal ${pathname === `/courses/${course.id}` || pathname?.startsWith(`/courses/${course.id}/`) ? "btn-primary" : "btn-ghost bg-base-200 hover:bg-base-300"
+                                                    }`}
+                                            >
+                                                <div className="text-left w-full">
+                                                    <div className="font-bold text-xs">{course.code}</div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {uncategorizedCourses.map((course) => (
                         <Link
                             key={course.id}
-                            href={`/courses/${course.id}`}
-                            className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname === `/courses/${course.id}` ? "btn-primary bg-primary" : ""
+                            href={`/courses/${course.id}${linkSuffix}`}
+                            className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname === `/courses/${course.id}` || pathname?.startsWith(`/courses/${course.id}/`) ? "btn-primary bg-primary" : ""
                                 }`}
                         >
                             <div className="text-left w-full text-primary-content">

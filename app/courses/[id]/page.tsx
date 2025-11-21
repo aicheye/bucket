@@ -1,11 +1,11 @@
 "use client";
 
-import { faCheck, faExternalLinkAlt, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faEdit, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Modal from "../../components/modal";
-import { useCourses } from "../course-context";
+import { getCategoryColor, useCourses } from "../course-context";
 
 function formatTime(time: { hours: number; minutes: number }) {
     if (!time) return "";
@@ -62,7 +62,7 @@ function processSchedule(schedule: any[]) {
 export default function CourseDetailPage() {
     const { id } = useParams();
     const router = useRouter();
-    const { courses, deleteCourse, updateSections, updateMarkingSchemes, loading } = useCourses();
+    const { courses, deleteCourse, updateSections, updateMarkingSchemes, items } = useCourses();
 
     const selectedCourse = courses.find((c) => c.id === id);
 
@@ -82,25 +82,11 @@ export default function CourseDetailPage() {
         setShowSectionConfirm(false);
     }, [id]);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
-                <div className="skeleton h-8 w-1/3 mb-4"></div>
-                <div className="skeleton h-64 w-full rounded-box"></div>
-                <div className="skeleton h-64 w-full rounded-box"></div>
-            </div>
-        );
-    }
+    if (!selectedCourse) return null;
 
-    if (!selectedCourse) {
-        return (
-            <div className="flex h-full flex-col items-center justify-center">
-                <h2 className="text-2xl font-bold text-base-content/70">Course not found</h2>
-                <p className="text-base-content/60">The course you are looking for does not exist or you do not have permission to view it.</p>
-                <button className="btn btn-primary mt-4" onClick={() => router.push("/courses")}>Back to Courses</button>
-            </div>
-        );
-    }
+    const courseItems = items.filter(i => i.course_id === selectedCourse.id);
+    const placeholderGrades = selectedCourse.data.placeholder_grades || {};
+    const dropLowest = selectedCourse.data.drop_lowest || {};
 
     const processedSchedule = selectedCourse ? processSchedule(selectedCourse.data["schedule-info"] || []) : [];
 
@@ -164,6 +150,17 @@ export default function CourseDetailPage() {
         setTempMarkingSchemes(newSchemes);
     }
 
+    function updateComponentName(componentIndex: number, newName: string) {
+        const newSchemes = tempMarkingSchemes.map(scheme => {
+            const newScheme = [...scheme];
+            if (newScheme[componentIndex]) {
+                newScheme[componentIndex] = { ...newScheme[componentIndex], Component: newName };
+            }
+            return newScheme;
+        });
+        setTempMarkingSchemes(newSchemes);
+    }
+
     function resetToDefault() {
         if (!selectedCourse?.data["marking-schemes"] || selectedCourse.data["marking-schemes"].length === 0) return;
         const defaultScheme = JSON.parse(JSON.stringify(selectedCourse.data["marking-schemes"][0]));
@@ -183,7 +180,7 @@ export default function CourseDetailPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+        <>
             <Modal
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
@@ -212,22 +209,6 @@ export default function CourseDetailPage() {
                 <p>You haven't selected a section for: {missingComponents.join(", ")}. Continue anyway?</p>
             </Modal>
 
-            <div className="prose max-w-none flex items-center gap-4">
-                <h1 className="lead text-xl font-bold mb-0">{selectedCourse.data.description}</h1>
-                <h2 className="text-lg text-base-content/70">{selectedCourse.code} ({selectedCourse.term})</h2>
-                {selectedCourse.data.outline_url && (
-                    <a
-                        href={selectedCourse.data.outline_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-soft btn-info btn-sm btn-circle"
-                        title="View Original Outline"
-                    >
-                        <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
-                    </a>
-                )}
-            </div>
-
             {/* Schedule Info */}
             {selectedCourse.data["schedule-info"] && (
                 <div className="card bg-base-100 shadow-md">
@@ -241,10 +222,10 @@ export default function CourseDetailPage() {
                                 {selectedCourse.sections && Object.keys(selectedCourse.sections).length > 0
                                     ? isEditingSections
                                         ? <>Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" /></>
-                                        : "Edit Sections"
+                                        : <><FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Edit Sections</>
                                     : isEditingSections
                                         ? <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
-                                        : "Choose Sections"}
+                                        : <><FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Choose Sections</>}
                             </button>
                         </div>
                         <div className="overflow-x-auto rounded border border-base-content/10">
@@ -318,7 +299,8 @@ export default function CourseDetailPage() {
                                 onClick={toggleMarkingSchemesEdit}
                             >
                                 {isEditingMarkingSchemes ?
-                                    <>Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" /></> : "Edit Schemes"}
+                                    <>Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" /></> :
+                                    <><FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Edit Schemes</>}
                             </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -352,7 +334,20 @@ export default function CourseDetailPage() {
                                             <tbody>
                                                 {scheme.map((item: any, j: number) => (
                                                     <tr key={j}>
-                                                        <td>{item.Component}</td>
+                                                        <td>
+                                                            {isEditingMarkingSchemes ? (
+                                                                <input
+                                                                    className="input input-sm text-sm input-bordered w-full"
+                                                                    value={item.Component}
+                                                                    onChange={(e) => updateComponentName(j, e.target.value)}
+                                                                />
+                                                            ) : (
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`badge badge-xs ${getCategoryColor(item.Component)}`}></div>
+                                                                    {item.Component}
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                         <td className="text-right">
                                                             {isEditingMarkingSchemes ? (
                                                                 <div className="flex justify-end items-center gap-1">
@@ -401,6 +396,6 @@ export default function CourseDetailPage() {
                     Delete Course
                 </button>
             </div>
-        </div>
+        </>
     );
 }
