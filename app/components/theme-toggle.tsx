@@ -1,5 +1,7 @@
 "use client";
 
+import { faB, faBrush } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 
 const themes = [
@@ -76,7 +78,7 @@ export default function ThemeToggle() {
     return (
         <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-ghost">
-                Theme
+                <FontAwesomeIcon icon={faBrush} className="w-5 h-5" /> {theme.charAt(0).toUpperCase() + theme.slice(1)}
                 <svg
                     width="12px"
                     height="12px"
