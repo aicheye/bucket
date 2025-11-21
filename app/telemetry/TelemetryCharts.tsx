@@ -15,7 +15,7 @@ type FeatureDaily = { event: string; event_count: number; unique_users: number; 
 
 export function DauChart({ data }: { data: DauPoint[] }) {
     return (
-        <div style={{ width: "100%", height: 280 }}>
+        <div style={{ width: "100%", height: 320 }}>
             <ResponsiveContainer>
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-base-content)" strokeOpacity={0.2} />
