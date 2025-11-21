@@ -139,6 +139,8 @@ export default function CourseGradesPage() {
 
         setIsImporting(false);
 
+        const categoriesWithGrades = new Set<string>();
+
         for (const item of parsedItems) {
             const mappedType = categoryMapping[item.category];
             let gradeVal = item.grade.toString();
@@ -155,7 +157,26 @@ export default function CourseGradesPage() {
                 due_date: "" // No date in import
             };
 
+            if (gradeVal !== "") {
+                categoriesWithGrades.add(mappedType);
+            }
+
             await addItem(id as string, newItemData, session.user.id);
+        }
+
+        // Remove placeholders for categories that got grades
+        const newPlaceholders = { ...placeholderGrades };
+        let placeholdersChanged = false;
+        categoriesWithGrades.forEach(cat => {
+            if (newPlaceholders[cat] !== undefined) {
+                delete newPlaceholders[cat];
+                placeholdersChanged = true;
+            }
+        });
+
+        if (placeholdersChanged) {
+            setPlaceholderGrades(newPlaceholders);
+            await updateCourseData(id as string, { placeholder_grades: newPlaceholders });
         }
 
         setImportText("");
@@ -189,6 +210,14 @@ export default function CourseGradesPage() {
                 await updateItem(editingItem.id, itemData);
             } else {
                 await addItem(id as string, itemData, session.user.id);
+            }
+
+            // Remove placeholder if grade is added
+            if (itemData.grade && placeholderGrades[itemData.type] !== undefined) {
+                const newPlaceholders = { ...placeholderGrades };
+                delete newPlaceholders[itemData.type];
+                setPlaceholderGrades(newPlaceholders);
+                await updateCourseData(id as string, { placeholder_grades: newPlaceholders });
             }
         }
 
@@ -418,42 +447,47 @@ export default function CourseGradesPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {getCourseTypes().map((t: any) => (
-                                    <tr key={t}>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                <div className={`badge badge-xs ${getCategoryColor(t)}`}></div>
-                                                <span className="font-medium">{t}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                className="input input-bordered input-sm w-full text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                value={dropLowest[t] || 0}
-                                                onChange={(e) => setDropLowest({ ...dropLowest, [t]: parseInt(e.target.value) || 0 })}
-                                            />
-                                        </td>
-                                        <td>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                className="input input-bordered input-sm w-full text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                value={placeholderGrades[t] ?? ""}
-                                                placeholder="-"
-                                                onChange={(e) => {
-                                                    const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
-                                                    const newPlaceholders = { ...placeholderGrades };
-                                                    if (val === undefined) delete newPlaceholders[t];
-                                                    else newPlaceholders[t] = val;
-                                                    setPlaceholderGrades(newPlaceholders);
-                                                }}
-                                            />
-                                        </td>
-                                    </tr>
-                                ))}
+                                {getCourseTypes().map((t: any) => {
+                                    const hasGrades = courseItems.some(i => i.data.type === t && i.data.grade);
+                                    return (
+                                        <tr key={t}>
+                                            <td>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`badge badge-xs ${getCategoryColor(t)}`}></div>
+                                                    <span className="font-medium">{t}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    className="input input-bordered input-sm w-full text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    value={dropLowest[t] || 0}
+                                                    onChange={(e) => setDropLowest({ ...dropLowest, [t]: parseInt(e.target.value) || 0 })}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    className="input input-bordered input-sm w-full text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    value={placeholderGrades[t] ?? ""}
+                                                    placeholder={hasGrades ? "Grades exist" : "-"}
+                                                    disabled={hasGrades}
+                                                    title={hasGrades ? "Cannot add placeholder when grades exist" : ""}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                                                        const newPlaceholders = { ...placeholderGrades };
+                                                        if (val === undefined) delete newPlaceholders[t];
+                                                        else newPlaceholders[t] = val;
+                                                        setPlaceholderGrades(newPlaceholders);
+                                                    }}
+                                                />
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

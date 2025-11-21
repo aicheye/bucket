@@ -25,6 +25,7 @@ export default function Footer() {
                     , Icons from FontAwesome <a className="link" href="https://scripts.sil.org/OFL" target="_blank" rel="noopener noreferrer">
                         SIL OFL 1.1</a>
                 </p>
+                <div className="border h-5 border-base-content/20 self-center"></div>
                 <p>Read our <a target="_blank" href="/legal/privacy" className="link" rel="noopener noreferrer">
                     Privacy Policy</a> & <a target="_blank" href="/legal/terms" className="link" rel="noopener noreferrer">
                         Terms of Service
