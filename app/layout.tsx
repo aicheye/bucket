@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Lora, Playfair_Display } from "next/font/google";
-// @ts-expect-error: allow side-effect import of global CSS without type declarations
 import "./globals.css";
 import Providers from "./providers";
 
