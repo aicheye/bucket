@@ -390,30 +390,36 @@ export default function CoursesPage() {
                                 <div className="flex sm:flex-row flex-col items-center gap-6 justify-center sm:justify-start">
                                     <div className="flex flex-row items-center justify-between sm:justify-start gap-6">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term Average</span>
-                                            <span className={"text-5xl font-black tracking-tighter leading-none" + (termAverage >= 80 ? " text-success" : termAverage >= 60 ? " text-warning" : " text-error")}>
-                                                {termAverage.toFixed(1)}<span className="text-2xl opacity-40 ml-1">%</span>
-                                            </span>
+                                            <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term Average</div>
+                                            <div className={"card card-xl bg-base-text-5xl font-black tracking-tighter leading-none" + (termAverage >= 80 ? " bg-success/70" : termAverage >= 60 ? " bg-warning/70" : " bg-error/70")}>
+                                                <div className={'flex card-body px-2 p-1 text-3xl text-center' + (termAverage >= 80 ? " text-success-content" : termAverage >= 60 ? " text-warning-content" : " text-error-content")}>
+                                                    <div>
+                                                        {termAverage.toFixed(1)}<span className="text-2xl opacity-50 ml-1">%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="h-12 w-px bg-base-content/10"></div>
 
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term GPA</span>
-                                            <span className="text-5xl font-black tracking-tighter leading-none">
-                                                {termGPA?.toFixed(2)}
-                                            </span>
+                                            <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">Term GPA</div>
+                                            <div className="card card-xl bg-neutral/70 font-black tracking-tighter leading-none">
+                                                <div className="card-body px-2 p-1 text-neutral-content text-3xl text-center tracking-wide">
+                                                    {termGPA?.toFixed(2)}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="hidden sm:block h-12 w-px bg-base-content/10"></div>
 
-                                    <div className="flex flex-row items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card border border-base-content/5 w-fit sm:w-auto">
+                                    <div className="flex flex-row items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-2 card border border-base-content/5 w-fit sm:w-auto">
                                         <span className="text-xs font-bold uppercase tracking-wider text-base-content/50 mx-3">Goal</span>
                                         <div className="relative flex items-center flex-1 sm:flex-none justify-end">
                                             <input
                                                 type="number"
-                                                className="input input-lg w-24 text-right pr-6 bg-base-100 border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
+                                                className="input input-lg text-2xl w-24 text-right pr-6 bg-base-100 border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
                                                 placeholder="-"
                                                 value={termGoal}
                                                 onChange={(e) => setTermGoal(e.target.value)}
@@ -454,7 +460,7 @@ export default function CoursesPage() {
                             {cav !== null && (
                                 <div className="flex flex-col items-center sm:items-end">
                                     <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">Cumulative Avg</span>
-                                    <span className={`text-2xl font-black tracking-tight leading-none ${cav >= 80 ? "text-success" : cav >= 60 ? "text-warning" : "text-error"}`}>
+                                    <span className={`text-2xl font-black tracking-tight leading-none ${cav >= 80 ? "text-success-content" : cav >= 60 ? "text-warning-content" : "text-error-content"}`}>
                                         {cav.toFixed(1)}<span className="text-sm opacity-50 ml-0.5">%</span>
                                     </span>
                                 </div>
