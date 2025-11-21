@@ -460,9 +460,12 @@ export default function CoursesPage() {
                             {cav !== null && (
                                 <div className="flex flex-col items-center sm:items-end">
                                     <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">Cumulative Avg</span>
-                                    <span className={`text-2xl font-black tracking-tight leading-none ${cav >= 80 ? "text-success-content" : cav >= 60 ? "text-warning-content" : "text-error-content"}`}>
-                                        {cav.toFixed(1)}<span className="text-sm opacity-50 ml-0.5">%</span>
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`badge badge-xs ${cav >= 80 ? 'badge-success' : cav >= 60 ? 'badge-warning' : 'badge-error'}`}></span>
+                                        <span className="text-2xl font-black tracking-tight leading-none">
+                                            {cav.toFixed(1)}<span className="text-sm opacity-50 ml-0.5">%</span>
+                                        </span>
+                                    </div>
                                 </div>
                             )}
                             {cgpa !== null && (
