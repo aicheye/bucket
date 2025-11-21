@@ -22,7 +22,7 @@ export default function AuthScreen() {
                                 Terms of Service </a>.<br />
                             We encourage you to read them carefully. They aren&apos;t long!
                         </p>
-                        <p className="text-base-content/70 text-md"> See the <a target="_blank" href="/help" className="link link-primary">
+                        <p className="text-base-content/70 text-md text-center"> See the <a target="_blank" href="/help" className="link link-primary">
                             help page</a> for more information on how to use the service.
                         </p>
                     </>

@@ -404,7 +404,7 @@ export default function CourseGradesPage() {
                                     checked={treatZeroAsEmpty}
                                     onChange={(e) => setTreatZeroAsEmpty(e.target.checked)}
                                 />
-                                <span className="label-text text-sm">Include items with 0% score (uncheck to leave grade empty)</span>
+                                <span className="label-text text-sm">Include items with 0% score</span>
                             </label>
                         </div>
 
@@ -650,116 +650,133 @@ export default function CourseGradesPage() {
             </Modal>
 
             <div className="card bg-base-100 shadow-md">
-                <div className="card-body">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <div className="flex items-center gap-2">
-                            <h2 className="card-title text-2xl">Grades</h2>
-                            <Link href="/help#grade-calculation" className="btn btn-ghost btn-circle btn-xs opacity-50 hover:opacity-100" title="How are grades calculated?">
-                                <FontAwesomeIcon icon={faInfoCircle} />
-                            </Link>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="form-control mr-2">
-                                <label className="label cursor-pointer justify-start gap-2 p-0">
-                                    <span className="label-text text-xs font-bold uppercase tracking-wider text-base-content/50">Target Grade</span>
-                                    <div className="relative flex items-center">
-                                        <input
-                                            type="number"
-                                            className="input input-bordered input-sm w-20 text-right pr-6 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            placeholder="-"
-                                            value={targetGrade}
-                                            onChange={(e) => setTargetGrade(e.target.value)}
-                                            onBlur={handleSaveTargetGrade}
-                                        />
-                                        <span className="absolute right-2 text-sm opacity-50 pointer-events-none">%</span>
-                                    </div>
-                                </label>
+                <div className="card-body p-4 sm:p-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+                            <div className="flex items-center gap-2">
+                                <h2 className="card-title text-2xl">Grades</h2>
+                                <Link href="/help#grade-calculation" className="btn btn-ghost btn-circle btn-xs opacity-50 hover:opacity-100" title="How are grades calculated?">
+                                    <FontAwesomeIcon icon={faInfoCircle} />
+                                </Link>
                             </div>
+                            <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto">
+                                <span className="text-xs font-bold uppercase tracking-wider text-base-content/50 ml-2">Goal</span>
+                                <div className="relative flex items-center flex-1 sm:flex-none justify-end">
+                                    <input
+                                        type="number"
+                                        className="input input-md w-24 text-right pr-6 bg-base-100 border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
+                                        placeholder="-"
+                                        value={targetGrade}
+                                        onChange={(e) => setTargetGrade(e.target.value)}
+                                        onBlur={handleSaveTargetGrade}
+                                    />
+                                    <span className="absolute right-2 text-sm opacity-50 pointer-events-none">%</span>
+                                </div>
+                            </div>
+                        </div>
 
-                            <div className="w-px h-6 bg-base-content/10 mx-1 hidden sm:block"></div>
-
-                            <button className="btn btn-ghost btn-sm" onClick={() => setShowGradingSettings(true)}>
-                                <FontAwesomeIcon icon={faCog} /> <span className="hidden sm:inline">Grading Settings</span>
+                        <div className="flex gap-2 w-full md:w-auto">
+                            <button className="btn btn-soft btn-md flex-1 sm:flex-none" onClick={() => setShowGradingSettings(true)}>
+                                <FontAwesomeIcon icon={faCog} /> Grading
                             </button>
-                            <button className="btn btn-ghost btn-sm" onClick={() => { setImportStep(1); setImportText(""); setIsImporting(true); }}>
-                                <FontAwesomeIcon icon={faFileImport} /> <span className="hidden sm:inline">Import from LEARN</span>
+                            <button className="btn btn-soft btn-md flex-1 sm:flex-none" onClick={() => setIsImporting(true)}>
+                                <FontAwesomeIcon icon={faFileImport} /> Import
                             </button>
-                            <button className="btn btn-primary btn-sm" onClick={openAddItem}>
-                                <FontAwesomeIcon icon={faPlus} /> Add Item
+                            <button className="btn btn-primary btn-md flex-1 sm:flex-none" onClick={openAddItem}>
+                                <FontAwesomeIcon icon={faPlus} /> Add
                             </button>
                         </div>
                     </div>
 
                     {selectedCourse.data["marking-schemes"]?.length > 0 && displayItems.length > 0 && (
                         <div className="bg-base-200/40 card p-4 mb-6 border border-base-content/5 shadow-sm">
-                            <div className="flex flex-wrap gap-4">
-                                {selectedCourse.data["marking-schemes"].map((scheme: any[], idx: number) => {
-                                    const details = calculateSchemeGradeDetails(scheme, courseItems, placeholderGrades, dropLowest);
-                                    if (details.currentGrade === null) return null;
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {selectedCourse.data["marking-schemes"]
+                                    .map((scheme: any[], idx: number) => ({
+                                        scheme,
+                                        originalIndex: idx,
+                                        details: calculateSchemeGradeDetails(scheme, courseItems, placeholderGrades, dropLowest)
+                                    }))
+                                    .filter((item: any) => item.details.currentGrade !== null)
+                                    .sort((a: any, b: any) => b.details.currentGrade - a.details.currentGrade)
+                                    .map((item: any, idx: number) => {
+                                        const { scheme, originalIndex, details } = item;
+                                        const isHighest = idx === 0;
 
-                                    const min = details.currentScore;
-                                    const max = details.currentScore + (details.totalSchemeWeight - details.totalWeightGraded);
-                                    const required = calculateRequired(scheme);
+                                        const min = details.currentScore;
+                                        const max = details.currentScore + (details.totalSchemeWeight - details.totalWeightGraded);
+                                        const required = calculateRequired(scheme);
 
-                                    let gradeColor = "text-error";
-                                    if (details.currentGrade >= 80) gradeColor = "text-success";
-                                    else if (details.currentGrade >= 60) gradeColor = "text-warning";
+                                        let gradeColor = "text-error";
+                                        if (details.currentGrade >= 80) gradeColor = "text-success";
+                                        else if (details.currentGrade >= 60) gradeColor = "text-warning";
 
-                                    return (
-                                        <div key={idx} className="relative group">
-                                            <div className="flex flex-col p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all min-w-[180px] cursor-default h-full">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-[10px] uppercase tracking-wider font-bold opacity-50">Scheme {idx + 1}</span>
-                                                    <FontAwesomeIcon icon={faInfoCircle} className="text-xs opacity-20" />
-                                                </div>
+                                        if (!isHighest) gradeColor = "text-base-content/50";
 
-                                                <div className="flex items-baseline gap-1 mb-3">
-                                                    <span className={`text-4xl font-black tracking-tighter ${gradeColor}`}>{details.currentGrade.toFixed(1)}</span>
-                                                    <span className="text-lg font-bold opacity-40">%</span>
-                                                </div>
-
-                                                <div className="space-y-1.5 mt-auto">
-                                                    <div className="flex justify-between items-center text-xs">
-                                                        <span className="opacity-60">Range</span>
-                                                        <span className="font-mono font-medium opacity-80">{min.toFixed(1)} - {max.toFixed(1)}%</span>
-                                                    </div>
-
-                                                    <div className={`flex justify-between items-center text-xs ${required !== null ? "" : "invisible"}`}>
-                                                        <span className="opacity-60">Req. to Goal</span>
-                                                        <span className={`font-bold ${required !== null && required > 100 ? "text-error" : required !== null && required < 0 ? "text-success" : required !== null && required < details.currentGrade ? "text-info" : "text-warning"}`}>
-                                                            {required !== null ? required.toFixed(1) : "0.0"}%
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
-                                                <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">Scheme Breakdown</div>
-                                                <div className="flex flex-col gap-2">
-                                                    {scheme.map((s, i) => (
-                                                        <div key={i} className="flex justify-between items-center">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={`badge badge-xs ${getCategoryColor(s.Component)}`}></div>
-                                                                <span className="font-medium">{s.Component}</span>
-                                                            </div>
-                                                            <span className="opacity-70 font-mono">{s.Weight}%</span>
+                                        return (
+                                            <div key={originalIndex} className="relative group w-full">
+                                                <div className={`flex flex-row justify-between items-center p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full cursor-default ${!isHighest ? "opacity-60 grayscale" : ""}`}>
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-[10px] uppercase tracking-wider font-bold opacity-50">Scheme {originalIndex + 1}</span>
+                                                            <FontAwesomeIcon icon={faInfoCircle} className="text-xs opacity-20" />
                                                         </div>
-                                                    ))}
+
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className={`text-4xl font-black tracking-tighter ${gradeColor}`}>{details.currentGrade.toFixed(1)}</span>
+                                                            <span className="text-lg font-bold opacity-40">%</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {required === null ? (
+                                                        <div className={`flex w-full flex-col items-end gap-2 text-sm justify-end`}>
+                                                            <span className="opacity-60">Range</span>
+                                                            <span className="font-medium opacity-80 font-mo">{min.toFixed(1)} - {max.toFixed(1)}%</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-end gap-2 min-w-[140px] text-sm">
+                                                            <div className={`flex justify-between w-full items-center gap-2`}>
+                                                                <span className="opacity-60">Range</span>
+                                                                <span className="font-medium opacity-80">{min.toFixed(1)} - {max.toFixed(1)}%</span>
+                                                            </div>
+
+                                                            <div className={`flex justify-between w-full items-center gap-2 ${required !== null ? "" : "invisible"}`}>
+                                                                <span className="opacity-60">Req. to Goal</span>
+                                                                <span className={`font-bold ${required !== null && required > 100 ? "text-error" : required !== null && required < 0 ? "text-success" : required !== null && required < details.currentGrade ? "text-info" : "text-warning"}`}>
+                                                                    {required !== null ? required.toFixed(1) : "0.0"}%
+                                                                </span>
+                                                            </div>
+                                                        </div>)
+                                                    }
+                                                </div>
+
+                                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
+                                                    <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">Scheme Breakdown</div>
+                                                    <div className="flex flex-col gap-2">
+                                                        {scheme.map((s: any, i: number) => (
+                                                            <div key={i} className="flex justify-between items-center">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`badge badge-xs ${getCategoryColor(s.Component)}`}></div>
+                                                                    <span className="font-medium">{s.Component}</span>
+                                                                </div>
+                                                                <span className="opacity-70 font-mono">{s.Weight}%</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
                             </div>
                         </div>
-                    )}                    <div className="overflow-x-auto border border-base-content/10 card">
+                    )}                    <div className="overflow-x-auto border border-base-content/10 rounded-box">
                         <table className="table w-full">
                             <thead>
                                 <tr>
-                                    <th className="w-full">Name</th>
-                                    <th className="whitespace-nowrap min-w-[120px]">Type</th>
-                                    <th className="whitespace-nowrap min-w-[120px]">Grade</th>
-                                    {hasDueDates && <th className="whitespace-nowrap min-w-[120px]">Due Date</th>}
+                                    <th className="whitespace-nowrap min-w-fit text-right">Grade</th>
+                                    <th className="whitespace-nowrap min-w-fit w-full">Name</th>
+                                    <th className="whitespace-nowrap w-fit">Type</th>
+                                    {hasDueDates && <th className="whitespace-nowrap min-w-fit">Due Date</th>}
                                     <th className="whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
@@ -782,7 +799,27 @@ export default function CourseGradesPage() {
 
                                         return (
                                             <tr key={item.id} className={`${item.data.isPlaceholder ? "bg-base-200/30 italic opacity-70" : ""} ${isGreyedOut ? "bg-base-300 opacity-50" : ""}`}>
-                                                <td className="font-medium">
+                                                <td>
+                                                    {item.data.grade ? (
+                                                        <div className="flex flex-col w-full items-end">
+                                                            {item.data.max_grade && !isNaN(parseFloat(item.data.grade)) && !isNaN(parseFloat(item.data.max_grade)) && parseFloat(item.data.max_grade) !== 0 && (
+                                                                <span className={`font-bold font-mono ${isDropped ? "line-through" : ""}`}>
+                                                                    {((parseFloat(item.data.grade) / parseFloat(item.data.max_grade)) * 100).toFixed(2)}%
+                                                                </span>
+                                                            )}
+                                                            <span className={`text-xs opacity-50 ${isDropped ? "line-through decoration-base-content/50" : ""}`}>
+                                                                {item.data.grade}
+                                                                {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-base-content/30 justify-end flex w-full gap-1">
+                                                            -
+                                                            {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="font-medium whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
                                                         <span className={isDropped ? "line-through decoration-base-content/50" : ""}>{item.data.name}</span>
                                                         {isGreyedOut && (
@@ -793,29 +830,9 @@ export default function CourseGradesPage() {
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div className={`badge ${getCategoryColor(item.data.type)} text-white border-none max-w-[150px] truncate block ${isDropped ? "opacity-50" : ""}`}>
+                                                    <div className={`badge ${getCategoryColor(item.data.type)} text-white border-none max-w-[120px] truncate block lg:max-w-none lg:whitespace-nowrap lg:h-auto ${isDropped ? "opacity-50" : ""}`}>
                                                         {item.data.type}
                                                     </div>
-                                                </td>
-                                                <td>
-                                                    {item.data.grade ? (
-                                                        <div className="flex flex-col">
-                                                            <span className={isDropped ? "line-through decoration-base-content/50" : ""}>
-                                                                {item.data.grade}
-                                                                {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
-                                                            </span>
-                                                            {item.data.max_grade && !isNaN(parseFloat(item.data.grade)) && !isNaN(parseFloat(item.data.max_grade)) && parseFloat(item.data.max_grade) !== 0 && (
-                                                                <span className={`text-xs opacity-50 font-mono ${isDropped ? "line-through" : ""}`}>
-                                                                    {((parseFloat(item.data.grade) / parseFloat(item.data.max_grade)) * 100).toFixed(2)}%
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-base-content/30">
-                                                            -
-                                                            {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
-                                                        </span>
-                                                    )}
                                                 </td>
                                                 {hasDueDates && <td>{item.data.due_date ? new Date(item.data.due_date + "T00:00:00").toLocaleDateString() : "-"}</td>}
                                                 <td>

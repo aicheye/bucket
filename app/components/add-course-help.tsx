@@ -5,7 +5,7 @@ export default function AddCourseHelp() {
         <section className="flex flex-col gap-4">
             <h2 className="text-2xl font-semibold">Adding a Course</h2>
             <p>
-                Find your course outline from <a target="_blank" href="https://outline.uwaterloo.ca/viewer" className="underline">Outline.uwaterloo.ca</a>.
+                Find your course outline from <a target="_blank" href="https://outline.uwaterloo.ca/viewer" className="link link-primary" rel="noopener noreferrer">Outline.uwaterloo.ca</a>.
             </p>
             <p className="text-base-content/50">
                 Unfortunately, we only support course imports from Outline.uwaterloo.ca at this time.

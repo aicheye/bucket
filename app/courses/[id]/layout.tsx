@@ -78,29 +78,41 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
             >
                 <p>Are you sure you want to delete this course?</p>
             </Modal>
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 md:gap-8">
                     <div className="prose max-w-none">
                         <h1 className="lead text-xl font-bold mb-0">{selectedCourse.data.description}</h1>
                         <h2 className="text-md text-base-content/70">{selectedCourse.code} ({selectedCourse.term})</h2>
                     </div>
 
-                    <div className="border h-10 border-base-content/20"></div>
-
+                    {selectedCourse.data.outline_url && (
+                        <>
+                            <div className="hidden md:block border h-10 border-base-content/20"></div>
+                            <a
+                                href={selectedCourse.data.outline_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hidden md:inline-flex btn btn-soft btn-info btn-sm btn-circle shrink-0"
+                                title="View Original Outline"
+                            >
+                                <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
+                            </a>
+                        </>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 w-full md:w-auto">
                     {selectedCourse.data.outline_url && (
                         <a
                             href={selectedCourse.data.outline_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-soft btn-info btn-sm btn-circle"
+                            className="md:hidden btn btn-soft btn-info btn-sm flex-1"
                             title="View Original Outline"
                         >
-                            <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
+                            <FontAwesomeIcon icon={faExternalLinkAlt} /> Open Outline
                         </a>
                     )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <button className="btn btn-error btn-soft btn-sm" onClick={() => setShowDeleteConfirm(true)} title="Delete Course">
+                    <button className="btn btn-error btn-soft btn-sm flex-1 md:flex-none" onClick={() => setShowDeleteConfirm(true)} title="Delete Course">
                         <FontAwesomeIcon icon={faTrash} /> Delete Course
                     </button>
                 </div>

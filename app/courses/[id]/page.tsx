@@ -6,33 +6,10 @@ import { faCheck, faEdit, faPlus, faRotateRight, faTrash } from "@fortawesome/fr
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatDates, formatTime } from "../../../lib/format-utils";
 import { sendTelemetry } from "../../../lib/telemetry";
 import Modal from "../../components/modal";
 import { getCategoryColor, useCourses } from "../course-context";
-
-function formatTime(time: { hours: number; minutes: number }) {
-    if (!time) return "";
-    let h = time.hours;
-    const m = time.minutes.toString().padStart(2, "0");
-
-    if (h === 24) h = 12; // Handle the parser quirk for 12 PM
-
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12;
-    if (h === 0) h = 12;
-
-    return `${h}:${m} ${ampm}`;
-}
-
-function formatDates(dates: string[]) {
-    if (!dates || dates.length === 0) return "";
-    return dates
-        .map((d) => {
-            const date = new Date(d);
-            return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-        })
-        .join(", ");
-}
 
 function processSchedule(schedule: any[]) {
     if (!schedule) return [];
@@ -223,7 +200,7 @@ export default function CourseDetailPage() {
             {/* Schedule Info */}
             {selectedCourse.data["schedule-info"] && (
                 <div className="card bg-base-100 shadow-md">
-                    <div className="card-body">
+                    <div className="card-body p-4 sm:p-8">
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="card-title">Schedule</h2>
                             <button
@@ -239,16 +216,16 @@ export default function CourseDetailPage() {
                                         : <><FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Choose Sections</>}
                             </button>
                         </div>
-                        <div className="overflow-x-auto card border border-base-content/10">
+                        <div className="overflow-x-auto border border-base-content/10 rounded-box">
                             <table className="table table-zebra w-full">
                                 <thead>
                                     <tr>
                                         {isEditingSections && <th></th>}
                                         <th>Section</th>
                                         <th>Component</th>
-                                        <th>Days</th>
-                                        <th>Time</th>
-                                        <th>Location</th>
+                                        <th className="min-w-fit">Days</th>
+                                        <th className="min-w-fit">Time</th>
+                                        <th className="min-w-fit">Location</th>
                                         <th>Instructors</th>
                                     </tr>
                                 </thead>
@@ -268,12 +245,12 @@ export default function CourseDetailPage() {
                                             )}
                                             <td>{info.Section}</td>
                                             <td>{info.Component}</td>
-                                            <td>
+                                            <td className="min-w-fit">
                                                 {info["Meet Dates"] && info["Meet Dates"].length <= 3
                                                     ? formatDates(info["Meet Dates"])
                                                     : info["Days of Week"]?.join(", ")}
                                             </td>
-                                            <td>
+                                            <td className="min-w-fit">
                                                 {typeof info["Start Time"] === "object"
                                                     ? formatTime(info["Start Time"])
                                                     : info["Start Time"]}{" "}
@@ -282,7 +259,7 @@ export default function CourseDetailPage() {
                                                     ? formatTime(info["End Time"])
                                                     : info["End Time"]}
                                             </td>
-                                            <td>{info.Location}</td>
+                                            <td className="min-w-fit">{info.Location}</td>
                                             <td>
                                                 {info.Instructors?.map((inst: any) => (
                                                     <div key={inst.Email}>
@@ -302,7 +279,7 @@ export default function CourseDetailPage() {
             {/* Marking Schemes */}
             {(selectedCourse.data["marking-schemes"] || isEditingMarkingSchemes) && (
                 <div className="card bg-base-100 shadow-md">
-                    <div className="card-body">
+                    <div className="card-body p-4 sm:p-8">
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="card-title">Marking Schemes</h2>
                             <button
@@ -334,7 +311,7 @@ export default function CourseDetailPage() {
                                             <FontAwesomeIcon icon={faRotateRight} className="w-3 h-3 text-base-content/50" />
                                         </button>
                                     )}
-                                    <div className="overflow-x-auto card border border-base-content/10">
+                                    <div className="overflow-x-auto border border-base-content/10 rounded-box">
                                         <table className="table table-md w-full">
                                             <thead>
                                                 <tr>

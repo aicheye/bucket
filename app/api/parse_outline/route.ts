@@ -146,11 +146,11 @@ async function parse_html(content: string) {
               const endAM: boolean = times[1]?.trim().toLowerCase().includes("am") || (!times[1]?.trim().toLowerCase().includes("pm") && parseInt(endTime[0], 10) < 12);
 
               rowData["Start Time"] = {
-                hours: parseInt(startTime[0], 10) + (startAM ? 0 : 12),
+                hours: (parseInt(startTime[0], 10) === 12 ? 0 : parseInt(startTime[0], 10)) + (startAM ? 0 : 12),
                 minutes: parseInt(startTime[1].substring(0, 2), 10) || 0,
               };
               rowData["End Time"] = {
-                hours: parseInt(endTime[0], 10) + (endAM ? 0 : 12),
+                hours: (parseInt(endTime[0], 10) === 12 ? 0 : parseInt(endTime[0], 10)) + (endAM ? 0 : 12),
                 minutes: parseInt(endTime[1].substring(0, 2), 10) || 0,
               };
             }

@@ -68,6 +68,8 @@ export async function POST(request: Request) {
       "create_placeholder",
       "edit_grading_settings",
       "set_goal",
+      "set_term_goal",
+      "view_term_dashboard",
     ];
 
     const normalizedEvent = allowed.includes(event) ? event : "other";

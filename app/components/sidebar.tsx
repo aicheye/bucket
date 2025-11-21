@@ -91,6 +91,13 @@ export default function Sidebar() {
         input.value = "";
     }
 
+    function closeDrawer() {
+        const drawerCheckbox = document.getElementById("my-drawer-2") as HTMLInputElement;
+        if (drawerCheckbox) {
+            drawerCheckbox.checked = false;
+        }
+    }
+
     // Group courses by folder
     const groupedCourses: Record<string, typeof courses> = {};
     const uncategorizedCourses: typeof courses = [];
@@ -134,7 +141,7 @@ export default function Sidebar() {
     });
 
     return (
-        <div className="w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10">
+        <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10">
             <Modal
                 isOpen={alertState.isOpen}
                 onClose={closeAlert}
@@ -218,6 +225,7 @@ export default function Sidebar() {
                                             <Link
                                                 key={course.id}
                                                 href={`/courses/${course.id}${linkSuffix}`}
+                                                onClick={closeDrawer}
                                                 className={`btn btn-sm justify-start h-auto py-2 font-normal ${pathname === `/courses/${course.id}` || pathname?.startsWith(`/courses/${course.id}/`) ? "btn-primary" : "btn-ghost bg-base-200 hover:bg-base-300"
                                                     }`}
                                             >
@@ -236,6 +244,7 @@ export default function Sidebar() {
                         <Link
                             key={course.id}
                             href={`/courses/${course.id}${linkSuffix}`}
+                            onClick={closeDrawer}
                             className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname === `/courses/${course.id}` || pathname?.startsWith(`/courses/${course.id}/`) ? "btn-primary bg-primary" : ""
                                 }`}
                         >

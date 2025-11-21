@@ -190,10 +190,10 @@ export default function Profile() {
                 <ul className="menu menu-sm w-full px-2 gap-1">
                     <li>
                         <a onClick={() => toggleTelemetry()} className="justify-between">
-                            Telemetry
+                            Anon. Telemetry
                             <input
                                 type="checkbox"
-                                className="toggle toggle-sm toggle-success"
+                                className="toggle toggle-sm checked:bg-error/80 checked:border-error bg-success/70 border-success/70"
                                 checked={telemetryConsent}
                                 readOnly
                             />

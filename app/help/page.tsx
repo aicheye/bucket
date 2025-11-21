@@ -31,6 +31,18 @@ export default function HelpPage() {
                             <strong>Current Grade:</strong> This is your weighted average based on the items you have received grades for so far. It ignores any items that are not yet graded.
                         </li>
                         <li>
+                            <strong>Term Average:</strong> The average of your current grades for all courses in the current term.
+                        </li>
+                        <li>
+                            <strong>Term GPA:</strong> The average GPA of all courses in the current term, calculated by converting each course's percentage grade to a 4.0 scale according to <a href="https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table/#conversion-table" target="_blank" rel="noopener noreferrer" className="link link-primary">OUAC Scale 3</a>.
+                        </li>
+                        <li>
+                            <strong>Cumulative Average (CAV):</strong> The average of your final (or current) grades across all courses in all terms.
+                        </li>
+                        <li>
+                            <strong>Cumulative GPA (CGPA):</strong> The average GPA across all courses in all terms.
+                        </li>
+                        <li>
                             <strong>Range:</strong> The range shows your minimum and maximum possible final grade.
                             <ul className="list-disc list-inside ml-6 mt-1 text-sm opacity-80">
                                 <li><strong>Min:</strong> Assumes you get 0% on all remaining ungraded items.</li>
