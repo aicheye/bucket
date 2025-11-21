@@ -176,6 +176,14 @@ export default function CoursesPage() {
 
     useEffect(() => {
         if (currentTerm) {
+            document.title = `Bucket | ${currentTerm} Dashboard`;
+        } else {
+            document.title = `Bucket Dashboard`;
+        }
+    }, [currentTerm]);
+
+    useEffect(() => {
+        if (currentTerm) {
             let goal = "";
             if (userData?.term_goals?.[currentTerm]) {
                 goal = userData.term_goals[currentTerm];

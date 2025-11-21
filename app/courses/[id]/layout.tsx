@@ -4,7 +4,7 @@ import { faExternalLinkAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { sendTelemetry } from "../../../lib/telemetry";
 import Modal from "../../components/modal";
 import { useCourses } from "../course-context";
@@ -59,6 +59,15 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
     }
 
     const isGradesView = pathname?.endsWith("/grades");
+
+    useEffect(() => {
+        if (selectedCourse) {
+            const tab = isGradesView ? "Grades" : "Info";
+            document.title = `Bucket | ${selectedCourse.code} - ${tab}`;
+        } else {
+            document.title = "Bucket";
+        }
+    }, [selectedCourse, isGradesView]);
 
     return (
         <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">

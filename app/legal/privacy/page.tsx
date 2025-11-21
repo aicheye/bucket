@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import Footer from "../../components/footer";
 import Navbar from "../../components/navbar";
+
+export const metadata: Metadata = {
+    title: "Bucket | Privacy Policy",
+};
 
 export default function PrivacyPage() {
     return (

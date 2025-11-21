@@ -1,11 +1,12 @@
+import { faLock } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth/next";
 import { executeHasuraAdminQuery } from "../../lib/hasura";
 import authOptions from "../../lib/nextauth";
 import Footer from "../components/footer";
 import Navbar from "../components/navbar";
 import { DauChart, FeatureDailyMultiLine } from "./TelemetryCharts";
-import { faLock } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default async function TelemetryPage() {
     const session = await getServerSession(authOptions);
@@ -67,14 +68,14 @@ export default async function TelemetryPage() {
             <main className="flex-1 p-8 max-w-7xl mx-auto space-y-8 w-full">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold tracking-tight">Telemetry</h1>
-                    <div className="badge badge-primary badge-lg">
+                    <div className="badge badge-secondary badge-lg">
                         <FontAwesomeIcon icon={faLock} />
                         Admin View
                     </div>
                 </div>
 
                 {/* Metrics */}
-                <div className="stats shadow w-full bg-base-100">
+                <div className="stats shadow-sm w-full bg-base-100">
                     <div className="stat">
                         <div className="stat-title">Monthly Active Users</div>
                         <div className="stat-value">{mau}</div>
@@ -89,13 +90,13 @@ export default async function TelemetryPage() {
 
                 {/* Charts */}
                 <div className="grid gap-6 lg:grid-cols-2">
-                    <div className="card bg-base-100 shadow-xl">
+                    <div className="card bg-base-100 shadow-sm">
                         <div className="card-body">
                             <h2 className="card-title">User Growth (DAU)</h2>
                             <DauChart data={daus.map((d: any) => ({ day: d.day, dau: d.dau }))} />
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-xl">
+                    <div className="card bg-base-100 shadow-sm">
                         <div className="card-body">
                             <h2 className="card-title">Feature Usage Trends</h2>
                             <FeatureDailyMultiLine grouped={groupedTop} />
@@ -104,7 +105,7 @@ export default async function TelemetryPage() {
                 </div>
 
                 {/* Table */}
-                <div className="card bg-base-100 shadow-xl overflow-hidden">
+                <div className="card bg-base-100 shadow-sm overflow-hidden">
                     <div className="card-body p-0">
                         <div className="p-6 bg-base-200">
                             <h2 className="card-title">Most Used Features (30 Days)</h2>
@@ -138,3 +139,7 @@ export default async function TelemetryPage() {
         </div>
     );
 }
+
+export const metadata: Metadata = {
+    title: "Bucket | Telemetry",
+};

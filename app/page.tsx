@@ -10,6 +10,14 @@ export default function Home() {
 
     useEffect(() => {
         if (session) {
+            document.title = "Bucket";
+        } else {
+            document.title = "Bucket — Sign in";
+        }
+    }, [session]);
+
+    useEffect(() => {
+        if (session) {
             router.push("/courses");
         }
     }, [session, router]);
