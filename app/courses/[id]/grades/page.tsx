@@ -5,6 +5,7 @@
 import { faCog, faCopy, faEdit, faFileImport, faInfoCircle, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { calculateSchemeGradeDetails } from "../../../../lib/grade-utils";
@@ -242,6 +243,20 @@ export default function CourseGradesPage() {
     }
 
     const [targetGrade, setTargetGrade] = useState<string>("");
+
+    // Calculate best scheme and dropped items
+    let bestSchemeDroppedItems: string[] = [];
+    if (selectedCourse?.data["marking-schemes"]?.length > 0) {
+        let bestGrade = -1;
+
+        selectedCourse.data["marking-schemes"].forEach((scheme: any[]) => {
+            const details = calculateSchemeGradeDetails(scheme, courseItems, placeholderGrades, dropLowest);
+            if (details.currentGrade !== null && details.currentGrade > bestGrade) {
+                bestGrade = details.currentGrade;
+                bestSchemeDroppedItems = details.droppedItemIds || [];
+            }
+        });
+    }
 
     async function handleSaveTargetGrade() {
         if (!selectedCourse) return;
@@ -540,7 +555,12 @@ export default function CourseGradesPage() {
             <div className="card bg-base-100 shadow-md">
                 <div className="card-body">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h2 className="card-title text-2xl">Grades</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="card-title text-2xl">Grades</h2>
+                            <Link href="/help#grade-calculation" className="btn btn-ghost btn-circle btn-xs opacity-50 hover:opacity-100" title="How are grades calculated?">
+                                <FontAwesomeIcon icon={faInfoCircle} />
+                            </Link>
+                        </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <div className="form-control mr-2">
                                 <label className="label cursor-pointer justify-start gap-2 p-0">
@@ -655,7 +675,7 @@ export default function CourseGradesPage() {
                                     </tr>
                                 ) : (
                                     displayItems.map((item) => (
-                                        <tr key={item.id} className={item.data.isPlaceholder ? "bg-base-200/30 italic opacity-70" : ""}>
+                                        <tr key={item.id} className={`${item.data.isPlaceholder ? "bg-base-200/30 italic opacity-70" : ""} ${bestSchemeDroppedItems.includes(item.id) || (!item.data.grade && !item.data.isPlaceholder) ? "opacity-40 grayscale" : ""}`}>
                                             <td className="font-medium">
                                                 {item.data.name}
                                             </td>

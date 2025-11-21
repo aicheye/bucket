@@ -36,7 +36,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
         }
     }
 
-    if (loading) {
+    if (loading && !selectedCourse) {
         return (
             <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
                 <div className="skeleton h-8 w-1/3 mb-4"></div>
@@ -103,9 +103,9 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
                 </div>
             </div>
 
-            <div role="tablist" className="tabs tabs-box w-fit">
-                <Link role="tab" href={`/courses/${id}`} className={`tab ${!isGradesView ? "tab-active" : ""}`}>Info</Link>
-                <Link role="tab" href={`/courses/${id}/grades`} className={`tab ${isGradesView ? "tab-active" : ""}`}>Grades</Link>
+            <div role="tablist" className="tabs tabs-box bg-base-200/50 p-1 gap-1 w-fit">
+                <Link role="tab" href={`/courses/${id}`} className={`tab px-8 transition-all duration-200 ${!isGradesView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}>Info</Link>
+                <Link role="tab" href={`/courses/${id}/grades`} className={`tab px-8 transition-all duration-200 ${isGradesView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}>Grades</Link>
             </div>
 
             {children}

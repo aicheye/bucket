@@ -10,6 +10,7 @@ export function calculateSchemeGradeDetails(
     let totalWeightGraded = 0;
     let totalScore = 0;
     let totalSchemeWeight = 0;
+    const droppedItemIds: string[] = [];
 
     scheme.forEach(component => {
         const weight = parseFloat(component.Weight);
@@ -31,13 +32,19 @@ export function calculateSchemeGradeDetails(
         const scores = compItems.map(i => {
             const g = parseFloat(i.data.grade || "0");
             const m = parseFloat(i.data.max_grade || "0");
-            return { grade: g, max: m, ratio: m > 0 ? g / m : 0 };
+            return { id: i.id, grade: g, max: m, ratio: m > 0 ? g / m : 0 };
         });
 
         // Sort by ratio ascending (worst first)
         scores.sort((a, b) => a.ratio - b.ratio);
 
         const dropCount = dropLowest[component.Component] || 0;
+        
+        // Identify dropped items
+        for (let i = 0; i < dropCount && i < scores.length; i++) {
+            droppedItemIds.push(scores[i].id);
+        }
+
         const keptScores = scores.slice(dropCount);
 
         if (keptScores.length === 0) {
@@ -64,7 +71,8 @@ export function calculateSchemeGradeDetails(
         currentGrade: totalWeightGraded > 0 ? (totalScore / totalWeightGraded * 100) : null,
         currentScore: totalScore,
         totalWeightGraded: totalWeightGraded,
-        totalSchemeWeight: totalSchemeWeight
+        totalSchemeWeight: totalSchemeWeight,
+        droppedItemIds: droppedItemIds
     };
 }
 

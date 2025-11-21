@@ -21,6 +21,30 @@ export default function HelpPage() {
                         Click on a course in the sidebar to view and manage its details. You can edit course information or delete the course if needed.
                     </p>
                 </section>
+                <section className="flex flex-col gap-4" id="grade-calculation">
+                    <h2 className="text-2xl font-semibold">Grade Calculation</h2>
+                    <p>
+                        Bucket calculates your grades based on the marking schemes defined for each course.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 ml-4">
+                        <li>
+                            <strong>Current Grade:</strong> This is your weighted average based on the items you have received grades for so far. It ignores any items that are not yet graded.
+                        </li>
+                        <li>
+                            <strong>Range:</strong> The range shows your minimum and maximum possible final grade.
+                            <ul className="list-disc list-inside ml-6 mt-1 text-sm opacity-80">
+                                <li><strong>Min:</strong> Assumes you get 0% on all remaining ungraded items.</li>
+                                <li><strong>Max:</strong> Assumes you get 100% on all remaining ungraded items.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Required to Goal:</strong> If you set a target grade, this tells you what average percentage you need to achieve on all remaining ungraded items to reach that goal.
+                        </li>
+                    </ul>
+                    <p className="text-sm opacity-70 mt-2">
+                        Note: If a category has no graded items yet, its weight is distributed proportionally among the other categories for the "Current Grade" calculation.
+                    </p>
+                </section>
                 <section className="flex flex-col gap-4">
                     <h2 className="text-2xl font-semibold">Account Deletion</h2>
                     <p>
