@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Footer() {
     return (
-        <footer className="footer footer-horizontal p-4 bg-base-200 text-base-content border-t border-base-content/10">
+        <footer className="footer footer-horizontal p-2 bg-base-200 text-base-content border-t border-base-content/10">
             <div className="grid grid-flow-col gap-4">
                 <a href="https://github.com/aicheye/bucket" target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-md gap-2">
                     <FontAwesomeIcon icon={faGithub} className="w-4 h-4" />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Profile from "./profile";
+import ThemeToggle from "./theme-toggle";
 
 interface NavbarProps {
     // No props needed for now
@@ -7,11 +8,12 @@ interface NavbarProps {
 
 export default function Navbar({ }: NavbarProps) {
     return (
-        <div className="navbar bg-base-100 border-b border-base-content/10 px-4">
+        <div className="navbar bg-base-200 border-b border-base-content/10 px-4">
             <div className="flex-1">
                 <Link href="/" className="font-bold text-xl">Bucket</Link>
             </div>
-            <div className="flex-none gap-2">
+            <div className="flex flex-row gap-4">
+                <ThemeToggle />
                 <Profile />
             </div>
         </div>
