@@ -492,10 +492,6 @@ export const CATEGORY_COLORS = [
     "bg-fuchsia-600",
     "bg-pink-600",
     "bg-rose-600",
-    "bg-slate-600",
-    "bg-gray-600",
-    "bg-stone-600",
-    "bg-zinc-600",
 ];
 
 const assignedColors: Record<string, string> = {};
