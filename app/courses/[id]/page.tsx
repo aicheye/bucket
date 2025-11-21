@@ -62,7 +62,7 @@ function processSchedule(schedule: any[]) {
 export default function CourseDetailPage() {
     const { id } = useParams();
     const router = useRouter();
-    const { courses, deleteCourse, updateSections, updateMarkingSchemes, items } = useCourses();
+    const { courses, deleteCourse, updateSections, updateMarkingSchemes, items, deleteItem } = useCourses();
 
     const selectedCourse = courses.find((c) => c.id === id);
 
@@ -175,6 +175,13 @@ export default function CourseDetailPage() {
 
     async function confirmDelete() {
         setShowDeleteConfirm(false);
+
+        // Delete all items first
+        const itemsToDelete = items.filter(item => item.course_id === selectedCourse!.id);
+        for (const item of itemsToDelete) {
+            await deleteItem(item.id);
+        }
+
         await deleteCourse(selectedCourse!.id);
         router.push("/courses");
     }

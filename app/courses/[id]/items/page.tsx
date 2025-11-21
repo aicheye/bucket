@@ -3,7 +3,7 @@
 import { faCog, faCopy, faEdit, faFileImport, faInfoCircle, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { calculateSchemeGradeDetails } from "../../../../lib/grade-utils";
 import Modal from "../../../components/modal";
@@ -17,11 +17,10 @@ interface ParsedItem {
     type: string;
 }
 
-export default function CourseGradesPage() {
+export default function CourseItemsPage() {
     const { id } = useParams();
-    const router = useRouter();
     const { data: session } = useSession();
-    const { courses, items, addItem, deleteItem, updateItem, updateCourseData, deleteCourse } = useCourses();
+    const { courses, items, addItem, deleteItem, updateItem, updateCourseData } = useCourses();
 
     const selectedCourse = courses.find((c) => c.id === id);
     const [placeholderGrades, setPlaceholderGrades] = useState<Record<string, number>>({});
@@ -53,7 +52,6 @@ export default function CourseGradesPage() {
     } as Item));
 
     const displayItems = [...placeholderItems, ...courseItems];
-    const hasDueDates = displayItems.some(item => item.data.due_date);
 
     const [showGradingSettings, setShowGradingSettings] = useState(false);
     const [dropLowest, setDropLowest] = useState<Record<string, number>>({});
@@ -245,26 +243,6 @@ export default function CourseGradesPage() {
         if (!selectedCourse) return;
         const val = targetGrade === "" ? undefined : parseFloat(targetGrade);
         await updateCourseData(selectedCourse.id, { target_grade: val });
-    }
-
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    async function handleDeleteCourse() {
-        if (!selectedCourse || !id) return;
-
-        setIsDeleting(true);
-
-        // Delete all items first
-        const itemsToDelete = items.filter(item => item.course_id === id);
-        for (const item of itemsToDelete) {
-            await deleteItem(item.id);
-        }
-
-        // Delete the course
-        await deleteCourse(id as string);
-
-        router.push("/courses");
     }
 
     function calculateRequired(scheme: any[]) {
@@ -555,69 +533,28 @@ export default function CourseGradesPage() {
                 </div>
             </Modal>
 
-            <Modal
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                title="Confirm Deletion"
-                actions={
-                    <>
-                        <button className="btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleDeleteCourse} disabled={isDeleting}>
-                            {isDeleting ? "Deleting..." : "Delete Course"}
-                        </button>
-                    </>
-                }
-            >
-                <div className="flex flex-col gap-4">
-                    <p className="text-sm opacity-70">
-                        Are you sure you want to delete this course? This action cannot be undone.
-                    </p>
-                </div>
-            </Modal>
-
-            <Modal
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                title="Delete Course"
-                actions={
-                    <>
-                        <button className="btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                        <button className="btn btn-error" onClick={handleDeleteCourse} disabled={isDeleting}>
-                            {isDeleting ? "Deleting..." : "Delete Course"}
-                        </button>
-                    </>
-                }
-            >
-                <p>Are you sure you want to delete this course? This action cannot be undone and will delete all associated grades and items.</p>
-            </Modal>
-
             <div className="card bg-base-100 shadow-md">
                 <div className="card-body">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h2 className="card-title text-2xl">Grades</h2>
+                        <h2 className="card-title text-2xl">Items</h2>
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="form-control mr-2">
-                                <label className="label cursor-pointer justify-start gap-2 p-0">
-                                    <span className="label-text text-xs font-bold uppercase tracking-wider text-base-content/50">Target Grade</span>
-                                    <div className="relative flex items-center">
-                                        <input
-                                            type="number"
-                                            className="input input-bordered input-sm w-20 text-right pr-6 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            placeholder="-"
-                                            value={targetGrade}
-                                            onChange={(e) => setTargetGrade(e.target.value)}
-                                            onBlur={handleSaveTargetGrade}
-                                        />
-                                        <span className="absolute right-2 text-sm opacity-50 pointer-events-none">%</span>
-                                    </div>
-                                </label>
+                            <div className="flex items-center gap-2 mr-2 bg-base-200/50 rounded-lg px-3 py-1 border border-base-content/5">
+                                <span className="text-xs font-bold uppercase tracking-wider opacity-50">Goal</span>
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="number"
+                                        className="input input-ghost input-sm w-16 text-right pr-4 p-0 focus:bg-transparent focus:outline-none font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        placeholder="-"
+                                        value={targetGrade}
+                                        onChange={(e) => setTargetGrade(e.target.value)}
+                                        onBlur={handleSaveTargetGrade}
+                                    />
+                                    <span className="absolute right-1 text-sm opacity-50 pointer-events-none">%</span>
+                                </div>
                             </div>
 
                             <div className="w-px h-6 bg-base-content/10 mx-1 hidden sm:block"></div>
 
-                            <button className="btn btn-ghost btn-sm text-error" onClick={() => setShowDeleteConfirm(true)}>
-                                <FontAwesomeIcon icon={faTrash} /> <span className="hidden sm:inline">Delete Course</span>
-                            </button>
                             <button className="btn btn-ghost btn-sm" onClick={() => setShowGradingSettings(true)}>
                                 <FontAwesomeIcon icon={faCog} /> <span className="hidden sm:inline">Grading Settings</span>
                             </button>
@@ -630,7 +567,7 @@ export default function CourseGradesPage() {
                         </div>
                     </div>
 
-                    {selectedCourse.data["marking-schemes"]?.length > 0 && displayItems.length > 0 && (
+                    {selectedCourse.data["marking-schemes"]?.length > 0 && (
                         <div className="bg-base-200/40 rounded-md p-4 mb-6 border border-base-content/5 shadow-sm">
                             <div className="flex flex-wrap gap-4">
                                 {selectedCourse.data["marking-schemes"].map((scheme: any[], idx: number) => {
@@ -699,15 +636,15 @@ export default function CourseGradesPage() {
                                     <th className="w-full">Name</th>
                                     <th className="whitespace-nowrap min-w-[120px]">Type</th>
                                     <th className="whitespace-nowrap min-w-[120px]">Grade</th>
-                                    {hasDueDates && <th className="whitespace-nowrap min-w-[120px]">Due Date</th>}
+                                    <th className="whitespace-nowrap min-w-[120px]">Due Date</th>
                                     <th className="whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {displayItems.length === 0 ? (
                                     <tr>
-                                        <td colSpan={hasDueDates ? 5 : 4} className="text-center text-base-content/50 py-8">
-                                            No grades found. Add one to get started!
+                                        <td colSpan={5} className="text-center text-base-content/50 py-8">
+                                            No items found. Add one to get started!
                                         </td>
                                     </tr>
                                 ) : (
@@ -723,17 +660,10 @@ export default function CourseGradesPage() {
                                             </td>
                                             <td>
                                                 {item.data.grade ? (
-                                                    <div className="flex flex-col">
-                                                        <span>
-                                                            {item.data.grade}
-                                                            {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
-                                                        </span>
-                                                        {item.data.max_grade && !isNaN(parseFloat(item.data.grade)) && !isNaN(parseFloat(item.data.max_grade)) && parseFloat(item.data.max_grade) !== 0 && (
-                                                            <span className="text-xs opacity-50 font-mono">
-                                                                {((parseFloat(item.data.grade) / parseFloat(item.data.max_grade)) * 100).toFixed(2)}%
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                    <span>
+                                                        {item.data.grade}
+                                                        {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-base-content/30">
                                                         -
@@ -741,7 +671,7 @@ export default function CourseGradesPage() {
                                                     </span>
                                                 )}
                                             </td>
-                                            {hasDueDates && <td>{item.data.due_date ? new Date(item.data.due_date + "T00:00:00").toLocaleDateString() : "-"}</td>}
+                                            <td>{item.data.due_date ? new Date(item.data.due_date + "T00:00:00").toLocaleDateString() : "-"}</td>
                                             <td>
                                                 <div className="flex gap-2">
                                                     <button className="btn btn-ghost btn-xs" onClick={() => openEditItem(item)} title="Edit">
