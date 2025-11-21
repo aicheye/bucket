@@ -16,6 +16,37 @@ export default function CoursesPage() {
     const { data: session, status } = useSession();
     const { courses, loading, items, addItem } = useCourses();
     const [termGoal, setTermGoal] = useState<string>("");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [userData, setUserData] = useState<any>({});
+
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userId = (session?.user as any)?.id;
+        if (status === "authenticated" && userId) {
+            const query = `
+                query GetUserData($id: String!) {
+                    users_by_pk(id: $id) {
+                        data
+                    }
+                }
+            `;
+            fetch("/api/graphql", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query,
+                    variables: { id: userId }
+                })
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.data?.users_by_pk?.data) {
+                        setUserData(res.data.users_by_pk.data);
+                    }
+                })
+                .catch(err => console.error("Failed to fetch user data", err));
+        }
+    }, [status, session]);
 
     const [isAddingItem, setIsAddingItem] = useState(false);
     const [addingItemCourseId, setAddingItemCourseId] = useState<string | null>(null);
@@ -109,13 +140,18 @@ export default function CoursesPage() {
 
     useEffect(() => {
         if (currentTerm) {
-            const saved = localStorage.getItem(`term_goal_${currentTerm}`);
-            if (saved) setTermGoal(saved);
-            else setTermGoal("");
+            let goal = "";
+            if (userData?.term_goals?.[currentTerm]) {
+                goal = userData.term_goals[currentTerm];
+            } else {
+                const saved = localStorage.getItem(`term_goal_${currentTerm}`);
+                if (saved) goal = saved;
+            }
+            setTermGoal(goal);
 
             sendTelemetry("view_term_dashboard", { term: currentTerm });
         }
-    }, [currentTerm]);
+    }, [currentTerm, userData]);
 
     if (status === "loading" || loading) {
         return <div className="flex h-full items-center justify-center">
@@ -133,9 +169,47 @@ export default function CoursesPage() {
     if (courses.length > 0 && status === "authenticated" && currentTerm) {
         const currentCourses = groupedCourses[currentTerm];
 
-        const handleSaveGoal = () => {
+        const handleSaveGoal = async () => {
             localStorage.setItem(`term_goal_${currentTerm}`, termGoal);
             sendTelemetry("set_term_goal", { term: currentTerm, goal: termGoal });
+
+            const newUserData = {
+                ...userData,
+                term_goals: {
+                    ...(userData.term_goals || {}),
+                    [currentTerm]: termGoal
+                }
+            };
+            setUserData(newUserData);
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userId = (session?.user as any)?.id;
+            if (!userId) return;
+
+            const query = `
+                mutation UpdateUserData($id: String!, $data: jsonb!) {
+                    update_users_by_pk(pk_columns: {id: $id}, _set: {data: $data}) {
+                        id
+                        data
+                    }
+                }
+            `;
+
+            try {
+                await fetch("/api/graphql", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        query,
+                        variables: {
+                            id: userId,
+                            data: newUserData
+                        }
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to save user data", err);
+            }
         };
 
         // 1. Term Average
@@ -435,17 +509,36 @@ export default function CoursesPage() {
                                         <div className="flex gap-2 items-center bg-base-200/50 badge badge-lg border border-base-content/5">
                                             <div className="flex gap-2 items-center justify-center">
                                                 <span className="opacity-50 font-bold uppercase tracking-wider text-sm">Range</span>
-                                                <span className="font-bold text-sm">{termMin.toFixed(1)}% - {termMax.toFixed(1)}%</span>
+                                                <span className="font-bold text-sm text-base-content/70">{termMin.toFixed(1)}% - {termMax.toFixed(1)}%</span>
                                             </div>
                                         </div>
                                     )}
 
                                     {requiredAverage !== null && (
-                                        <div className="flex gap-2 items-center bg-base-200/50 badge badge-lg border border-base-content/5">
-                                            <span className="opacity-50 font-bold uppercase tracking-wider text-sm">Req. Avg</span>
-                                            <span className={`font-bold text-sm ${requiredAverage > 100 ? "text-error" : requiredAverage < 0 ? "text-success" : "text-info"}`}>
-                                                {requiredAverage.toFixed(1)}%
-                                            </span>
+                                        <div className="relative group">
+                                            <div className={`flex gap-2 items-center ${requiredAverage > 100 ? "bg-error/50 border-error-content/5" : requiredAverage < 0 ? "bg-success/50 border-success-content/5" : "bg-info/50 border-info-content/5"} badge badge-lg border cursor-help`}>
+                                                <span className="opacity-50 font-bold uppercase tracking-wider text-sm">Req. Avg</span>
+                                                <span className={`font-bold text-sm ${requiredAverage > 100 ? "text-error-content/70" : requiredAverage < 0 ? "text-success-content/70" : "text-info-content/70"}`}>
+                                                    {requiredAverage.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50 w-48 p-3 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
+                                                <div className="font-bold mb-2 border-b border-base-content/10 pb-1">Legend</div>
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-success"></div>
+                                                        <span>Goal Achieved</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-info"></div>
+                                                        <span>Achievable</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-error"></div>
+                                                        <span>Impossible (&gt;100%)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

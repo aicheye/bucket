@@ -655,7 +655,7 @@ export default function CourseGradesPage() {
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
                             <div className="flex items-center gap-2">
                                 <h2 className="card-title text-2xl">Grades</h2>
-                                <Link href="/help#grade-calculation" className="btn btn-ghost btn-circle btn-xs opacity-50 hover:opacity-100" title="How are grades calculated?">
+                                <Link href="/help#grade-calculation" className="text-base opacity-30 hover:opacity-100 transition-opacity" title="How are grades calculated?">
                                     <FontAwesomeIcon icon={faInfoCircle} />
                                 </Link>
                             </div>
