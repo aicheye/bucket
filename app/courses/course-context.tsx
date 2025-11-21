@@ -4,6 +4,7 @@
 
 import { useSession } from "next-auth/react";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { sendTelemetry } from "../../lib/telemetry";
 
 export interface Course {
     id: string;
@@ -285,6 +286,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         if (!json.data?.update_courses_by_pk) {
             console.error("Failed to update sections", json);
             fetchCourses();
+        } else {
+            // Telemetry - selecting an individual section component
+            sendTelemetry("select_sections", { course_id: courseId, component, section });
         }
     }
 
@@ -322,6 +326,12 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         if (!json.data?.update_courses_by_pk) {
             console.error("Failed to update marking schemes", json);
             fetchCourses();
+        }
+        // telemetry: marking scheme saved
+        try {
+            sendTelemetry("save_marking_scheme", { course_id: courseId, schemes_count: (newSchemes || []).length });
+        } catch (e) {
+            // swallow telemetry error
         }
     }
 
@@ -393,6 +403,13 @@ export function CourseProvider({ children }: { children: ReactNode }) {
             const json = await res.json();
             if (json.data?.insert_items?.returning) {
                 await fetchItems();
+                // telemetry - item created
+                try {
+                    const d: any = data as any;
+                    sendTelemetry("create_item", { course_id: courseId, type: d?.type, isPlaceholder: !!d?.isPlaceholder });
+                } catch (e) {
+                    // ignore telemetry failure
+                }
             } else {
                 console.error("Failed to add item", json);
             }
@@ -420,6 +437,13 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 
             const json = await res.json();
             if (json.data?.delete_items_by_pk) {
+                // telemetry - item deleted
+                try {
+                    const item = items.find(i => i.id === id);
+                    sendTelemetry("delete_item", { course_id: item?.course_id, type: item?.data?.type, isPlaceholder: !!item?.data?.isPlaceholder });
+                } catch (e) {
+                    // ignore telemetry failure
+                }
                 await fetchItems();
             } else {
                 console.error("Failed to delete item", json);
@@ -453,6 +477,14 @@ export function CourseProvider({ children }: { children: ReactNode }) {
             const json = await res.json();
             if (json.data?.update_items_by_pk) {
                 await fetchItems();
+                // telemetry - item edited
+                try {
+                    const item = items.find(i => i.id === id);
+                    const d: any = data as any;
+                    sendTelemetry("edit_item", { id, course_id: item?.course_id, type: d?.type ?? item?.data?.type });
+                } catch (e) {
+                    // ignore
+                }
             } else {
                 console.error("Failed to update item", json);
             }

@@ -6,6 +6,7 @@ import { faCheck, faEdit, faPlus, faRotateRight, faTrash } from "@fortawesome/fr
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { sendTelemetry } from "../../../lib/telemetry";
 import Modal from "../../components/modal";
 import { getCategoryColor, useCourses } from "../course-context";
 
@@ -82,6 +83,12 @@ export default function CourseDetailPage() {
         setShowSectionConfirm(false);
     }, [id]);
 
+    // Send view telemetry when the user visits this page
+    useEffect(() => {
+        if (!id) return;
+        sendTelemetry("view_course", { course_id: id });
+    }, [id]);
+
     if (!selectedCourse) return null;
 
     const processedSchedule = selectedCourse ? processSchedule(selectedCourse.data["schedule-info"] || []) : [];
@@ -103,12 +110,24 @@ export default function CourseDetailPage() {
                 return;
             }
         }
-        setIsEditingSections(!isEditingSections);
+        const newState = !isEditingSections;
+        setIsEditingSections(newState);
+        // Telemetry: record whether the sections editor was toggled
+        sendTelemetry("toggle_sections", { course_id: id, state: newState });
+        // If we are closing the editor, record that sections were saved
+        if (isEditingSections) {
+            sendTelemetry("save_sections", { course_id: id });
+        }
     }
 
     function confirmSectionEdit() {
         setShowSectionConfirm(false);
-        setIsEditingSections(!isEditingSections);
+        const newState = !isEditingSections;
+        setIsEditingSections(newState);
+        sendTelemetry("toggle_sections", { course_id: id, state: newState });
+        if (isEditingSections) {
+            sendTelemetry("save_sections", { course_id: id });
+        }
     }
 
     function toggleMarkingSchemesEdit() {
@@ -125,6 +144,7 @@ export default function CourseDetailPage() {
             }
             setIsEditingMarkingSchemes(true);
         }
+        sendTelemetry("toggle_marking_schemes", { state: !isEditingMarkingSchemes });
     }
 
     function addScheme() {
@@ -162,6 +182,7 @@ export default function CourseDetailPage() {
             return [...scheme, { Component: "New Component", Weight: "0" }];
         });
         setTempMarkingSchemes(newSchemes);
+        sendTelemetry("add_component", {});
     }
 
     function removeComponent(index: number) {
@@ -171,6 +192,7 @@ export default function CourseDetailPage() {
             return newScheme;
         });
         setTempMarkingSchemes(newSchemes);
+        sendTelemetry("remove_component", { index });
     }
 
     function resetToDefault() {

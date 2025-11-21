@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { calculateSchemeGradeDetails } from "../../../../lib/grade-utils";
+import { sendTelemetry } from "../../../../lib/telemetry";
 import Modal from "../../../components/modal";
 import { getCategoryColor, Item, useCourses } from "../../course-context";
 
@@ -91,6 +92,12 @@ export default function CourseGradesPage() {
         }
     }, [id, selectedCourse]);
 
+    // Fire a telemetry event when the user opens the grades view
+    useEffect(() => {
+        if (!id) return;
+        sendTelemetry("view_grades", { course_id: id });
+    }, [id]);
+
     function getCourseTypes() {
         const schemes = selectedCourse?.data["marking-schemes"] || [];
         let types = Array.from(new Set(schemes.flat().map((s: any) => s.Component)));
@@ -118,6 +125,8 @@ export default function CourseGradesPage() {
 
             // Initialize mapping
             const uniqueCategories = Array.from(new Set(parsed.map((i: ParsedItem) => i.category))) as string[];
+            // Telemetry for parsing grades - item count and categories found
+            sendTelemetry("parse_grades", { items_count: parsed.length, unique_categories: uniqueCategories.length });
             const initialMapping: Record<string, string> = {};
             const courseTypes = getCourseTypes();
 
@@ -205,6 +214,8 @@ export default function CourseGradesPage() {
 
             newPlaceholders[itemData.type] = percentage;
             await updateCourseData(id as string, { placeholder_grades: newPlaceholders });
+            // Telemetry - placeholder created/updated
+            sendTelemetry("create_placeholder", { course_id: id, type: itemData.type, percentage: percentage });
         } else {
             if (editingItem) {
                 await updateItem(editingItem.id, itemData);
@@ -252,6 +263,7 @@ export default function CourseGradesPage() {
         const newPlaceholders = { ...placeholderGrades };
         delete newPlaceholders[category];
         await updateCourseData(selectedCourse.id, { placeholder_grades: newPlaceholders });
+        sendTelemetry("delete_item", { course_id: selectedCourse.id, type: category, isPlaceholder: true });
     }
 
     async function duplicateItem(item: Item) {
@@ -268,6 +280,7 @@ export default function CourseGradesPage() {
     async function handleSaveGradingSettings() {
         if (!selectedCourse) return;
         await updateCourseData(selectedCourse.id, { drop_lowest: dropLowest, placeholder_grades: placeholderGrades });
+        sendTelemetry("edit_grading_settings", { course_id: selectedCourse.id, drops: JSON.stringify(dropLowest) });
         setShowGradingSettings(false);
     }
 
@@ -291,6 +304,8 @@ export default function CourseGradesPage() {
         if (!selectedCourse) return;
         const val = targetGrade === "" ? undefined : parseFloat(targetGrade);
         await updateCourseData(selectedCourse.id, { target_grade: val });
+        // Telemetry - set goal
+        sendTelemetry("set_goal", { course_id: selectedCourse.id, goal: val });
     }
 
     function calculateRequired(scheme: any[]) {

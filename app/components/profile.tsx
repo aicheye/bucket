@@ -2,23 +2,94 @@
 
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AuthComponent from "./auth-button";
 import Modal from "./modal";
 
 export default function Profile() {
     const { data: session, status } = useSession();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [telemetryConsent, setTelemetryConsent] = useState<boolean>(false);
     const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string }>({
         isOpen: false,
         message: "",
     });
+
+    useEffect(() => {
+        if (session?.user?.id) {
+            const fetchTelemetry = async () => {
+                const query = `
+                    query GetUserTelemetry($id: String!) {
+                        users_by_pk(id: $id) {
+                            telemetry_consent
+                        }
+                    }
+                `;
+                try {
+                    const response = await fetch("/api/graphql", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            query,
+                            variables: { id: session.user.id },
+                        }),
+                    });
+                    const result = await response.json();
+                    if (result.data?.users_by_pk) {
+                        setTelemetryConsent(result.data.users_by_pk.telemetry_consent ?? false);
+                    }
+                } catch (error) {
+                    console.error("Error fetching telemetry consent:", error);
+                }
+            };
+            fetchTelemetry();
+        }
+    }, [session?.user?.id]);
 
     if (status === "loading") return <div className="loading loading-spinner loading-lg"></div>;
     if (!session?.user) return <AuthComponent />;
 
     const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
     const closeConfirm = () => setShowDeleteConfirm(false);
+
+    const toggleTelemetry = async () => {
+        const newValue = !telemetryConsent;
+        setTelemetryConsent(newValue);
+
+        const mutation = `
+            mutation UpdateUserTelemetry($id: String!, $consent: Boolean!) {
+                update_users_by_pk(pk_columns: {id: $id}, _set: {telemetry_consent: $consent}) {
+                    telemetry_consent
+                }
+            }
+        `;
+
+        try {
+            const response = await fetch("/api/graphql", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query: mutation,
+                    variables: {
+                        id: session.user.id,
+                        consent: newValue,
+                    },
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.errors) {
+                console.error("Error updating telemetry consent:", result.errors);
+                setTelemetryConsent(!newValue);
+                setAlertState({ isOpen: true, message: "Failed to update telemetry settings." });
+            }
+        } catch (error) {
+            console.error("Error updating telemetry consent:", error);
+            setTelemetryConsent(!newValue);
+            setAlertState({ isOpen: true, message: "An error occurred. Please try again." });
+        }
+    };
 
     const deleteAccount = async () => {
         setShowDeleteConfirm(false);
@@ -114,7 +185,18 @@ export default function Profile() {
                     <span className="font-normal text-sm text-base-content/50 truncate w-full">{session.user.email}</span>
                 </div>
                 <div className="divider my-0 px-4"></div>
-                <ul className="menu menu-sm w-full">
+                <ul className="menu menu-sm w-full px-2 gap-1">
+                    <li>
+                        <a onClick={() => toggleTelemetry()} className="justify-between">
+                            Telemetry
+                            <input
+                                type="checkbox"
+                                className="toggle toggle-sm toggle-success"
+                                checked={telemetryConsent}
+                                readOnly
+                            />
+                        </a>
+                    </li>
                     <li>
                         <a onClick={() => signOut({ callbackUrl: "/" })}>Sign out</a>
                     </li>

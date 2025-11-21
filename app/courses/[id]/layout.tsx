@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
+import { sendTelemetry } from "../../../lib/telemetry";
 import Modal from "../../components/modal";
 import { useCourses } from "../course-context";
 
@@ -29,6 +30,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
             }
 
             await deleteCourse(selectedCourse.id);
+            await sendTelemetry("delete_course", { course_id: selectedCourse.id });
             router.push("/courses");
         } catch (error) {
             console.error("Failed to delete course:", error);

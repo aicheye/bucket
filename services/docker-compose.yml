@@ -23,6 +23,7 @@ services:
       HASURA_GRAPHQL_ADMIN_SECRET: "your_admin_secret"
       HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"your_jwt_secret_key"}'
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      CRON_SECRET: "your_cron_secret"
     networks:
       - backend
     ports:

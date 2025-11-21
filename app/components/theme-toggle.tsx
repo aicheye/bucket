@@ -3,6 +3,7 @@
 import { faBrush } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
+import { sendTelemetry } from "../../lib/telemetry";
 
 const themes = [
     "system",
@@ -74,6 +75,7 @@ export default function ThemeToggle() {
         setTheme(newTheme);
         localStorage.setItem("theme", newTheme);
         applyTheme(newTheme);
+        sendTelemetry("toggle_theme", { theme: newTheme });
     };
 
     return (

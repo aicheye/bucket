@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
+import { sendTelemetry } from "../../lib/telemetry";
 import { useCourses } from "../courses/course-context";
 import Modal from "./modal";
 
@@ -78,6 +79,8 @@ export default function Sidebar() {
                 if (newCourseId) {
                     router.push(`/courses/${newCourseId}`);
                 }
+                // Record successful outline parse and add
+                sendTelemetry("parse_outline", { code: data.code, term: data.term });
             }
         } catch (error) {
             console.error("Failed to upload course:", error);
