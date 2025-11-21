@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { faCheck, faEdit, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faEdit, faPlus, faRotateRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -152,6 +152,22 @@ export default function CourseDetailPage() {
             if (newScheme[componentIndex]) {
                 newScheme[componentIndex] = { ...newScheme[componentIndex], Component: newName };
             }
+            return newScheme;
+        });
+        setTempMarkingSchemes(newSchemes);
+    }
+
+    function addComponent() {
+        const newSchemes = tempMarkingSchemes.map(scheme => {
+            return [...scheme, { Component: "New Component", Weight: "0" }];
+        });
+        setTempMarkingSchemes(newSchemes);
+    }
+
+    function removeComponent(index: number) {
+        const newSchemes = tempMarkingSchemes.map(scheme => {
+            const newScheme = [...scheme];
+            newScheme.splice(index, 1);
             return newScheme;
         });
         setTempMarkingSchemes(newSchemes);
@@ -308,11 +324,20 @@ export default function CourseDetailPage() {
                                                     <tr key={j}>
                                                         <td>
                                                             {isEditingMarkingSchemes ? (
-                                                                <input
-                                                                    className="input input-sm text-sm input-bordered w-full"
-                                                                    value={item.Component}
-                                                                    onChange={(e) => updateComponentName(j, e.target.value)}
-                                                                />
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        className="btn btn-sm btn-circle btn-soft text-error flex items-center justify-center mr-2"
+                                                                        onClick={() => removeComponent(j)}
+                                                                        title="Remove Component"
+                                                                    >
+                                                                        <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
+                                                                    </button>
+                                                                    <input
+                                                                        className="input input-sm text-sm input-bordered w-full"
+                                                                        value={item.Component}
+                                                                        onChange={(e) => updateComponentName(j, e.target.value)}
+                                                                    />
+                                                                </div>
                                                             ) : (
                                                                 <div className="flex items-center gap-2">
                                                                     <div className={`badge badge-xs ${getCategoryColor(item.Component)}`}></div>
@@ -336,6 +361,13 @@ export default function CourseDetailPage() {
                                                         </td>
                                                     </tr>
                                                 ))}
+                                                {isEditingMarkingSchemes && (
+                                                    <tr className="hover:bg-base-200 cursor-pointer border-t border-dashed border-base-content/20" onClick={addComponent}>
+                                                        <td colSpan={2} className="text-center text-base-content/50 py-2">
+                                                            <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add Component
+                                                        </td>
+                                                    </tr>
+                                                )}
                                             </tbody>
                                             <tfoot>
                                                 <tr className="bg-base-200">
@@ -353,9 +385,9 @@ export default function CourseDetailPage() {
                                 </div>
                             ))}
                             {isEditingMarkingSchemes && (
-                                <div className="flex items-center justify-center border border-dashed border-base-content/20 card min-h-[200px]">
+                                <div className="flex flex-col gap-2 items-center justify-center border border-dashed border-base-content/20 card min-h-[200px]">
                                     <button className="btn btn-ghost" onClick={addScheme}>
-                                        + Add Scheme
+                                        <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add Scheme
                                     </button>
                                 </div>
                             )}
