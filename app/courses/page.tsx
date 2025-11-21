@@ -112,7 +112,7 @@ export default function CoursesPage() {
             const saved = localStorage.getItem(`term_goal_${currentTerm}`);
             if (saved) setTermGoal(saved);
             else setTermGoal("");
-            
+
             sendTelemetry("view_term_dashboard", { term: currentTerm });
         }
     }, [currentTerm]);
