@@ -353,6 +353,11 @@ export default function CourseGradesPage() {
         return ((target - A) / B) * 100;
     }
 
+    const currentTypeHasGrades = courseItems.some(i => i.data.type === itemData.type && i.data.grade);
+    const allTypes = getCourseTypes();
+    const validPlaceholderCategories = allTypes.filter((t: string) => !courseItems.some(i => i.data.type === t && i.data.grade));
+    const canAddPlaceholder = validPlaceholderCategories.length > 0;
+
     if (!selectedCourse) return null;
 
     return (
@@ -361,6 +366,7 @@ export default function CourseGradesPage() {
                 isOpen={isImporting}
                 onClose={() => setIsImporting(false)}
                 title="Import from Learn"
+                onConfirm={importStep === 1 ? (importText.trim() ? handleImportParse : undefined) : handleImportConfirm}
                 actions={
                     <>
                         <button className="btn" onClick={() => setIsImporting(false)}>Cancel</button>
@@ -443,6 +449,7 @@ export default function CourseGradesPage() {
                 isOpen={showGradingSettings}
                 onClose={() => setShowGradingSettings(false)}
                 title="Grading Settings"
+                onConfirm={handleSaveGradingSettings}
                 actions={
                     <>
                         <button className="btn" onClick={() => setShowGradingSettings(false)}>Cancel</button>
@@ -477,8 +484,20 @@ export default function CourseGradesPage() {
                                                     type="number"
                                                     min="0"
                                                     className="input input-bordered input-sm w-full text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                    value={dropLowest[t] || 0}
-                                                    onChange={(e) => setDropLowest({ ...dropLowest, [t]: parseInt(e.target.value) || 0 })}
+                                                    value={dropLowest[t] ?? ""}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val === "") {
+                                                            const newDrops = { ...dropLowest };
+                                                            delete newDrops[t];
+                                                            setDropLowest(newDrops);
+                                                        } else {
+                                                            const parsed = parseInt(val);
+                                                            if (!isNaN(parsed)) {
+                                                                setDropLowest({ ...dropLowest, [t]: parsed });
+                                                            }
+                                                        }
+                                                    }}
                                                 />
                                             </td>
                                             <td>
@@ -513,6 +532,7 @@ export default function CourseGradesPage() {
                 isOpen={isAddingItem}
                 onClose={() => setIsAddingItem(false)}
                 title={editingItem ? (itemData.isPlaceholder ? "Edit Placeholder" : "Edit Item") : "Add Item"}
+                onConfirm={handleSaveItem}
                 actions={
                     <>
                         <button className="btn" onClick={() => setIsAddingItem(false)}>Cancel</button>
@@ -522,15 +542,34 @@ export default function CourseGradesPage() {
             >
                 <div className="flex flex-col gap-4">
                     {!editingItem && (
-                        <div className="form-control">
+                        <div className="form-control" title={!canAddPlaceholder ? "All categories have grades" : ""}>
                             <label className="label cursor-pointer justify-start gap-2">
                                 <input
                                     type="checkbox"
                                     className="checkbox checkbox-primary"
                                     checked={itemData.isPlaceholder}
-                                    onChange={(e) => setItemData({ ...itemData, isPlaceholder: e.target.checked, name: e.target.checked ? `${itemData.type} Placeholder` : "" })}
+                                    disabled={!canAddPlaceholder}
+                                    onChange={(e) => {
+                                        const isChecked = e.target.checked;
+                                        let newType = itemData.type;
+
+                                        if (isChecked && currentTypeHasGrades) {
+                                            // Find a valid type
+                                            const validType = validPlaceholderCategories[0];
+                                            if (validType) {
+                                                newType = validType;
+                                            }
+                                        }
+
+                                        setItemData({
+                                            ...itemData,
+                                            isPlaceholder: isChecked,
+                                            type: newType,
+                                            name: isChecked ? `${newType} Placeholder` : ""
+                                        });
+                                    }}
                                 />
-                                <span className="label-text">Is Placeholder?</span>
+                                <span className={`label-text ${!canAddPlaceholder ? "opacity-50" : ""}`}>Is Placeholder?</span>
                             </label>
                         </div>
                     )}
@@ -555,10 +594,19 @@ export default function CourseGradesPage() {
                         <select
                             className="select select-bordered w-full"
                             value={itemData.type}
-                            onChange={(e) => setItemData({ ...itemData, type: e.target.value, name: itemData.isPlaceholder ? `${e.target.value} Placeholder` : itemData.name })}
+                            onChange={(e) => {
+                                const newType = e.target.value;
+                                const typeHasGrades = courseItems.some(i => i.data.type === newType && i.data.grade);
+                                setItemData({
+                                    ...itemData,
+                                    type: newType,
+                                    name: itemData.isPlaceholder ? `${newType} Placeholder` : itemData.name,
+                                    isPlaceholder: typeHasGrades ? false : itemData.isPlaceholder
+                                });
+                            }}
                             disabled={!!editingItem && itemData.isPlaceholder}
                         >
-                            {getCourseTypes().map((t: any) => <option key={t}>{t}</option>)}
+                            {(itemData.isPlaceholder ? validPlaceholderCategories : getCourseTypes()).map((t: any) => <option key={t}>{t}</option>)}
                         </select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -705,7 +753,7 @@ export default function CourseGradesPage() {
                             </div>
                         </div>
                     )}                    <div className="overflow-x-auto border border-base-content/10 card">
-                        <table className="table w-full table-zebra">
+                        <table className="table w-full">
                             <thead>
                                 <tr>
                                     <th className="w-full">Name</th>
@@ -723,52 +771,69 @@ export default function CourseGradesPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    displayItems.map((item) => (
-                                        <tr key={item.id} className={`${item.data.isPlaceholder ? "bg-base-200/30 italic opacity-70" : ""} ${bestSchemeDroppedItems.includes(item.id) || (!item.data.grade && !item.data.isPlaceholder) ? "opacity-40 grayscale" : ""}`}>
-                                            <td className="font-medium">
-                                                {item.data.name}
-                                            </td>
-                                            <td>
-                                                <div className={`badge ${getCategoryColor(item.data.type)} text-white border-none max-w-[150px] truncate block`}>
-                                                    {item.data.type}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                {item.data.grade ? (
-                                                    <div className="flex flex-col">
-                                                        <span>
-                                                            {item.data.grade}
-                                                            {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
-                                                        </span>
-                                                        {item.data.max_grade && !isNaN(parseFloat(item.data.grade)) && !isNaN(parseFloat(item.data.max_grade)) && parseFloat(item.data.max_grade) !== 0 && (
-                                                            <span className="text-xs opacity-50 font-mono">
-                                                                {((parseFloat(item.data.grade) / parseFloat(item.data.max_grade)) * 100).toFixed(2)}%
-                                                            </span>
+                                    displayItems.map((item) => {
+                                        const isDropped = bestSchemeDroppedItems.includes(item.id);
+                                        const isNoGrade = !item.data.grade && !item.data.isPlaceholder;
+                                        const isGreyedOut = isDropped || isNoGrade;
+
+                                        let reason = "";
+                                        if (isDropped) reason = "Dropped: Lowest grade in category";
+                                        else if (isNoGrade) reason = "Not included: Not yet graded";
+
+                                        return (
+                                            <tr key={item.id} className={`${item.data.isPlaceholder ? "bg-base-200/30 italic opacity-70" : ""} ${isGreyedOut ? "bg-base-300 opacity-50" : ""}`}>
+                                                <td className="font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={isDropped ? "line-through decoration-base-content/50" : ""}>{item.data.name}</span>
+                                                        {isGreyedOut && (
+                                                            <div className="tooltip tooltip-right z-50" data-tip={reason}>
+                                                                <FontAwesomeIcon icon={faInfoCircle} className="text-xs opacity-50 hover:opacity-100 cursor-help" />
+                                                            </div>
                                                         )}
                                                     </div>
-                                                ) : (
-                                                    <span className="text-base-content/30">
-                                                        -
-                                                        {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            {hasDueDates && <td>{item.data.due_date ? new Date(item.data.due_date + "T00:00:00").toLocaleDateString() : "-"}</td>}
-                                            <td>
-                                                <div className="flex gap-2">
-                                                    <button className="btn btn-ghost btn-xs" onClick={() => openEditItem(item)} title="Edit">
-                                                        <FontAwesomeIcon icon={faEdit} />
-                                                    </button>
-                                                    <button className={`btn btn-ghost btn-xs ${item.data.isPlaceholder ? "invisible" : ""}`} onClick={() => !item.data.isPlaceholder && duplicateItem(item)} title="Duplicate">
-                                                        <FontAwesomeIcon icon={faCopy} />
-                                                    </button>
-                                                    <button className="btn btn-ghost btn-xs text-error" onClick={() => item.data.isPlaceholder ? deletePlaceholder(item.data.type) : deleteItem(item.id)} title="Delete">
-                                                        <FontAwesomeIcon icon={faTrash} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                </td>
+                                                <td>
+                                                    <div className={`badge ${getCategoryColor(item.data.type)} text-white border-none max-w-[150px] truncate block ${isDropped ? "opacity-50" : ""}`}>
+                                                        {item.data.type}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {item.data.grade ? (
+                                                        <div className="flex flex-col">
+                                                            <span className={isDropped ? "line-through decoration-base-content/50" : ""}>
+                                                                {item.data.grade}
+                                                                {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
+                                                            </span>
+                                                            {item.data.max_grade && !isNaN(parseFloat(item.data.grade)) && !isNaN(parseFloat(item.data.max_grade)) && parseFloat(item.data.max_grade) !== 0 && (
+                                                                <span className={`text-xs opacity-50 font-mono ${isDropped ? "line-through" : ""}`}>
+                                                                    {((parseFloat(item.data.grade) / parseFloat(item.data.max_grade)) * 100).toFixed(2)}%
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-base-content/30">
+                                                            -
+                                                            {item.data.max_grade ? <span className="text-base-content/50"> / {item.data.max_grade}</span> : ""}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                {hasDueDates && <td>{item.data.due_date ? new Date(item.data.due_date + "T00:00:00").toLocaleDateString() : "-"}</td>}
+                                                <td>
+                                                    <div className="flex gap-2">
+                                                        <button className="btn btn-ghost btn-xs" onClick={() => openEditItem(item)} title="Edit">
+                                                            <FontAwesomeIcon icon={faEdit} />
+                                                        </button>
+                                                        <button className={`btn btn-ghost btn-xs ${item.data.isPlaceholder ? "invisible" : ""}`} onClick={() => !item.data.isPlaceholder && duplicateItem(item)} title="Duplicate">
+                                                            <FontAwesomeIcon icon={faCopy} />
+                                                        </button>
+                                                        <button className="btn btn-ghost btn-xs text-error" onClick={() => item.data.isPlaceholder ? deletePlaceholder(item.data.type) : deleteItem(item.id)} title="Delete">
+                                                            <FontAwesomeIcon icon={faTrash} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

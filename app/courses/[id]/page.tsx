@@ -209,6 +209,7 @@ export default function CourseDetailPage() {
                 isOpen={showSectionConfirm}
                 onClose={() => setShowSectionConfirm(false)}
                 title="Missing Sections"
+                onConfirm={confirmSectionEdit}
                 actions={
                     <>
                         <button className="btn" onClick={() => setShowSectionConfirm(false)}>Cancel</button>

@@ -66,6 +66,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
                 title="Delete Course"
+                onConfirm={handleDelete}
                 actions={
                     <>
                         <button className="btn" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>Cancel</button>

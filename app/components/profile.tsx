@@ -139,6 +139,7 @@ export default function Profile() {
                 isOpen={showDeleteConfirm}
                 onClose={closeConfirm}
                 title="Delete Account"
+                onConfirm={deleteAccount}
                 actions={
                     <>
                         <button className="btn" onClick={closeConfirm}>Cancel</button>
@@ -152,6 +153,7 @@ export default function Profile() {
                 isOpen={alertState.isOpen}
                 onClose={closeAlert}
                 title="Error"
+                onConfirm={closeAlert}
                 actions={<button className="btn" onClick={closeAlert}>Close</button>}
             >
                 <p>{alertState.message}</p>

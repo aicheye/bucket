@@ -139,6 +139,7 @@ export default function Sidebar() {
                 isOpen={alertState.isOpen}
                 onClose={closeAlert}
                 title="Notice"
+                onConfirm={closeAlert}
                 actions={<button className="btn" onClick={closeAlert}>Close</button>}
             >
                 <p>{alertState.message}</p>
