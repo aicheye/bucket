@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeHasuraQuery } from "../../../lib/hasura";
 import authOptions from "../../../lib/nextauth"; // adjust path
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   return new NextResponse("Method Not Allowed", { status: 405 });
 }
 

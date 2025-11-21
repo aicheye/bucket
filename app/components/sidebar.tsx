@@ -55,7 +55,7 @@ export default function Sidebar() {
                 try {
                     const errorData = await res.json();
                     if (errorData.error) errorMessage = errorData.error;
-                } catch (e) {
+                } catch {
                     // ignore json parse error
                 }
                 throw new Error(errorMessage);

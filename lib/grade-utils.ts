@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Course, Item } from "../app/courses/course-context";
 
 export function calculateSchemeGradeDetails(

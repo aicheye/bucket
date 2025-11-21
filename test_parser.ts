@@ -40,7 +40,7 @@ function parse_grades(text: string): ParsedItem[] {
         const name = lines[i].replace(/View statistics for .*$/, '').trim();
         
         // Look ahead
-        let j = i + 1;
+        const j = i + 1;
         if (j >= lines.length) break;
 
         // Check if lines[j] is Points "X / Y"

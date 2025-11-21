@@ -1,21 +1,40 @@
 "use client";
 
-import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
+import { faExternalLinkAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
+import Modal from "../../components/modal";
 import { useCourses } from "../course-context";
 
 export default function CourseLayout({ children }: { children: ReactNode }) {
     const { id } = useParams();
     const router = useRouter();
     const pathname = usePathname();
-    const { data: session } = useSession();
-    const { courses, loading } = useCourses();
+    const { courses, loading, deleteCourse, items, deleteItem } = useCourses();
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const selectedCourse = courses.find((c) => c.id === id);
+
+    async function handleDelete() {
+        if (!selectedCourse) return;
+        setIsDeleting(true);
+        try {
+            // Delete all items first
+            const itemsToDelete = items.filter(item => item.course_id === selectedCourse.id);
+            for (const item of itemsToDelete) {
+                await deleteItem(item.id);
+            }
+
+            await deleteCourse(selectedCourse.id);
+            router.push("/courses");
+        } catch (error) {
+            console.error("Failed to delete course:", error);
+            setIsDeleting(false);
+        }
+    }
 
     if (loading) {
         return (
@@ -41,20 +60,47 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
 
     return (
         <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
-            <div className="prose max-w-none flex items-center gap-4">
-                <h1 className="lead text-xl font-bold mb-0">{selectedCourse.data.description}</h1>
-                <h2 className="text-lg text-base-content/70">{selectedCourse.code} ({selectedCourse.term})</h2>
-                {selectedCourse.data.outline_url && (
-                    <a
-                        href={selectedCourse.data.outline_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-soft btn-info btn-sm btn-circle"
-                        title="View Original Outline"
-                    >
-                        <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
-                    </a>
-                )}
+            <Modal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                title="Delete Course"
+                actions={
+                    <>
+                        <button className="btn" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>Cancel</button>
+                        <button className="btn btn-error" onClick={handleDelete} disabled={isDeleting}>
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </button>
+                    </>
+                }
+            >
+                <p>Are you sure you want to delete this course?</p>
+            </Modal>
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-8">
+                    <div className="prose max-w-none">
+                        <h1 className="lead text-xl font-bold mb-0">{selectedCourse.data.description}</h1>
+                        <h2 className="text-md text-base-content/70">{selectedCourse.code} ({selectedCourse.term})</h2>
+                    </div>
+
+                    <div className="border h-10 border-base-content/20"></div>
+
+                    {selectedCourse.data.outline_url && (
+                        <a
+                            href={selectedCourse.data.outline_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-soft btn-info btn-sm btn-circle"
+                            title="View Original Outline"
+                        >
+                            <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
+                        </a>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <button className="btn btn-error btn-soft btn-sm" onClick={() => setShowDeleteConfirm(true)} title="Delete Course">
+                        <FontAwesomeIcon icon={faTrash} /> Delete Course
+                    </button>
+                </div>
             </div>
 
             <div role="tablist" className="tabs tabs-box w-fit">

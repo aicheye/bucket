@@ -6,7 +6,7 @@ import Footer from "./footer";
 import Navbar from "./navbar";
 
 export default function AuthScreen() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -20,7 +20,7 @@ export default function AuthScreen() {
                                 Privacy Policy
                             </a> and <a href="/legal/terms" className="link link-primary" target="_blank" rel="noopener noreferrer">
                                 Terms of Service </a>.<br />
-                            We encourage you to read them carefully. They aren't long!
+                            We encourage you to read them carefully. They aren&apos;t long!
                         </p>
                         <p className="text-base-content/70 text-md"> See the <a target="_blank" href="/help" className="link link-primary">
                             help page</a> for more information on how to use the service.

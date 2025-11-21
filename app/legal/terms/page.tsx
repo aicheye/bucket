@@ -21,10 +21,10 @@ export default function TermsPage() {
                         Users agree not to engage in any activities that violate applicable laws or regulations, infringe on the rights of others, or interfere with the operation of our services.
                     </p>
                     <p>
-                        Users must follow the University of Waterloo's <a href="https://uwaterloo.ca/secretariat/policies-procedures-guidelines/policies" target="_blank" rel="noopener noreferrer" className="link link-primary">policies, procedures, and guidelines</a> while using our services.
+                        Users must follow the University of Waterloo&apos;s <a href="https://uwaterloo.ca/secretariat/policies-procedures-guidelines/policies" target="_blank" rel="noopener noreferrer" className="link link-primary">policies, procedures, and guidelines</a> while using our services.
                     </p>
                     <p>
-                        Prohibited activities include, but are not limited to, hacking, distributing malware, spamming, and attempting to gain unauthorized access to our systems or other users' accounts.
+                        Prohibited activities include, but are not limited to, hacking, distributing malware, spamming, and attempting to gain unauthorized access to our systems or other users&apos; accounts.
                     </p>
                     <h2 className="text-2xl font-bold">Termination of Service</h2>
                     <p>

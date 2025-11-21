@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useSession } from "next-auth/react";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
@@ -175,6 +177,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         if (session) {
             fetchCourses();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session, status]);
 
     async function addCourse(code: string, term: string, data: object, owner_id: string) {

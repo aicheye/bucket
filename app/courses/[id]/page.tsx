@@ -1,8 +1,10 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { faCheck, faEdit, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Modal from "../../components/modal";
 import { getCategoryColor, useCourses } from "../course-context";
@@ -61,32 +63,26 @@ function processSchedule(schedule: any[]) {
 
 export default function CourseDetailPage() {
     const { id } = useParams();
-    const router = useRouter();
-    const { courses, deleteCourse, updateSections, updateMarkingSchemes, items, deleteItem } = useCourses();
+    const { courses, updateSections, updateMarkingSchemes } = useCourses();
 
     const selectedCourse = courses.find((c) => c.id === id);
 
     const [isEditingSections, setIsEditingSections] = useState(false);
     const [isEditingMarkingSchemes, setIsEditingMarkingSchemes] = useState(false);
     const [tempMarkingSchemes, setTempMarkingSchemes] = useState<any[][]>([]);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showSectionConfirm, setShowSectionConfirm] = useState(false);
     const [missingComponents, setMissingComponents] = useState<string[]>([]);
 
     // Reset editing states when course changes
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsEditingSections(false);
         setIsEditingMarkingSchemes(false);
         setTempMarkingSchemes([]);
-        setShowDeleteConfirm(false);
         setShowSectionConfirm(false);
     }, [id]);
 
     if (!selectedCourse) return null;
-
-    const courseItems = items.filter(i => i.course_id === selectedCourse.id);
-    const placeholderGrades = selectedCourse.data.placeholder_grades || {};
-    const dropLowest = selectedCourse.data.drop_lowest || {};
 
     const processedSchedule = selectedCourse ? processSchedule(selectedCourse.data["schedule-info"] || []) : [];
 
@@ -169,39 +165,8 @@ export default function CourseDetailPage() {
         setTempMarkingSchemes(newSchemes);
     }
 
-    async function handleDelete() {
-        setShowDeleteConfirm(true);
-    }
-
-    async function confirmDelete() {
-        setShowDeleteConfirm(false);
-
-        // Delete all items first
-        const itemsToDelete = items.filter(item => item.course_id === selectedCourse!.id);
-        for (const item of itemsToDelete) {
-            await deleteItem(item.id);
-        }
-
-        await deleteCourse(selectedCourse!.id);
-        router.push("/courses");
-    }
-
     return (
         <>
-            <Modal
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                title="Delete Course"
-                actions={
-                    <>
-                        <button className="btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                        <button className="btn btn-error" onClick={confirmDelete}>Delete</button>
-                    </>
-                }
-            >
-                <p>Are you sure you want to delete this course?</p>
-            </Modal>
-
             <Modal
                 isOpen={showSectionConfirm}
                 onClose={() => setShowSectionConfirm(false)}
@@ -213,7 +178,7 @@ export default function CourseDetailPage() {
                     </>
                 }
             >
-                <p>You haven't selected a section for: {missingComponents.join(", ")}. Continue anyway?</p>
+                <p>You haven&apos;t selected a section for: {missingComponents.join(", ")}. Continue anyway?</p>
             </Modal>
 
             {/* Schedule Info */}
@@ -235,7 +200,7 @@ export default function CourseDetailPage() {
                                         : <><FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Choose Sections</>}
                             </button>
                         </div>
-                        <div className="overflow-x-auto rounded border border-base-content/10">
+                        <div className="overflow-x-auto card border border-base-content/10">
                             <table className="table table-zebra w-full">
                                 <thead>
                                     <tr>
@@ -330,7 +295,7 @@ export default function CourseDetailPage() {
                                             <FontAwesomeIcon icon={faRotateRight} className="w-3 h-3 text-base-content/50" />
                                         </button>
                                     )}
-                                    <div className="overflow-x-auto rounded border border-base-content/10">
+                                    <div className="overflow-x-auto card border border-base-content/10">
                                         <table className="table table-md w-full">
                                             <thead>
                                                 <tr>
@@ -388,7 +353,7 @@ export default function CourseDetailPage() {
                                 </div>
                             ))}
                             {isEditingMarkingSchemes && (
-                                <div className="flex items-center justify-center border border-dashed border-base-content/20 rounded min-h-[200px]">
+                                <div className="flex items-center justify-center border border-dashed border-base-content/20 card min-h-[200px]">
                                     <button className="btn btn-ghost" onClick={addScheme}>
                                         + Add Scheme
                                     </button>
@@ -398,11 +363,6 @@ export default function CourseDetailPage() {
                     </div>
                 </div>
             )}
-            <div className="flex justify-end">
-                <button onClick={handleDelete} className="btn btn-error btn-outline">
-                    Delete Course
-                </button>
-            </div>
         </>
     );
 }

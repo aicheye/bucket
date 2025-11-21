@@ -1,9 +1,11 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { faCog, faCopy, faEdit, faFileImport, faInfoCircle, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { calculateSchemeGradeDetails } from "../../../../lib/grade-utils";
 import Modal from "../../../components/modal";
@@ -19,9 +21,8 @@ interface ParsedItem {
 
 export default function CourseGradesPage() {
     const { id } = useParams();
-    const router = useRouter();
     const { data: session } = useSession();
-    const { courses, items, addItem, deleteItem, updateItem, updateCourseData, deleteCourse } = useCourses();
+    const { courses, items, addItem, deleteItem, updateItem, updateCourseData } = useCourses();
 
     const selectedCourse = courses.find((c) => c.id === id);
     const [placeholderGrades, setPlaceholderGrades] = useState<Record<string, number>>({});
@@ -135,6 +136,8 @@ export default function CourseGradesPage() {
     async function handleImportConfirm() {
         if (!session?.user?.id || !id) return;
 
+        setIsImporting(false);
+
         for (const item of parsedItems) {
             const mappedType = categoryMapping[item.category];
             let gradeVal = item.grade.toString();
@@ -154,7 +157,6 @@ export default function CourseGradesPage() {
             await addItem(id as string, newItemData, session.user.id);
         }
 
-        setIsImporting(false);
         setImportText("");
         setParsedItems([]);
         setImportStep(1);
@@ -247,26 +249,6 @@ export default function CourseGradesPage() {
         await updateCourseData(selectedCourse.id, { target_grade: val });
     }
 
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    async function handleDeleteCourse() {
-        if (!selectedCourse || !id) return;
-
-        setIsDeleting(true);
-
-        // Delete all items first
-        const itemsToDelete = items.filter(item => item.course_id === id);
-        for (const item of itemsToDelete) {
-            await deleteItem(item.id);
-        }
-
-        // Delete the course
-        await deleteCourse(id as string);
-
-        router.push("/courses");
-    }
-
     function calculateRequired(scheme: any[]) {
         if (!targetGrade) return null;
         const target = parseFloat(targetGrade);
@@ -336,7 +318,7 @@ export default function CourseGradesPage() {
                         <p className="text-sm opacity-70 leading-relaxed">
                             Navigate to the <strong>Grades</strong> tab of your course on Learn. <br />
                             Press <kbd className="kbd kbd-sm">Ctrl</kbd> + <kbd className="kbd kbd-sm">A</kbd> to select all text, then <kbd className="kbd kbd-sm">Ctrl</kbd> + <kbd className="kbd kbd-sm">C</kbd> to copy. <br />
-                            Paste the result below.
+                            Paste the result below using <kbd className="kbd kbd-sm">Ctrl</kbd> + <kbd className="kbd kbd-sm">V</kbd>.
                         </p>
                         <textarea
                             className="textarea textarea-bordered h-64 w-full font-mono text-xs"
@@ -555,42 +537,6 @@ export default function CourseGradesPage() {
                 </div>
             </Modal>
 
-            <Modal
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                title="Confirm Deletion"
-                actions={
-                    <>
-                        <button className="btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleDeleteCourse} disabled={isDeleting}>
-                            {isDeleting ? "Deleting..." : "Delete Course"}
-                        </button>
-                    </>
-                }
-            >
-                <div className="flex flex-col gap-4">
-                    <p className="text-sm opacity-70">
-                        Are you sure you want to delete this course? This action cannot be undone.
-                    </p>
-                </div>
-            </Modal>
-
-            <Modal
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                title="Delete Course"
-                actions={
-                    <>
-                        <button className="btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                        <button className="btn btn-error" onClick={handleDeleteCourse} disabled={isDeleting}>
-                            {isDeleting ? "Deleting..." : "Delete Course"}
-                        </button>
-                    </>
-                }
-            >
-                <p>Are you sure you want to delete this course? This action cannot be undone and will delete all associated grades and items.</p>
-            </Modal>
-
             <div className="card bg-base-100 shadow-md">
                 <div className="card-body">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -615,9 +561,6 @@ export default function CourseGradesPage() {
 
                             <div className="w-px h-6 bg-base-content/10 mx-1 hidden sm:block"></div>
 
-                            <button className="btn btn-ghost btn-sm text-error" onClick={() => setShowDeleteConfirm(true)}>
-                                <FontAwesomeIcon icon={faTrash} /> <span className="hidden sm:inline">Delete Course</span>
-                            </button>
                             <button className="btn btn-ghost btn-sm" onClick={() => setShowGradingSettings(true)}>
                                 <FontAwesomeIcon icon={faCog} /> <span className="hidden sm:inline">Grading Settings</span>
                             </button>
@@ -631,7 +574,7 @@ export default function CourseGradesPage() {
                     </div>
 
                     {selectedCourse.data["marking-schemes"]?.length > 0 && displayItems.length > 0 && (
-                        <div className="bg-base-200/40 rounded-md p-4 mb-6 border border-base-content/5 shadow-sm">
+                        <div className="bg-base-200/40 card p-4 mb-6 border border-base-content/5 shadow-sm">
                             <div className="flex flex-wrap gap-4">
                                 {selectedCourse.data["marking-schemes"].map((scheme: any[], idx: number) => {
                                     const details = calculateSchemeGradeDetails(scheme, courseItems, placeholderGrades, dropLowest);
@@ -647,7 +590,7 @@ export default function CourseGradesPage() {
 
                                     return (
                                         <div key={idx} className="relative group">
-                                            <div className="flex flex-col p-4 bg-base-100 rounded-3xl border border-base-content/10 shadow-sm hover:shadow-md transition-all min-w-[180px] cursor-default h-full">
+                                            <div className="flex flex-col p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all min-w-[180px] cursor-default h-full">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="text-[10px] uppercase tracking-wider font-bold opacity-50">Scheme {idx + 1}</span>
                                                     <FontAwesomeIcon icon={faInfoCircle} className="text-xs opacity-20" />
@@ -673,13 +616,13 @@ export default function CourseGradesPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-4 bg-base-300 text-base-content text-xs rounded-xl shadow-2xl border border-base-content/10">
+                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
                                                 <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">Scheme Breakdown</div>
                                                 <div className="flex flex-col gap-2">
                                                     {scheme.map((s, i) => (
                                                         <div key={i} className="flex justify-between items-center">
                                                             <div className="flex items-center gap-2">
-                                                                <div className={`w-2 h-2 rounded-full ${getCategoryColor(s.Component)}`}></div>
+                                                                <div className={`badge badge-xs ${getCategoryColor(s.Component)}`}></div>
                                                                 <span className="font-medium">{s.Component}</span>
                                                             </div>
                                                             <span className="opacity-70 font-mono">{s.Weight}%</span>
@@ -692,7 +635,7 @@ export default function CourseGradesPage() {
                                 })}
                             </div>
                         </div>
-                    )}                    <div className="overflow-x-auto border border-base-content/10 rounded-md">
+                    )}                    <div className="overflow-x-auto border border-base-content/10 card">
                         <table className="table w-full table-zebra">
                             <thead>
                                 <tr>

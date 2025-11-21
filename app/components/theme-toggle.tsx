@@ -1,6 +1,6 @@
 "use client";
 
-import { faB, faBrush } from "@fortawesome/free-solid-svg-icons";
+import { faBrush } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 
@@ -53,6 +53,7 @@ export default function ThemeToggle() {
 
     useEffect(() => {
         const savedTheme = localStorage.getItem("theme") || "system";
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTheme(savedTheme);
         applyTheme(savedTheme);
     }, []);

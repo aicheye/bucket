@@ -37,12 +37,13 @@ async function parse_html(content: string) {
       continue;
     }
 
-    let temp = [];
+    const temp = [];
 
     const rows = table.getElementsByTagName("tr");
-    var rowspans: { col: number; rowspan: number; cell: HTMLElement }[] = [];
+    let rowspans: { col: number; rowspan: number; cell: HTMLElement }[] = [];
     for (let j = 1; j < rows.length; j++) {
       const row = rows[j];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rowData: { [key: string]: any } = {};
 
       const rowHeaders = Array.from(row.getElementsByTagName("th"));
@@ -51,7 +52,7 @@ async function parse_html(content: string) {
       cells.unshift(...rowHeaders);
 
       // Handle rowspan from previous rows
-      for (let rs of rowspans) {
+      for (const rs of rowspans) {
         if (rs.rowspan > 1) {
           cells.splice(rs.col, 0, rs.cell);
           rs.rowspan -= 1;
@@ -62,8 +63,8 @@ async function parse_html(content: string) {
         const cell = cells[k];
 
         if (cell.hasAttribute("rowspan")) {
-          let dup: Boolean = false;
-          for (let rs of rowspans) {
+          let dup: boolean = false;
+          for (const rs of rowspans) {
             if (rs.col === k) dup = true;
           }
           if (!dup) rowspans.push({ col: k, rowspan: parseInt(cell.getAttribute("rowspan") || "1", 10), cell });
@@ -90,9 +91,9 @@ async function parse_html(content: string) {
             if (!daysVisualEl) continue;
 
             const days = daysVisualEl.textContent.replace(/\s+/g, "").split(",");
-            let daysActive = [];
+            const daysActive = [];
 
-            for (let day of days) {
+            for (const day of days) {
               rowData["Days of Week"].push(day.substring(0, 3));
               daysActive.push(daysOfWeek.indexOf(day.substring(0, 3)));
             }
@@ -107,7 +108,7 @@ async function parse_html(content: string) {
 
             const dateRanges = dateRangeEl.children;
 
-            for (let range of dateRanges) {
+            for (const range of dateRanges) {
               const startEnd = range.textContent.split(" - ");
 
               const start = startEnd[0].split(" ");
@@ -158,7 +159,7 @@ async function parse_html(content: string) {
           } else if (header === "Instructor(s)") {
             rowData["Instructors"] = [];
 
-            for (let instructor of cell.getElementsByClassName("instructor-info")) {
+            for (const instructor of cell.getElementsByClassName("instructor-info")) {
               rowData["Instructors"].push({
                 Name: instructor.getElementsByTagName("span")[0]?.textContent.trim() || "Unknown Name",
                 Email: instructor.getElementsByTagName("a")[0]?.textContent.trim() || "Unknown Email",

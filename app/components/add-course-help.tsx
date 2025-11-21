@@ -12,11 +12,11 @@ export default function AddCourseHelp() {
             </p>
             <Image src="/outlineuwaterlooca.png" alt="Outline.uwaterloo.ca screenshot" width={736} height={367} className="my-2 rounded-lg" />
             <p>
-                Select the course you wish to add and click "Save a Local Copy" to download the outline file as an HTML document.
+                Select the course you wish to add and click &quot;Save a Local Copy&quot; to download the outline file as an HTML document.
             </p>
             <Image src="/savealocalcopy.png" alt="Save a Local Copy button" width={736} height={316} className="my-2 rounded-lg" />
             <p>
-                Click the "+" button in the sidebar and upload the downloaded outline file. The course will then be automatically parsed and added to your dashboard!
+                Click the &quot;+&quot; button in the sidebar and upload the downloaded outline file. The course will then be automatically parsed and added to your dashboard!
             </p>
         </section>
     );

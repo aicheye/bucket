@@ -24,7 +24,7 @@ export default function HelpPage() {
                 <section className="flex flex-col gap-4">
                     <h2 className="text-2xl font-semibold">Account Deletion</h2>
                     <p>
-                        To delete your account, go to your profile settings and click "Delete Account". This will remove your user data and all associated courses permanently.
+                        To delete your account, go to your profile settings and click &quot;Delete Account&quot;. This will remove your user data and all associated courses permanently.
                     </p>
                 </section>
                 <section className="flex flex-col gap-4">
