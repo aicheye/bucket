@@ -72,7 +72,9 @@ export default function PrivacyPage() {
             enabled, this mode ensures that your name, email, and profile
             picture are set to null, and your account is marked as anonymous.
             Additionally, telemetry consent will be disabled to enhance your
-            privacy.
+            privacy. Note that enabling anonymous mode will prevent you from
+            receiving any and all email communications from us, including
+            important updates and notifications.
           </p>
           <p>
             Upon account deletion, all your personal data and associated courses
@@ -81,9 +83,10 @@ export default function PrivacyPage() {
           </p>
           <h2 className="text-2xl font-bold">Changes to This Policy</h2>
           <p>
-            We may update this Privacy Policy from time to time. All users will
-            be notified of any changes via email. Continued use of the service
-            constitutes acceptance of the updated policy.
+            We may update this Privacy Policy from time to time. User who have
+            not turned on anonymous mode will be notified of any changes via
+            email. Continued use of the service constitutes acceptance of the
+            updated policy.
           </p>
           <p className="font-bold rounded-box border-5 border-error/30 p-4">
             We will never change this Privacy Policy in a way that is less
