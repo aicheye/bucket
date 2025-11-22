@@ -105,7 +105,7 @@ export default function CoursesPage() {
   function getCourseTypes(courseId: string) {
     const course = courses.find((c) => c.id === courseId);
     const schemes = course?.data["marking-schemes"] || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let types = Array.from(
       new Set(schemes.flat().map((s: any) => s.Component)),
     );
@@ -156,7 +156,7 @@ export default function CoursesPage() {
   async function handleSaveItem() {
     if (!session?.user?.id) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { course_id, ...dataToSave } = itemData;
 
     if (editingItem) {
@@ -501,13 +501,13 @@ export default function CoursesPage() {
 
       console.log("Comparing times:", timeA, timeB);
 
-      let hA =
+      const hA =
         typeof timeA === "object" ? timeA.hours : parseInt(timeA.split(":")[0]);
       const mA =
         typeof timeA === "object"
           ? timeA.minutes
           : parseInt(timeA.split(":")[1]);
-      let hB =
+      const hB =
         typeof timeB === "object" ? timeB.hours : parseInt(timeB.split(":")[0]);
       const mB =
         typeof timeB === "object"

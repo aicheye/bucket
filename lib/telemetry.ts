@@ -13,7 +13,7 @@ export async function sendTelemetry(
     });
   } catch (e) {
     // Don't surface telemetry errors to user
-    // eslint-disable-next-line no-console
+     
     console.debug("Telemetry send failed", e);
   }
 }
