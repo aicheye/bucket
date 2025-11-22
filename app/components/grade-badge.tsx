@@ -53,7 +53,7 @@ export default function GradeBadge({
   }
 
   if (disabled) {
-    textClass = "text-neutral-content";
+    textClass = "text-white";
   }
 
   if (size === "sm") {
