@@ -160,7 +160,7 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10 mt-14 sm:mt-0">
+    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10">
       <Modal
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -254,11 +254,10 @@ export default function Sidebar() {
                         key={course.id}
                         href={`/courses/${course.id}/grades`}
                         onClick={closeDrawer}
-                        className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
-                          pathname?.startsWith(`/courses/${course.id}/`)
+                        className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
                             ? "btn-primary"
                             : "btn-base"
-                        }`}
+                          }`}
                       >
                         <div className="text-left w-full">
                           <div className="font-bold text-[14px]">
@@ -278,11 +277,10 @@ export default function Sidebar() {
               key={course.id}
               href={`/courses/${course.id}/grades`}
               onClick={closeDrawer}
-              className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
-                pathname?.startsWith(`/courses/${course.id}/`)
+              className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
                   ? "btn-primary bg-primary"
                   : ""
-              }`}
+                }`}
             >
               <div className="text-left w-full text-primary-content">
                 <div className="font-bold">{course.code}</div>
