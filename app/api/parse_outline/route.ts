@@ -6,12 +6,18 @@ async function parse_html(content: string) {
   const { JSDOM } = await import("jsdom");
   const doc = new JSDOM(content).window.document;
 
-  const code: string = doc.getElementsByClassName("outline-courses")[0]?.textContent.trim() || "Unknown Code";
-  const term: string = doc.getElementsByClassName("outline-term")[0]?.textContent.trim() || "Unknown Term";
+  const code: string =
+    doc.getElementsByClassName("outline-courses")[0]?.textContent.trim() ||
+    "Unknown Code";
+  const term: string =
+    doc.getElementsByClassName("outline-term")[0]?.textContent.trim() ||
+    "Unknown Term";
 
   const data = {};
 
-  data["description"] = doc.getElementsByClassName("outline-title-full")[0]?.textContent.trim() || "Unknown Description";
+  data["description"] =
+    doc.getElementsByClassName("outline-title-full")[0]?.textContent.trim() ||
+    "Unknown Description";
 
   const firstAnchor = doc.getElementsByTagName("a")[0];
   if (firstAnchor) {
@@ -22,11 +28,16 @@ async function parse_html(content: string) {
 
   for (let i = 0; i < tables.length; i++) {
     const table = tables[i];
-    const headers = table.getElementsByTagName("thead")[0]?.getElementsByTagName("th");
+    const headers = table
+      .getElementsByTagName("thead")[0]
+      ?.getElementsByTagName("th");
 
     if (!headers) continue;
 
-    let sectionType = tables[i].className.trim() || tables[i].parentElement?.className.trim() || `section_${i}`;
+    let sectionType =
+      tables[i].className.trim() ||
+      tables[i].parentElement?.className.trim() ||
+      `section_${i}`;
 
     if (headers[0]?.textContent.trim() === "Component / Activity") {
       data["marking-schemes"] = [];
@@ -67,7 +78,12 @@ async function parse_html(content: string) {
           for (const rs of rowspans) {
             if (rs.col === k) dup = true;
           }
-          if (!dup) rowspans.push({ col: k, rowspan: parseInt(cell.getAttribute("rowspan") || "1", 10), cell });
+          if (!dup)
+            rowspans.push({
+              col: k,
+              rowspan: parseInt(cell.getAttribute("rowspan") || "1", 10),
+              cell,
+            });
         }
 
         const header = headers[k]?.textContent.trim() || `column_${k}`;
@@ -76,21 +92,48 @@ async function parse_html(content: string) {
           if (header === "Course") {
             const sectionEl = cell.getElementsByClassName("section")[0];
             const classTypeEl = cell.getElementsByClassName("class-type")[0];
-            
-            rowData["Section"] = sectionEl ? sectionEl.textContent.split(" ")[0].trim() : "Unknown Section";
-            rowData["Component"] = classTypeEl ? classTypeEl.textContent.replace(/\]|\[/g, "").trim() : "Unknown Component";
+
+            rowData["Section"] = sectionEl
+              ? sectionEl.textContent.split(" ")[0].trim()
+              : "Unknown Section";
+            rowData["Component"] = classTypeEl
+              ? classTypeEl.textContent.replace(/\]|\[/g, "").trim()
+              : "Unknown Component";
             continue;
           } else if (header === "Meet Days") {
             rowData["Meet Dates"] = [];
             rowData["Days of Week"] = [];
             const year = parseInt(term.split(" ")[1], 10);
-            const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            
+            const daysOfWeek = [
+              "Sun",
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+            ];
+            const months = [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ];
+
             const daysVisualEl = cell.getElementsByClassName("days-visual")[0];
             if (!daysVisualEl) continue;
 
-            const days = daysVisualEl.textContent.replace(/\s+/g, "").split(",");
+            const days = daysVisualEl.textContent
+              .replace(/\s+/g, "")
+              .split(",");
             const daysActive = [];
 
             for (const day of days) {
@@ -112,7 +155,11 @@ async function parse_html(content: string) {
               const startEnd = range.textContent.split(" - ");
 
               const start = startEnd[0].split(" ");
-              const currentDate = new Date(year, months.indexOf(start[0]), parseInt(start[1], 10));
+              const currentDate = new Date(
+                year,
+                months.indexOf(start[0]),
+                parseInt(start[1], 10),
+              );
 
               if (startEnd.length == 1) {
                 rowData["Meet Dates"].push(new Date(currentDate));
@@ -120,7 +167,11 @@ async function parse_html(content: string) {
               }
 
               const end = startEnd[1].split(" ");
-              const endDate = new Date(year, months.indexOf(end[0]), parseInt(end[1], 10));
+              const endDate = new Date(
+                year,
+                months.indexOf(end[0]),
+                parseInt(end[1], 10),
+              );
 
               while (currentDate <= endDate) {
                 if (daysActive.includes(currentDate.getDay())) {
@@ -140,17 +191,31 @@ async function parse_html(content: string) {
               const times = timeText.split(" - ");
 
               const startTime: string[] = times[0].trim().split(":");
-              const startAM: boolean = times[0].trim().toLowerCase().includes("am") || (!times[0].trim().toLowerCase().includes("pm") && parseInt(startTime[0], 10) < 12);
+              const startAM: boolean =
+                times[0].trim().toLowerCase().includes("am") ||
+                (!times[0].trim().toLowerCase().includes("pm") &&
+                  parseInt(startTime[0], 10) < 12);
 
-              const endTime: string[] = (times[1]?.trim() || times[0].trim()).split(":");
-              const endAM: boolean = times[1]?.trim().toLowerCase().includes("am") || (!times[1]?.trim().toLowerCase().includes("pm") && parseInt(endTime[0], 10) < 12);
+              const endTime: string[] = (
+                times[1]?.trim() || times[0].trim()
+              ).split(":");
+              const endAM: boolean =
+                times[1]?.trim().toLowerCase().includes("am") ||
+                (!times[1]?.trim().toLowerCase().includes("pm") &&
+                  parseInt(endTime[0], 10) < 12);
 
               rowData["Start Time"] = {
-                hours: (parseInt(startTime[0], 10) === 12 ? 0 : parseInt(startTime[0], 10)) + (startAM ? 0 : 12),
+                hours:
+                  (parseInt(startTime[0], 10) === 12
+                    ? 0
+                    : parseInt(startTime[0], 10)) + (startAM ? 0 : 12),
                 minutes: parseInt(startTime[1].substring(0, 2), 10) || 0,
               };
               rowData["End Time"] = {
-                hours: (parseInt(endTime[0], 10) === 12 ? 0 : parseInt(endTime[0], 10)) + (endAM ? 0 : 12),
+                hours:
+                  (parseInt(endTime[0], 10) === 12
+                    ? 0
+                    : parseInt(endTime[0], 10)) + (endAM ? 0 : 12),
                 minutes: parseInt(endTime[1].substring(0, 2), 10) || 0,
               };
             }
@@ -159,10 +224,17 @@ async function parse_html(content: string) {
           } else if (header === "Instructor(s)") {
             rowData["Instructors"] = [];
 
-            for (const instructor of cell.getElementsByClassName("instructor-info")) {
+            for (const instructor of cell.getElementsByClassName(
+              "instructor-info",
+            )) {
               rowData["Instructors"].push({
-                Name: instructor.getElementsByTagName("span")[0]?.textContent.trim() || "Unknown Name",
-                Email: instructor.getElementsByTagName("a")[0]?.textContent.trim() || "Unknown Email",
+                Name:
+                  instructor
+                    .getElementsByTagName("span")[0]
+                    ?.textContent.trim() || "Unknown Name",
+                Email:
+                  instructor.getElementsByTagName("a")[0]?.textContent.trim() ||
+                  "Unknown Email",
               });
             }
 
@@ -207,7 +279,8 @@ export async function POST(request: Request) {
   try {
     // Optional: block if not signed in
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
 
@@ -216,7 +289,11 @@ export async function POST(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error processing request:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { error: `Internal Server Error: ${errorMessage}` },
+      { status: 500 },
+    );
   }
 }

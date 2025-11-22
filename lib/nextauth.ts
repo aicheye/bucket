@@ -7,8 +7,8 @@ declare module "next-auth" {
   interface Session {
     user: {
       /** The user's unique identifier. */
-      id: any
-    } & DefaultSession["user"]
+      id: any;
+    } & DefaultSession["user"];
   }
 }
 
@@ -59,7 +59,11 @@ export const authOptions: NextAuthOptions = {
           }
         `;
 
-        const result = await executeHasuraQuery(mutation, { objects: [input] }, user.id);
+        const result = await executeHasuraQuery(
+          mutation,
+          { objects: [input] },
+          user.id,
+        );
 
         if (result.errors) {
           console.error("GraphQL upsert returned errors:", result.errors);

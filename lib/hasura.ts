@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 export async function executeHasuraQuery(
   query: string,
   variables: any,
-  userId: string
+  userId: string,
 ) {
   const payload = {
     "https://hasura.io/jwt/claims": {
@@ -37,7 +37,9 @@ export async function executeHasuraQuery(
     });
 
     if (!res.ok) {
-      console.error(`Hasura fetch failed with status: ${res.status} ${res.statusText}`);
+      console.error(
+        `Hasura fetch failed with status: ${res.status} ${res.statusText}`,
+      );
       const text = await res.text();
       console.error("Response body:", text);
       throw new Error(`Hasura fetch failed: ${res.statusText}`);
@@ -53,7 +55,7 @@ export async function executeHasuraQuery(
 export async function executeHasuraAdminQuery(
   query: string,
   variables: any,
-  userId: string
+  userId: string,
 ) {
   // Sign a Hasura JWT as admin. This should only be used server-side for
   // trusted operations (like displaying telemetry) after validating session.
@@ -86,7 +88,9 @@ export async function executeHasuraAdminQuery(
     });
 
     if (!res.ok) {
-      console.error(`Hasura admin fetch failed with status: ${res.status} ${res.statusText}`);
+      console.error(
+        `Hasura admin fetch failed with status: ${res.status} ${res.statusText}`,
+      );
       const text = await res.text();
       console.error("Response body:", text);
       throw new Error(`Hasura fetch failed: ${res.statusText}`);

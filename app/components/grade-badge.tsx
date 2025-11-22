@@ -1,49 +1,91 @@
+"use client";
+
 const successCutoff = 80;
 const warningCutoff = 60;
 
+const bgMap: Record<string, string> = {
+  success: "bg-success/70",
+  warning: "bg-warning/70",
+  error: "bg-error/70",
+  accent: "bg-accent/70",
+};
 
-export default function GradeBadge({ grade, gpa, disabled = false, size }: { grade?: number, gpa?: number, disabled?: boolean, size?: "sm" | "lg" }) {
-    let color = "neutral";
-    let textColor = "text-neutral-content";
+const textMap: Record<string, string> = {
+  success: "text-success-content",
+  warning: "text-warning-content",
+  error: "text-error-content",
+  accent: "text-neutral-content",
+};
 
-    if (grade !== undefined) {
-        if (grade >= successCutoff) {
-            color = "success";
-            textColor = "text-success-content";
-        }
-        else if (grade >= warningCutoff) {
-            color = "warning";
-            textColor = "text-warning-content";
-        }
-        else {
-            color = "error";
-            textColor = "text-error-content";
-        }
+export default function GradeBadge({
+  grade,
+  gpa,
+  disabled = false,
+  size,
+}: {
+  grade?: number;
+  gpa?: number;
+  disabled?: boolean;
+  size?: "sm" | "lg";
+}) {
+  let colorKey = "accent";
+
+  if (grade !== undefined) {
+    if (grade >= successCutoff) {
+      colorKey = "success";
+    } else if (grade >= warningCutoff) {
+      colorKey = "warning";
+    } else {
+      colorKey = "error";
     }
+  } else {
+    colorKey = "accent";
+  }
 
-    if (disabled) {
-        textColor = "text-neutral-content/80";
-    }
+  let bgClass = bgMap[colorKey];
+  let textClass = textMap[colorKey];
 
-    if (size === "sm") {
-        return (
-            <div className="flex items-center gap-2">
-                <div className={`badge bg-${color}/70 text-sm font-bold ${textColor} border-none`}>
-                    {grade !== undefined ? grade.toFixed(1) + "%" : gpa!.toFixed(2)}
-                </div>
-            </div>
-        )
-    }
+  // If this badge is displaying a GPA, always use neutral background
+  // and neutral text so the GPA appearance is consistent.
+  if (gpa !== undefined) {
+    bgClass = "bg-neutral/70";
+    textClass = "text-neutral-content";
+  }
 
+  if (disabled) {
+    textClass = "text-neutral-content";
+  }
+
+  if (size === "sm") {
     return (
-        <div className={`card card-xl h-full font-black tracking-tighter leading-none bg-${color}/70`}>
-            <div className={`flex card-body px-2 p-1 text-2xl text-center ${textColor}`}>
-                <div>
-                    {gpa !== undefined ? (<span>{gpa.toFixed(2)}</span>) :
-                        (<>{grade.toFixed(1)}<span className={"text-md opacity-50 ml-1"}>%</span></>)
-                    }
-                </div>
-            </div>
+      <div className="flex items-center gap-2">
+        <div
+          className={`badge ${bgClass} text-sm font-bold ${textClass} border-none`}
+        >
+          {grade !== undefined ? grade.toFixed(1) + "%" : gpa!.toFixed(2)}
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div
+      className={`card card-xl h-full font-black tracking-tighter leading-none ${bgClass}`}
+    >
+      <div
+        className={`flex card-body px-2 p-1 text-2xl text-center ${textClass}`}
+      >
+        <div>
+          {gpa !== undefined ? (
+            <span>{gpa.toFixed(2)}</span>
+          ) : (
+            <>
+              {grade.toFixed(1)}
+              <span className={"text-md opacity-80 ml-1"}>%</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

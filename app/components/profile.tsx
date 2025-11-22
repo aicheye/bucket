@@ -7,56 +7,62 @@ import AuthComponent from "./auth-button";
 import Modal from "./modal";
 
 export default function Profile() {
-    const { data: session, status } = useSession();
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [telemetryConsent, setTelemetryConsent] = useState<boolean>(false);
-    const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string }>({
-        isOpen: false,
-        message: "",
-    });
+  const { data: session, status } = useSession();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [telemetryConsent, setTelemetryConsent] = useState<boolean>(false);
+  const [alertState, setAlertState] = useState<{
+    isOpen: boolean;
+    message: string;
+  }>({
+    isOpen: false,
+    message: "",
+  });
 
-    useEffect(() => {
-        if (session?.user?.id) {
-            const fetchTelemetry = async () => {
-                const query = `
+  useEffect(() => {
+    if (session?.user?.id) {
+      const fetchTelemetry = async () => {
+        const query = `
                     query GetUserTelemetry($id: String!) {
                         users_by_pk(id: $id) {
                             telemetry_consent
                         }
                     }
                 `;
-                try {
-                    const response = await fetch("/api/graphql", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            query,
-                            variables: { id: session.user.id },
-                        }),
-                    });
-                    const result = await response.json();
-                    if (result.data?.users_by_pk) {
-                        setTelemetryConsent(result.data.users_by_pk.telemetry_consent ?? false);
-                    }
-                } catch (error) {
-                    console.error("Error fetching telemetry consent:", error);
-                }
-            };
-            fetchTelemetry();
+        try {
+          const response = await fetch("/api/graphql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query,
+              variables: { id: session.user.id },
+            }),
+          });
+          const result = await response.json();
+          if (result.data?.users_by_pk) {
+            setTelemetryConsent(
+              result.data.users_by_pk.telemetry_consent ?? false,
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching telemetry consent:", error);
         }
-    }, [session?.user?.id]);
+      };
+      fetchTelemetry();
+    }
+  }, [session?.user?.id]);
 
-    if (status === "loading") return <div className="loading loading-spinner loading-lg"></div>;
-    if (!session?.user) return <AuthComponent />;
+  if (status === "loading")
+    return <div className="loading loading-spinner loading-lg"></div>;
+  if (!session?.user) return <AuthComponent />;
 
-    const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
-    const closeConfirm = () => setShowDeleteConfirm(false);
+  const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
+  const closeConfirm = () => setShowDeleteConfirm(false);
 
-    const toggleTelemetry = async () => {
-        const newValue = !telemetryConsent;
-        setTelemetryConsent(newValue);
+  const toggleTelemetry = async () => {
+    const newValue = !telemetryConsent;
+    setTelemetryConsent(newValue);
 
-        const mutation = `
+    const mutation = `
             mutation UpdateUserTelemetry($id: String!, $consent: Boolean!) {
                 update_users_by_pk(pk_columns: {id: $id}, _set: {telemetry_consent: $consent}) {
                     telemetry_consent
@@ -64,37 +70,43 @@ export default function Profile() {
             }
         `;
 
-        try {
-            const response = await fetch("/api/graphql", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    query: mutation,
-                    variables: {
-                        id: session.user.id,
-                        consent: newValue,
-                    },
-                }),
-            });
+    try {
+      const response = await fetch("/api/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            id: session.user.id,
+            consent: newValue,
+          },
+        }),
+      });
 
-            const result = await response.json();
+      const result = await response.json();
 
-            if (result.errors) {
-                console.error("Error updating telemetry consent:", result.errors);
-                setTelemetryConsent(!newValue);
-                setAlertState({ isOpen: true, message: "Failed to update telemetry settings." });
-            }
-        } catch (error) {
-            console.error("Error updating telemetry consent:", error);
-            setTelemetryConsent(!newValue);
-            setAlertState({ isOpen: true, message: "An error occurred. Please try again." });
-        }
-    };
+      if (result.errors) {
+        console.error("Error updating telemetry consent:", result.errors);
+        setTelemetryConsent(!newValue);
+        setAlertState({
+          isOpen: true,
+          message: "Failed to update telemetry settings.",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating telemetry consent:", error);
+      setTelemetryConsent(!newValue);
+      setAlertState({
+        isOpen: true,
+        message: "An error occurred. Please try again.",
+      });
+    }
+  };
 
-    const deleteAccount = async () => {
-        setShowDeleteConfirm(false);
-        try {
-            const mutation = `
+  const deleteAccount = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      const mutation = `
         mutation DeleteUserAndCourses($id: String!) {
           delete_courses(where: {owner_id: {_eq: $id}}) {
             affected_rows
@@ -105,110 +117,134 @@ export default function Profile() {
         }
       `;
 
-            const response = await fetch("/api/graphql", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    query: mutation,
-                    variables: {
-                        id: session.user.id,
-                    },
-                }),
-            });
+      const response = await fetch("/api/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            id: session.user.id,
+          },
+        }),
+      });
 
-            const result = await response.json();
+      const result = await response.json();
 
-            if (result.errors) {
-                console.error("Error deleting account:", result.errors);
-                setAlertState({ isOpen: true, message: "Failed to delete account. Please try again." });
-                return;
-            }
+      if (result.errors) {
+        console.error("Error deleting account:", result.errors);
+        setAlertState({
+          isOpen: true,
+          message: "Failed to delete account. Please try again.",
+        });
+        return;
+      }
 
-            await signOut({ callbackUrl: "/" });
-        } catch (error) {
-            console.error("Error deleting account:", error);
-            setAlertState({ isOpen: true, message: "An error occurred. Please try again." });
+      await signOut({ callbackUrl: "/" });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      setAlertState({
+        isOpen: true,
+        message: "An error occurred. Please try again.",
+      });
+    }
+  };
+
+  return (
+    <div className="dropdown dropdown-end">
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={closeConfirm}
+        title="Delete Account"
+        onConfirm={deleteAccount}
+        actions={
+          <>
+            <button className="btn" onClick={closeConfirm}>
+              Cancel
+            </button>
+            <button className="btn btn-error" onClick={deleteAccount}>
+              Delete
+            </button>
+          </>
         }
-    };
-
-    return (
-        <div className="dropdown dropdown-end">
-            <Modal
-                isOpen={showDeleteConfirm}
-                onClose={closeConfirm}
-                title="Delete Account"
-                onConfirm={deleteAccount}
-                actions={
-                    <>
-                        <button className="btn" onClick={closeConfirm}>Cancel</button>
-                        <button className="btn btn-error" onClick={deleteAccount}>Delete</button>
-                    </>
-                }
-            >
-                <p>Are you sure you want to delete your account? This action cannot be undone.</p>
-            </Modal>
-            <Modal
-                isOpen={alertState.isOpen}
-                onClose={closeAlert}
-                title="Error"
-                onConfirm={closeAlert}
-                actions={<button className="btn" onClick={closeAlert}>Close</button>}
-            >
-                <p>{alertState.message}</p>
-            </Modal>
-            <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost btn-circle avatar"
-                onMouseDown={(e) => {
-                    if (document.activeElement === e.currentTarget) {
-                        e.currentTarget.blur();
-                        e.preventDefault();
-                    }
-                }}
-            >
-                <div className="w-10 rounded-full">
-                    <Image
-                        src={session.user.image || ""}
-                        alt={session.user.name || "Profile"}
-                        width={40}
-                        height={40}
-                    />
-                </div>
-            </div>
-            <div
-                tabIndex={0}
-                className="mt-1 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 overflow-y-auto border border-base-content/10"
-            >
-                <div className="flex px-4 py-2 mt-2 flex-col gap-1">
-                    <span className="font-bold text-base text-base-content">{session.user.name}</span>
-                    <span className="font-normal text-sm text-base-content/50 truncate w-full">{session.user.email}</span>
-                </div>
-                <div className="divider my-0 px-4"></div>
-                <ul className="menu menu-sm w-full px-2 gap-1">
-                    <li>
-                        <a onClick={() => toggleTelemetry()} className="justify-between">
-                            Anon. Telemetry
-                            <input
-                                type="checkbox"
-                                className="toggle toggle-sm checked:bg-error/80 checked:border-error bg-success/70 border-success/70"
-                                checked={telemetryConsent}
-                                readOnly
-                            />
-                        </a>
-                    </li>
-                    <li>
-                        <a onClick={() => signOut({ callbackUrl: "/" })}>Sign out</a>
-                    </li>
-                    <li>
-                        <a onClick={() => setShowDeleteConfirm(true)} className="text-error">
-                            Delete Account
-                        </a>
-                    </li>
-                </ul>
-            </div>
+      >
+        <p>
+          Are you sure you want to delete your account? This action cannot be
+          undone.
+        </p>
+      </Modal>
+      <Modal
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        title="Error"
+        onConfirm={closeAlert}
+        actions={
+          <button className="btn" onClick={closeAlert}>
+            Close
+          </button>
+        }
+      >
+        <p>{alertState.message}</p>
+      </Modal>
+      <div
+        tabIndex={0}
+        role="button"
+        className="btn btn-ghost btn-circle avatar"
+        onMouseDown={(e) => {
+          if (document.activeElement === e.currentTarget) {
+            e.currentTarget.blur();
+            e.preventDefault();
+          }
+        }}
+      >
+        <div className="w-10 rounded-full">
+          <Image
+            src={session.user.image || ""}
+            alt={session.user.name || "Profile"}
+            width={40}
+            height={40}
+          />
         </div>
-    );
+      </div>
+      <div
+        tabIndex={0}
+        className="mt-1 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 overflow-y-auto border border-base-content/10"
+      >
+        <div className="flex px-4 py-2 mt-2 flex-col gap-1">
+          <span className="font-bold text-base text-base-content">
+            {session.user.name}
+          </span>
+          <span className="font-normal text-sm text-base-content/50 truncate w-full">
+            {session.user.email}
+          </span>
+        </div>
+        <div className="divider my-0 px-4"></div>
+        <ul className="menu menu-sm w-full px-2 gap-1">
+          <li>
+            <a onClick={() => toggleTelemetry()} className="justify-between">
+              Anon. Telemetry
+              <input
+                type="checkbox"
+                className="toggle toggle-sm checked:bg-error/80 checked:border-error bg-success/70 border-success/70"
+                checked={telemetryConsent}
+                readOnly
+              />
+            </a>
+          </li>
+          <li>
+            <a onClick={() => signOut({ callbackUrl: "/" })}>Sign out</a>
+          </li>
+          <li>
+            <a
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-error"
+            >
+              Delete Account
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
 }

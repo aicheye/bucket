@@ -5,26 +5,26 @@ import { useEffect } from "react";
 import AuthScreen from "./components/auth";
 
 export default function Home() {
-    const { data: session } = useSession();
-    const router = useRouter();
+  const { data: session } = useSession();
+  const router = useRouter();
 
-    useEffect(() => {
-        if (session) {
-            document.title = "Bucket";
-        } else {
-            document.title = "Bucket — Sign in";
-        }
-    }, [session]);
-
-    useEffect(() => {
-        if (session) {
-            router.push("/courses");
-        }
-    }, [session, router]);
-
-    if (!session) {
-        return <AuthScreen />;
+  useEffect(() => {
+    if (session) {
+      document.title = "Bucket";
+    } else {
+      document.title = "Bucket — Sign in";
     }
+  }, [session]);
 
-    return null;
+  useEffect(() => {
+    if (session) {
+      router.push("/courses");
+    }
+  }, [session, router]);
+
+  if (!session) {
+    return <AuthScreen />;
+  }
+
+  return null;
 }
