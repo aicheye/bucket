@@ -4,7 +4,7 @@ import { faArrowTrendUp, faCircleUser, faEyeLowVision } from "@fortawesome/free-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AuthComponent from "./auth-button";
 import { useLoading } from "./loading-context";
 import Modal from "./modal";
@@ -31,7 +31,7 @@ export default function Profile() {
 
   const { showLoading, hideLoading } = useLoading();
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     if (!session?.user?.id) return;
     const query = `
       query GetUserProfile($id: String!) {
@@ -64,11 +64,28 @@ export default function Profile() {
     } catch (err) {
       console.error("Error fetching user profile:", err);
     }
-  };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (session?.user?.id) fetchUserProfile();
   }, [session?.user?.id]);
+
+  // Listen for profile refresh requests from other parts of the app
+  useEffect(() => {
+    const handler = () => {
+      if (session?.user?.id) fetchUserProfile();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("user-profile-updated", handler as EventListener);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("user-profile-updated", handler as EventListener);
+      }
+    };
+  }, [session?.user?.id, fetchUserProfile]);
 
   useEffect(() => {
     // Show privacy modal on first login (once per browser) after we know current settings
@@ -352,56 +369,6 @@ export default function Profile() {
       >
         <p>{alertState.message}</p>
       </Modal>
-      <Modal
-        isOpen={showPrivacyModal}
-        onClose={closePrivacyModal}
-        title="Data & Privacy"
-        onConfirm={savePrivacyChoices}
-        actions={
-          <>
-            <button className="btn" onClick={closePrivacyModal}>
-              Skip
-            </button>
-            <button className="btn btn-primary" onClick={savePrivacyChoices}>
-              Save
-            </button>
-          </>
-        }
-      >
-        <p className="mb-3">Choose how you want us to handle data for your account.</p>
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex-1">
-            <div className="font-semibold">Telemetry</div>
-            <div className="text-sm text-base-content/60">Help improve the app — only anonymous usage data is collected, no personal identifiers.</div>
-          </div>
-          <input
-            type="checkbox"
-            className="toggle toggle-sm toggle-primary"
-            checked={privacyChoiceTelemetry}
-            onChange={() => {
-              const next = !privacyChoiceTelemetry;
-              setPrivacyChoiceTelemetry(next);
-              if (next) setPrivacyChoiceIncognito(false);
-            }}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <div className="font-semibold">Incognito</div>
-            <div className="text-sm text-base-content/60">Enable to remove name/email/image from your account and disable telemetry.</div>
-          </div>
-          <input
-            type="checkbox"
-            className="toggle toggle-sm toggle-primary"
-            checked={privacyChoiceIncognito}
-            onChange={() => {
-              const next = !privacyChoiceIncognito;
-              setPrivacyChoiceIncognito(next);
-              if (next) setPrivacyChoiceTelemetry(false);
-            }}
-          />
-        </div>
-      </Modal>
       <div
         tabIndex={0}
         role="button"
@@ -418,7 +385,7 @@ export default function Profile() {
             <FontAwesomeIcon icon={faCircleUser} className="text-[40px] text-base-content" />
           ) : (
             <Image
-              src={userImage ?? session.user.image ?? "/next.svg"}
+              src={userImage || session.user.image || "/next.svg"}
               alt={userNameLocal ?? session.user.name ?? "Profile"}
               width={40}
               height={40}
@@ -441,20 +408,6 @@ export default function Profile() {
         <div className="divider my-0 px-4"></div>
         <ul className="menu menu-sm w-full px-2 gap-1">
           <li>
-            <a onClick={() => toggleTelemetry()} className="justify-between">
-              <div>
-                <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" />
-                Telemetry
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-sm toggle-primary"
-                checked={telemetryConsent}
-                readOnly
-              />
-            </a>
-          </li>
-          <li>
             <a onClick={() => toggleAnonymous()} className="justify-between">
               <div>
                 <FontAwesomeIcon icon={faEyeLowVision} className="mr-1" />
@@ -464,6 +417,20 @@ export default function Profile() {
                 type="checkbox"
                 className="toggle toggle-sm toggle-primary"
                 checked={anonymousMode}
+                readOnly
+              />
+            </a>
+          </li>
+          <li>
+            <a onClick={() => toggleTelemetry()} className="justify-between">
+              <div>
+                <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" />
+                Telemetry
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm toggle-primary"
+                checked={telemetryConsent}
                 readOnly
               />
             </a>

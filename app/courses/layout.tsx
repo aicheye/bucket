@@ -1,5 +1,7 @@
 "use client";
 
+import { faArrowTrendUp, faEyeLowVision } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -73,6 +75,11 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Notify other UI (profile) to refresh after onboarding update
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("user-profile-updated"));
+      }
+
       // Successfully saved onboarding state, close modal
       setShowOnboarding(false);
     } catch (err) {
@@ -86,7 +93,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
       <Modal
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        title="Welcome"
+        title="Data & Privacy Preferences"
         onConfirm={confirmOnboarding}
         actions={
           <button className="btn btn-primary" onClick={confirmOnboarding}>
@@ -97,23 +104,30 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-4">
           <p className="text-sm text-base-content/50">Choose privacy preferences below. For more information on your privacy rights, visit our <Link href="legal/privacy" target="_blank" className="underline" rel="noopener noreferrer">privacy policy</Link>.</p>
           <hr className="border-base-content/20" />
-          <div className="label cursor-pointer justify-start gap-2 text-base-content/80 flex">
-            <span className="flex-grow label-text">Enable incognito mode</span>
-            <input
-              type="checkbox"
-              className="toggle toggle-primary"
-              checked={onboardAnon}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const checked = e.target.checked;
-                setOnboardAnon(checked);
-                if (checked) setOnboardTelemetry(false);
-              }}
-            />
+          <div className="label cursor-pointer justify-start text-base-content/80 flex w-full">
+            <div className="flex flex-col flex-grow gap-1">
+              <span className="label-text"><FontAwesomeIcon icon={faEyeLowVision} /> Incognito Mode</span>
+              <span className="flex-wrap label-text text-base-content/50 text-sm">Scrubs name, email, picture from the user database.</span>
+            </div>
+            <div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={onboardAnon}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const checked = e.target.checked;
+                  setOnboardAnon(checked);
+                  if (checked) setOnboardTelemetry(false);
+                }}
+              />
+            </div>
           </div>
-          <span className="label-text text-base-content/50 text-sm">Scrubs personal info (name, email, picture) from the user database.</span>
           <hr className="border-base-content/20" />
           <div className="label cursor-pointer justify-start gap-2 text-base-content/80 flex">
-            <span className="flex-grow label-text">Send anonymized telemetry (usage data)</span>
+            <div className="flex flex-col flex-grow gap-1">
+              <span className="label-text"><FontAwesomeIcon icon={faArrowTrendUp} /> Send Usage Data</span>
+              <span className="label-text text-base-content/50 text-sm">Helps us improve Bucket over time. No personal info is sent.</span>
+            </div>
             <input
               type="checkbox"
               className="toggle toggle-primary"
@@ -125,10 +139,9 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
               }}
             />
           </div>
-          <span className="label-text text-base-content/50 text-sm">Helps us improve Bucket over time. No personal info is sent.</span>
           <hr className="border-base-content/20" />
         </div>
-      </Modal>
+      </Modal >
       <Navbar showMenuButton={true} className="sticky top-0 z-30" />
       <div className="drawer lg:drawer-open flex-1 min-h-0 overflow-x-hidden">
         <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
@@ -157,7 +170,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <Footer />
-    </div>
+    </div >
   );
 }
 
