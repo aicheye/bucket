@@ -2,6 +2,8 @@
 
 import {
   faCalendarDay,
+  faChevronLeft,
+  faChevronRight,
   faClock,
   faInfoCircle,
   faPencil,
@@ -11,6 +13,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatTime } from "../../lib/format-utils";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
@@ -234,6 +237,117 @@ export default function CoursesPage() {
     return { groupedCourses: grouped, sortedFolders: sorted };
   }, [courses]);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // helpers to parse/format date param as local date (YYYY-MM-DD)
+  const parseDateParam = (s: string | null) => {
+    if (!s) return null;
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    const y = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10) - 1;
+    const d = parseInt(m[3], 10);
+    const dt = new Date(y, mo, d);
+    if (isNaN(dt.getTime())) return null;
+    return dt;
+  };
+
+  const formatDateParam = (date: Date) => {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, "0");
+    const d = date.getDate().toString().padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  // initialize selectedDate from `?date=YYYY-MM-DD` if present, otherwise today
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    try {
+      const param = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("date") : null;
+      const parsed = parseDateParam(param);
+      if (parsed) return parsed;
+    } catch (e) {
+      // ignore
+    }
+    return new Date();
+  });
+
+  function prevDay() {
+    setSelectedDate((d) => {
+      const nd = new Date(d);
+      nd.setDate(nd.getDate() - 1);
+      return nd;
+    });
+  }
+
+  function nextDay() {
+    setSelectedDate((d) => {
+      const nd = new Date(d);
+      nd.setDate(nd.getDate() + 1);
+      return nd;
+    });
+  }
+
+  function resetToToday() {
+    setSelectedDate(new Date());
+  }
+
+  // keep selectedDate in the URL as `?date=YYYY-MM-DD`. If selectedDate is today, remove the param.
+  useEffect(() => {
+    if (!router) return;
+    const param = searchParams?.get("date");
+    const isoLocal = formatDateParam(selectedDate);
+    const todayLocal = formatDateParam(new Date());
+
+    if (isoLocal === todayLocal) {
+      if (param) {
+        // remove param but preserve other params if any
+        const url = new URL(window.location.href);
+        url.searchParams.delete("date");
+        router.replace(url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : ""));
+      }
+    } else if (param !== isoLocal) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("date", isoLocal);
+      router.replace(url.pathname + "?" + url.searchParams.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
+
+  // sync when user navigates (back/forward) and the search param changes
+  useEffect(() => {
+    const param = searchParams?.get("date");
+    const parsed = parseDateParam(param);
+    if (parsed) {
+      setSelectedDate(parsed);
+    } else {
+      // if param removed, reset to today
+      setSelectedDate(new Date());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString()]);
+
+  // keyboard shortcuts: ArrowLeft / ArrowRight to navigate, 't' to reset to today
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.isContentEditable) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prevDay();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nextDay();
+      } else if (e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        resetToToday();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const currentTerm = sortedFolders.length > 0 ? sortedFolders[0] : null;
 
   useEffect(() => {
@@ -450,9 +564,9 @@ export default function CoursesPage() {
       }
     }
 
-    // 2. Today's Classes
-    const today = new Date();
-    const todayDay = today.toLocaleDateString("en-US", { weekday: "short" });
+    // 2. Today's Classes (uses `selectedDate` so user can navigate days)
+    const viewDate = selectedDate;
+    const viewDay = viewDate.toLocaleDateString("en-US", { weekday: "short" });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const todaysClasses: any[] = [];
@@ -471,9 +585,9 @@ export default function CoursesPage() {
           isToday = item["Meet Dates"].some((d: string) => {
             const date = new Date(d);
             return (
-              date.getUTCDate() === today.getDate() &&
-              date.getUTCMonth() === today.getMonth() &&
-              date.getUTCFullYear() === today.getFullYear()
+              date.getUTCDate() === viewDate.getDate() &&
+              date.getUTCMonth() === viewDate.getMonth() &&
+              date.getUTCFullYear() === viewDate.getFullYear()
             );
           });
         } else if (
@@ -481,7 +595,7 @@ export default function CoursesPage() {
           Array.isArray(item["Days of Week"])
         ) {
           isToday = item["Days of Week"].some((d: string) =>
-            d.startsWith(todayDay),
+            d.startsWith(viewDay),
           );
         }
 
@@ -517,6 +631,9 @@ export default function CoursesPage() {
       if (hA !== hB) return hA - hB;
       return mA - mB;
     });
+
+    // ensure we have a real 'today' for deliverables and other global calculations
+    const today = new Date();
 
     // 3. Upcoming Deliverables
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -896,10 +1013,46 @@ export default function CoursesPage() {
               {/* Column 2 */}
               <div className="card bg-base-100 shadow-sm h-full">
                 <div className="card-body p-4">
-                  <h3 className="card-title text-sm uppercase opacity-70 mb-2">
-                    <FontAwesomeIcon icon={faClock} className="mr-2" />
-                    Today&apos;s Classes
-                  </h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="card-title text-sm uppercase opacity-70 m-0 flex items-center gap-2">
+                      <FontAwesomeIcon icon={faClock} className="mr-2" />
+                      <span>
+                        CLASSES ({viewDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()})
+                      </span>
+                    </h3>
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        className="btn btn-xs btn-circle btn-ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          prevDay();
+                        }}
+                        title="Previous day"
+                      >
+                        <FontAwesomeIcon icon={faChevronLeft} />
+                      </button>
+                      <button
+                        className="btn btn-xs btn-ghost text-sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          resetToToday();
+                        }}
+                        title="Today (click to reset)"
+                      >
+                        Today
+                      </button>
+                      <button
+                        className="btn btn-xs btn-circle btn-ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          nextDay();
+                        }}
+                        title="Next day"
+                      >
+                        <FontAwesomeIcon icon={faChevronRight} />
+                      </button>
+                    </div>
+                  </div>
                   {todaysClasses.length > 0 ? (
                     <div className="flex flex-col h-full gap-2">
                       {todaysClasses.slice(0, 6).map((cls, i) => (
