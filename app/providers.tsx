@@ -2,6 +2,8 @@
 import { SessionProvider, useSession } from "next-auth/react";
 import React, { useEffect } from "react";
 import { sendTelemetry } from "../lib/telemetry";
+import GlobalLoading from "./components/global-loading";
+import { LoadingProvider } from "./components/loading-context";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // session heartbeat: periodically record active session (client-side)
@@ -27,8 +29,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   };
   return (
-    <SessionProvider>
-      <Heartbeat>{children}</Heartbeat>
-    </SessionProvider>
+    <LoadingProvider>
+      <SessionProvider>
+        <Heartbeat>{children}</Heartbeat>
+        <GlobalLoading />
+      </SessionProvider>
+    </LoadingProvider>
   );
 }

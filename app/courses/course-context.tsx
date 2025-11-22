@@ -248,30 +248,40 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   }
 
   async function deleteCourse(id: string) {
-    const mutation = `mutation DeleteCourse($id: uuid!) {
-      delete_courses_by_pk(id: $id) {
-        id
-      }
-    }`;
+    try {
+      // First delete any items attached to this course to avoid FK issues
+      const mutation = `
+        mutation DeleteCourseAndItems($id: uuid!) {
+          delete_items(where: {course_id: {_eq: $id}}) {
+            affected_rows
+          }
+          delete_courses_by_pk(id: $id) {
+            id
+          }
+        }
+      `;
 
-    const res = await fetch("/api/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          id: id,
+      const res = await fetch("/api/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            id: id,
+          },
+        }),
+      });
 
-    const json = await res.json();
-    if (json.data?.delete_courses_by_pk) {
-      await fetchCourses();
-    } else {
-      console.error("Failed to delete course", json);
+      const json = await res.json();
+      if (json.data?.delete_courses_by_pk) {
+        await fetchCourses();
+      } else {
+        console.error("Failed to delete course", json);
+      }
+    } catch (e) {
+      console.error("Error deleting course:", e);
     }
   }
 

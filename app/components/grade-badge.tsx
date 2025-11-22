@@ -62,7 +62,11 @@ export default function GradeBadge({
         <div
           className={`badge ${bgClass} text-sm font-bold ${textClass} border-none`}
         >
-          {grade !== undefined ? grade.toFixed(1) + "%" : gpa!.toFixed(2)}
+          {grade !== undefined
+            ? grade.toFixed(1) + "%"
+            : gpa !== undefined
+              ? gpa.toFixed(2)
+              : "-"}
         </div>
       </div>
     );
@@ -78,11 +82,13 @@ export default function GradeBadge({
         <div>
           {gpa !== undefined ? (
             <span>{gpa.toFixed(2)}</span>
-          ) : (
+          ) : grade !== undefined ? (
             <>
               {grade.toFixed(1)}
               <span className={"text-md opacity-80 ml-1"}>%</span>
             </>
+          ) : (
+            <span className="opacity-50">-</span>
           )}
         </div>
       </div>

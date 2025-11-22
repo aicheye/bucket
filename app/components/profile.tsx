@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import AuthComponent from "./auth-button";
+import { useLoading } from "./loading-context";
 import Modal from "./modal";
 
 export default function Profile() {
@@ -17,6 +18,8 @@ export default function Profile() {
     isOpen: false,
     message: "",
   });
+
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -105,9 +108,15 @@ export default function Profile() {
 
   const deleteAccount = async () => {
     setShowDeleteConfirm(false);
+
     try {
+      showLoading();
+
       const mutation = `
-        mutation DeleteUserAndCourses($id: String!) {
+        mutation DeleteUserEverything($id: String!) {
+          delete_items(where: {owner_id: {_eq: $id}}) {
+            affected_rows
+          }
           delete_courses(where: {owner_id: {_eq: $id}}) {
             affected_rows
           }
@@ -148,6 +157,12 @@ export default function Profile() {
         isOpen: true,
         message: "An error occurred. Please try again.",
       });
+    } finally {
+      try {
+        hideLoading();
+      } catch {
+        // ignore
+      }
     }
   };
 

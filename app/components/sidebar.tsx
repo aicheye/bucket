@@ -10,6 +10,7 @@ import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendTelemetry } from "../../lib/telemetry";
 import { useCourses } from "../courses/course-context";
 import GradeBadge from "./grade-badge";
+import { useLoading } from "./loading-context";
 import Modal from "./modal";
 
 export default function Sidebar() {
@@ -27,6 +28,8 @@ export default function Sidebar() {
   const [expandedFolders, setExpandedFolders] = useState<
     Record<string, boolean>
   >({});
+
+  const { showLoading, hideLoading } = useLoading();
 
   function toggleFolder(folder: string) {
     setExpandedFolders((prev) => ({ ...prev, [folder]: !prev[folder] }));
@@ -48,6 +51,7 @@ export default function Sidebar() {
     const text = await file.text();
 
     try {
+      showLoading();
       const res = await fetch("/api/parse_outline", {
         method: "POST",
         headers: {
@@ -102,6 +106,12 @@ export default function Sidebar() {
         message:
           error instanceof Error ? error.message : "Failed to upload course",
       });
+    } finally {
+      try {
+        hideLoading();
+      } catch {
+        // ignore
+      }
     }
 
     // Clear the input so the same file can be selected again if needed
@@ -255,8 +265,8 @@ export default function Sidebar() {
                         href={`/courses/${course.id}/grades`}
                         onClick={closeDrawer}
                         className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
-                            ? "btn-primary"
-                            : "btn-base"
+                          ? "btn-primary"
+                          : "btn-base"
                           }`}
                       >
                         <div className="text-left w-full">
@@ -278,8 +288,8 @@ export default function Sidebar() {
               href={`/courses/${course.id}/grades`}
               onClick={closeDrawer}
               className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
-                  ? "btn-primary bg-primary"
-                  : ""
+                ? "btn-primary bg-primary"
+                : ""
                 }`}
             >
               <div className="text-left w-full text-primary-content">

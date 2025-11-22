@@ -105,7 +105,7 @@ export default function CoursesPage() {
   function getCourseTypes(courseId: string) {
     const course = courses.find((c) => c.id === courseId);
     const schemes = course?.data["marking-schemes"] || [];
-     
+
     let types = Array.from(
       new Set(schemes.flat().map((s: any) => s.Component)),
     );
@@ -156,7 +156,7 @@ export default function CoursesPage() {
   async function handleSaveItem() {
     if (!session?.user?.id) return;
 
-     
+
     const { course_id, ...dataToSave } = itemData;
 
     if (editingItem) {
@@ -904,7 +904,7 @@ export default function CoursesPage() {
                     <div className="flex flex-col h-full gap-2">
                       {todaysClasses.slice(0, 6).map((cls, i) => (
                         <Link
-                          href={`/courses/${cls.courseId}`}
+                          href={`/courses/${cls.courseId}/info`}
                           key={i}
                           className="flex-grow max-h-[6rem] items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
                         >
@@ -1029,13 +1029,13 @@ export default function CoursesPage() {
                     const min = details ? details.currentScore : 0;
                     const max = details
                       ? details.currentScore +
-                        (details.totalSchemeWeight - details.totalWeightGraded)
+                      (details.totalSchemeWeight - details.totalWeightGraded)
                       : 0;
 
                     return (
                       <Link
                         key={course.id}
-                        href={`/courses/${course.id}`}
+                        href={`/courses/${course.id}/info`}
                         className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
                       >
                         <div className="card-body p-4">

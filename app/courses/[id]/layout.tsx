@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import { sendTelemetry } from "../../../lib/telemetry";
+import { useLoading } from "../../components/loading-context";
 import Modal from "../../components/modal";
 import { useCourses } from "../course-context";
 
@@ -16,6 +17,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   const { courses, loading, deleteCourse, items, deleteItem } = useCourses();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { showLoading, hideLoading } = useLoading();
 
   const selectedCourse = courses.find((c) => c.id === id);
 
@@ -33,7 +35,11 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
 
   async function handleDelete() {
     if (!selectedCourse) return;
+    // Close the confirmation modal immediately to avoid it staying visible
+    // while the deletion is in progress.
+    setShowDeleteConfirm(false);
     setIsDeleting(true);
+    showLoading();
     try {
       // Delete all items first
       const itemsToDelete = items.filter(
@@ -49,6 +55,12 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Failed to delete course:", error);
       setIsDeleting(false);
+    } finally {
+      try {
+        hideLoading();
+      } catch {
+        // ignore
+      }
     }
   }
 

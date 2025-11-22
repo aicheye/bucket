@@ -20,6 +20,7 @@ import { calculateSchemeGradeDetails } from "../../../../lib/grade-utils";
 import { sendTelemetry } from "../../../../lib/telemetry";
 import GoalInput from "../../../components/goal-input";
 import GradeBadge from "../../../components/grade-badge";
+import { useLoading } from "../../../components/loading-context";
 import Modal from "../../../components/modal";
 import RangeBadge from "../../../components/range-badge";
 import ReqAvgBadge from "../../../components/req-avg-badge";
@@ -103,6 +104,8 @@ export default function CourseGradesPage() {
   >({});
   const [treatZeroAsEmpty, setTreatZeroAsEmpty] = useState(false);
 
+  const { showLoading, hideLoading } = useLoading();
+
   useEffect(() => {
     setShowGradingSettings(false);
     if (selectedCourse?.data?.drop_lowest) {
@@ -139,7 +142,9 @@ export default function CourseGradesPage() {
   }
 
   async function handleImportParse() {
+
     try {
+      showLoading();
       const res = await fetch("/api/parse_grades", {
         method: "POST",
         headers: {
@@ -180,6 +185,12 @@ export default function CourseGradesPage() {
       setImportStep(2);
     } catch (error) {
       console.error("Failed to parse grades:", error);
+    } finally {
+      try {
+        hideLoading();
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -187,6 +198,7 @@ export default function CourseGradesPage() {
     if (!session?.user?.id || !id) return;
 
     setIsImporting(false);
+    showLoading();
 
     const categoriesWithGrades = new Set<string>();
 
@@ -233,6 +245,15 @@ export default function CourseGradesPage() {
     setImportText("");
     setParsedItems([]);
     setImportStep(1);
+    try {
+      // nothing
+    } finally {
+      try {
+        hideLoading();
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async function handleSaveItem() {
@@ -344,10 +365,10 @@ export default function CourseGradesPage() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-        )
-          .toISOString()
-          .split("T")[0]
+        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+      )
+        .toISOString()
+        .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -1124,8 +1145,8 @@ export default function CourseGradesPage() {
                           <td>
                             {item.data.due_date
                               ? new Date(
-                                  item.data.due_date + "T00:00:00",
-                                ).toLocaleDateString()
+                                item.data.due_date + "T00:00:00",
+                              ).toLocaleDateString()
                               : "-"}
                           </td>
                         )}
