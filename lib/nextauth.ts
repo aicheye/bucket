@@ -33,11 +33,26 @@ export const authOptions: NextAuthOptions = {
           return;
         }
 
+        // If the existing user has anonymous_mode enabled, don't write PII back
+        let nameVal = user.name ?? null;
+        let imageVal = user.image ?? null;
+        try {
+          const checkQuery = `query GetUserById($id: String!) { users_by_pk(id: $id) { anonymous_mode } }`;
+          const checkRes = await executeHasuraQuery(checkQuery, { id: user.id }, user.id);
+          const existing = checkRes?.data?.users_by_pk;
+          if (existing && existing.anonymous_mode) {
+            nameVal = null;
+            imageVal = null;
+          }
+        } catch (err) {
+          // ignore and proceed
+        }
+
         const input = {
           id: user.id,
           email: user.email,
-          name: user.name ?? null,
-          image: user.image ?? null,
+          name: nameVal,
+          image: imageVal,
         };
 
         const mutation = `
@@ -84,6 +99,27 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       session.user.id = token.id;
+
+      try {
+        // Fetch additional user fields from Hasura to include in session
+        const query = `query GetUser($id: String!) { users_by_pk(id: $id) { id name email image telemetry_consent anonymous_mode } }`;
+        const res = await executeHasuraQuery(query, { id: token.id }, String(token.id));
+        const userRec = res?.data?.users_by_pk;
+        if (userRec) {
+          // If anonymous_mode is enabled, scrub values from the session view
+          const anon = !!userRec.anonymous_mode;
+          session.user.name = anon ? "" : (userRec.name ?? session.user.name);
+          session.user.email = anon ? "" : (userRec.email ?? session.user.email);
+          session.user.image = anon ? "" : (userRec.image ?? session.user.image);
+          // Attach flags so client can read them
+          (session.user as any).telemetry_consent =
+            userRec.telemetry_consent ?? null;
+          (session.user as any).anonymous_mode = anon;
+        }
+      } catch (err) {
+        console.error("Failed to fetch additional session fields:", err);
+      }
+
       return session;
     },
   },

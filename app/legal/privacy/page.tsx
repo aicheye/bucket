@@ -64,8 +64,15 @@ export default function PrivacyPage() {
             at any time by contacting us at{" "}
             <a href="mailto:sean@seanyang.me" className="link link-primary">
               sean@seanyang.me
-            </a>
-            .
+            </a>.
+          </p>
+          <p>
+            You can also enable anonymous mode in your account settings to
+            remove personally identifiable information from our database. Once
+            enabled, this mode ensures that your name, email, and profile
+            picture are set to null, and your account is marked as anonymous.
+            Additionally, telemetry consent will be disabled to enhance your
+            privacy.
           </p>
           <p>
             Upon account deletion, all your personal data and associated courses

@@ -341,12 +341,45 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     const course = courses.find((c) => c.id === courseId);
     if (!course) return;
 
+    const oldSchemes = course.data["marking-schemes"] || [];
     const newData = { ...course.data, "marking-schemes": newSchemes };
 
-    // Optimistic update
+    // Detect renamed components (by position in the first scheme if present)
+    const mapping: Record<string, string> = {};
+    try {
+      const oldFirst = Array.isArray(oldSchemes[0]) ? oldSchemes[0] : [];
+      const newFirst = Array.isArray(newSchemes[0]) ? newSchemes[0] : [];
+      const len = Math.min(oldFirst.length, newFirst.length);
+      for (let i = 0; i < len; i++) {
+        const oldName = oldFirst[i]?.Component;
+        const newName = newFirst[i]?.Component;
+        if (oldName && newName && oldName !== newName) {
+          mapping[oldName] = newName;
+        }
+      }
+    } catch (e) {
+      // ignore mapping errors
+    }
+
+    // Optimistic update for course data
     setCourses(
       courses.map((c) => (c.id === courseId ? { ...c, data: newData } : c)),
     );
+
+    // If any components were renamed, optimistically update local items and schedule API updates
+    const itemsToUpdate: { id: string; newType: string; data: any }[] = [];
+    if (Object.keys(mapping).length > 0) {
+      setItems((prev) =>
+        prev.map((it) => {
+          if (it.course_id === courseId && mapping[it.data.type]) {
+            const newType = mapping[it.data.type];
+            itemsToUpdate.push({ id: it.id, newType, data: { ...it.data, type: newType } });
+            return { ...it, data: { ...it.data, type: newType } };
+          }
+          return it;
+        }),
+      );
+    }
 
     const mutation = `mutation UpdateCourseData($id: uuid!, $data: jsonb) {
       update_courses_by_pk(pk_columns: {id: $id}, _set: {data: $data}) {
@@ -382,6 +415,22 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       });
     } catch (e) {
       // swallow telemetry error
+    }
+
+    // Perform API updates for renamed item types
+    if (itemsToUpdate.length > 0) {
+      try {
+        // Update each affected item (sequentially to keep server load reasonable)
+        for (const u of itemsToUpdate) {
+          try {
+            await updateItem(u.id, u.data);
+          } catch (e) {
+            console.error("Failed to update item type during marking-schemes rename", e);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
     }
   }
 

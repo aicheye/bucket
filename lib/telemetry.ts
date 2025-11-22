@@ -6,6 +6,17 @@ export async function sendTelemetry(
   properties?: Record<string, unknown>,
 ) {
   try {
+    // Check client session flags to avoid sending telemetry when user opted out
+    // Importing here keeps the module safe for server-side usage.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { getSession } = await import("next-auth/react");
+    const sess = await getSession();
+    const telemetryConsent = (sess as any)?.user?.telemetry_consent;
+    const anonymousMode = (sess as any)?.user?.anonymous_mode;
+
+    if (anonymousMode === true) return;
+    if (telemetryConsent === false) return;
+
     await fetch("/api/telemetry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

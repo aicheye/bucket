@@ -39,7 +39,7 @@ export default function Navbar({
           </Link>
         </div>
       </div>
-      <div className="flex flex-row gap-2 ml-2">
+      <div className="flex flex-row gap-2 mx-2">
         <ThemeToggle />
         {showProfile && <Profile />}
       </div>
