@@ -1167,7 +1167,7 @@ export default function CoursesPage() {
               </div>
             </div>
             <div
-              className="card bg-base-100 shadow-sm border border-base-content/10 col-span-1 md:col-span-3"
+              className="card bg-base-100 shadow-sm col-span-1 md:col-span-3"
               key="courses-card"
             >
               <div className="card-body p-4">
