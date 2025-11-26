@@ -1124,8 +1124,8 @@ export default function CoursesPage() {
                                 {item.courseCode}
                               </div>
                             </div>
-                            <div className="text-right text-xs">
-                              <div className="font-bold text-error">
+                            <div className="text-right text-xs min-w-fit">
+                              <div className="font-bold text-error min-w-fit">
                                 {new Date(
                                   item.data.due_date,
                                 ).toLocaleDateString("en-US", {

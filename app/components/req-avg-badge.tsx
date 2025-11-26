@@ -13,10 +13,10 @@ export default function ReqAvgBadge({
   return (
     <div className="relative">
       <div
-        className={`border-none peer flex gap-2 items-center ${requiredAverage > 100 ? "bg-error/50 text-error-content/70" : requiredAverage < 0 ? "bg-success/50 text-success-content/70" : requiredAverage < average ? "bg-info/50 text-info-content/70" : "bg-warning/50 text-warning-content/70"} badge badge-lg ${showTooltip && "cursor-help"}`}
+        className={`border-none peer flex gap-2 items-center ${requiredAverage > 100 ? "bg-error/50 text-error-content" : requiredAverage < 0 ? "bg-success/50 text-success-content" : requiredAverage < average ? "bg-info/50 text-info-content" : "bg-warning/50 text-warning-content"} badge badge-lg ${showTooltip && "cursor-help"}`}
       >
-        <FaIcon icon={faInfoCircle} className="text-xs opacity-70" />
-        <span className="uppercase tracking-wider text-xs font-bold ">
+        <FaIcon icon={faInfoCircle} className="text-xs opacity-80" />
+        <span className="uppercase tracking-wider text-xs font-bold opacity-80">
           Req. Avg
         </span>
         <span

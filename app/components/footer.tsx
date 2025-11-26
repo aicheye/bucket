@@ -12,26 +12,26 @@ export default function Footer() {
           href="https://github.com/aicheye/bucket"
           target="_blank"
           rel="noopener noreferrer"
-          className="btn btn-ghost btn-sm gap-2"
+          className="btn btn-ghost btn-sm gap-2 text-lg"
         >
           <FontAwesomeIcon icon={faGithub} className="w-4 h-4" />
-          GitHub
+          <span className="hidden lg:block text-sm">GitHub</span>
         </a>
         <a
           href="mailto:sean@seanyang.me"
-          className="btn btn-ghost btn-sm gap-2"
+          className="btn btn-ghost btn-sm gap-2 text-lg"
         >
           <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" />
-          Email
+          <span className="hidden lg:block text-sm">Email</span>
         </a>
         <a
           href="https://seanyang.me"
           target="_blank"
           rel="noopener noreferrer"
-          className="btn btn-ghost btn-sm gap-2"
+          className="btn btn-ghost btn-sm gap-2 text-lg"
         >
           <FontAwesomeIcon icon={faGlobe} className="w-4 h-4" />
-          Website
+          <span className="hidden lg:block text-sm">Website</span>
         </a>
       </div>
       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-sm opacity-70 text-center md:text-right">
