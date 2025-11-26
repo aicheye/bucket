@@ -80,6 +80,13 @@ export default function HelpPage() {
               tells you what average percentage you need to achieve on all
               remaining ungraded items to reach that goal.
             </li>
+            <li>
+              <strong>Contribution:</strong> This shows how much each individual
+              item deducts from your overall grade. For example, an item worth
+              10% of the course that you scored 80% on deducts -2% from your
+              overall grade. If you earned 100% on that item, the contribution
+              instead shows 10% (the full weight).
+            </li>
           </ul>
           <p className="text-sm opacity-70 mt-2">
             Note: If a category has no graded items yet, its weight is
