@@ -85,7 +85,7 @@ export default function GradeBadge({
           ) : grade !== undefined ? (
             <>
               {grade.toFixed(1)}
-              <span className={"text-md opacity-80 ml-1"}>%</span>
+              <span className={"text-[18px] opacity-80 ml-0.5"}>%</span>
             </>
           ) : (
             <span className="opacity-50">-</span>
