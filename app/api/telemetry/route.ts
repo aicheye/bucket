@@ -91,6 +91,8 @@ export async function POST(request: Request) {
       "set_goal",
       "set_term_goal",
       "view_term_dashboard",
+      "update_course_credits",
+      "select_marking_scheme",
     ];
 
     const normalizedEvent = allowed.includes(event) ? event : "other";

@@ -1,4 +1,4 @@
-import { faBars, faGauge } from "@fortawesome/free-solid-svg-icons";
+import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import Profile from "./profile";
@@ -28,16 +28,13 @@ export default function Navbar({
           </label>
         )}
       </div>
-      <div className="flex-1">
-        <div className="btn btn-primary">
-          <Link
-            href="/"
-            className="font-bold text-xl flex items-center gap-2 w-fit"
-          >
-            <FontAwesomeIcon icon={faGauge} className="w-5 h-5" />
-            Bucket
-          </Link>
-        </div>
+      <div className="flex-1 mx-2">
+        <Link
+          href="/"
+          className="font-bold text-xl flex items-center gap-2 w-fit"
+        >
+          Bucket
+        </Link>
       </div>
       <div className="flex flex-row gap-2 mx-2">
         <ThemeToggle />

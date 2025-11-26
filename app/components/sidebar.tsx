@@ -1,6 +1,6 @@
 "use client";
 
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faGauge, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendTelemetry } from "../../lib/telemetry";
-import { useCourses } from "../courses/course-context";
+import { useCourses } from "../course-context";
 import GradeBadge from "./grade-badge";
 import { useLoading } from "./loading-context";
 import Modal from "./modal";
@@ -170,7 +170,7 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-2 border-r border-base-content/10">
+    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
       <Modal
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -184,145 +184,157 @@ export default function Sidebar() {
       >
         <p>{alertState.message}</p>
       </Modal>
-      <input
-        onChange={fileChange}
-        type="file"
-        id="outlineInput"
-        accept=".html"
-        style={{ display: "none" }}
-      />
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="font-bold text-lg">Courses</h2>
-        <button
-          onClick={buttonClick}
-          className="btn btn-sm btn-circle btn-primary"
-          title="Add Course"
-        >
-          <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
-        </button>
-      </div>
-      {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-16 w-full shrink-0"></div>
-          ))}
+      <button
+        onClick={() => router.push("/dashboard")}
+        className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-ghost bg-base-300/70 hover:bg-primary hover:text-primary-content"} p-2 justify-start w-full text-lg`}
+      >
+        <FontAwesomeIcon icon={faGauge} className="w-5 h-5" />
+        Dashboard
+      </button>
+
+      <div className="border border-base-content/10 w-full"></div>
+
+      <div className="flex flex-col gap-4 flex-1">
+        <div className="flex justify-between items-center">
+          <input
+            onChange={fileChange}
+            type="file"
+            id="outlineInput"
+            accept=".html"
+            style={{ display: "none" }}
+          />
+          <h2 className="font-bold text-lg">Courses</h2>
+          <button
+            onClick={buttonClick}
+            className="btn btn-sm btn-circle btn-primary"
+            title="Add Course"
+          >
+            <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
+          </button>
         </div>
-      ) : (
-        <>
-          {sortedFolders.map((folder) => {
-            const folderCourses = groupedCourses[folder];
-            let totalCurrent = 0;
-            let totalCurrentCredits = 0;
-            let totalMin = 0;
-            let totalMax = 0;
-            let countMinMax = 0;
+        {loading ? (
+          <div className="flex flex-col gap-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-16 w-full shrink-0"></div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {sortedFolders.map((folder) => {
+              const folderCourses = groupedCourses[folder];
+              let totalCurrent = 0;
+              let totalCurrentCredits = 0;
+              let totalMin = 0;
+              let totalMax = 0;
+              let countMinMax = 0;
 
-            folderCourses.forEach((c) => {
-              const details = getCourseGradeDetails(c, items);
-              if (details && details.currentGrade !== null) {
-                const credits = c.credits ?? 0.5;
-                totalCurrent += details.currentGrade * credits;
-                totalCurrentCredits += credits;
+              folderCourses.forEach((c) => {
+                const details = getCourseGradeDetails(c, items);
+                if (details && details.currentGrade !== null) {
+                  const credits = c.credits ?? 0.5;
+                  totalCurrent += details.currentGrade * credits;
+                  totalCurrentCredits += credits;
 
-                const min = details.currentScore;
-                const max =
-                  details.currentScore +
-                  (details.totalSchemeWeight - details.totalWeightGraded);
-                totalMin += min;
-                totalMax += max;
-                countMinMax++;
-              }
-            });
+                  const min = details.currentScore;
+                  const max =
+                    details.currentScore +
+                    (details.totalSchemeWeight - details.totalWeightGraded);
+                  totalMin += min;
+                  totalMax += max;
+                  countMinMax++;
+                }
+              });
 
-            const avgCurrent =
-              totalCurrentCredits > 0
-                ? totalCurrent / totalCurrentCredits
-                : null;
-            const avgMin = countMinMax > 0 ? totalMin / countMinMax : null;
-            const avgMax = countMinMax > 0 ? totalMax / countMinMax : null;
+              const avgCurrent =
+                totalCurrentCredits > 0
+                  ? totalCurrent / totalCurrentCredits
+                  : null;
+              const avgMin = countMinMax > 0 ? totalMin / countMinMax : null;
+              const avgMax = countMinMax > 0 ? totalMax / countMinMax : null;
 
-            return (
-              <div
-                key={folder}
-                className="collapse collapse-arrow border border-base-content/10 rounded-box"
+              return (
+                <div
+                  key={folder}
+                  className="collapse collapse-arrow border border-base-content/10 rounded-box"
+                >
+                  <input
+                    type="checkbox"
+                    checked={expandedFolders[folder] ?? true}
+                    onChange={() => toggleFolder(folder)}
+                    className="min-h-0 p-0"
+                  />
+                  <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex items-center align-center gap-2">
+                    <div className="flex items-center gap-2 text-md">
+                      {folder}
+                    </div>
+                    {avgCurrent !== null && (
+                      <GradeBadge grade={avgCurrent} size="sm" />
+                    )}
+                  </div>
+                  <div className="collapse-content p-0 bg-base-300">
+                    <div className="card bg-base-100 flex flex-col gap-2 p-2 py-3">
+                      {groupedCourses[folder].map((course) => (
+                        <Link
+                          key={course.id}
+                          href={`/courses/${course.id}/grades`}
+                          onClick={closeDrawer}
+                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
+                            ? "btn-primary"
+                            : "btn-base"
+                            }`}
+                        >
+                          <div className="text-left w-full flex justify-between items-center gap-2">
+                            <div className="min-w-fit font-bold text-[14px]">
+                              {course.code}
+                            </div>
+                            <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
+                              <div>
+                                ({course.credits})
+                              </div>
+                              <div className="font-semibold">
+                                {getCourseGradeDetails(course, items).currentGrade.toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-base-300 py-2 px-4 text-xs text-base-content/70 items-center text-right w-full font-mono">
+                    Total credits: <span className="font-bold">{folderCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {uncategorizedCourses.map((course) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.id}/grades`}
+                onClick={closeDrawer}
+                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
+                  ? "btn-primary bg-primary"
+                  : ""
+                  }`}
               >
-                <input
-                  type="checkbox"
-                  checked={expandedFolders[folder] ?? true}
-                  onChange={() => toggleFolder(folder)}
-                  className="min-h-0 p-0"
-                />
-                <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex items-center align-center gap-2">
-                  <div className="flex items-center gap-2 text-md">
-                    {folder}
-                  </div>
-                  {avgCurrent !== null && (
-                    <GradeBadge grade={avgCurrent} size="sm" />
-                  )}
+                <div className="text-left w-full text-primary-content">
+                  <div className="font-bold">{course.code}</div>
+                  <div className="text-xs opacity-70">{course.term}</div>
                 </div>
-                <div className="collapse-content bg-base-100 p-0">
-                  <div className="flex flex-col gap-2 p-2">
-                    {groupedCourses[folder].map((course) => (
-                      <Link
-                        key={course.id}
-                        href={`/courses/${course.id}/grades`}
-                        onClick={closeDrawer}
-                        className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
-                          ? "btn-primary"
-                          : "btn-base"
-                          }`}
-                      >
-                        <div className="text-left w-full flex justify-between items-center gap-2">
-                          <div className="min-w-fit font-bold text-[14px]">
-                            {course.code}
-                          </div>
-                          <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
-                            <div>
-                              ({course.credits})
-                            </div>
-                            <div className="font-semibold">
-                              {getCourseGradeDetails(course, items).currentGrade.toFixed(2)}%
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-base-200 py-2 px-4 text-xs text-base-content/70 items-center text-right w-full font-mono">
-                  Total credits: <span className="font-bold">{folderCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
-                </div>
-              </div>
-            );
-          })}
-
-          {uncategorizedCourses.map((course) => (
-            <Link
-              key={course.id}
-              href={`/courses/${course.id}/grades`}
-              onClick={closeDrawer}
-              className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
-                ? "btn-primary bg-primary"
-                : ""
-                }`}
-            >
-              <div className="text-left w-full text-primary-content">
-                <div className="font-bold">{course.code}</div>
-                <div className="text-xs opacity-70">{course.term}</div>
-              </div>
-            </Link>
-          ))}
-        </>
-      )}
-      {!loading && courses.length === 0 && (
-        <div className="text-center text-sm opacity-50 mt-4">
-          No courses yet. Click + to add one. Not sure how? See the{" "}
-          <a target="_blank" href="/help" className="underline">
-            help page
-          </a>
-          .
-        </div>
-      )}
+              </Link>
+            ))}
+          </>
+        )}
+        {!loading && courses.length === 0 && (
+          <div className="text-center text-sm opacity-50 mt-4">
+            No courses yet. Click + to add one. Not sure how? See the{" "}
+            <a target="_blank" href="/help" className="underline">
+              help page
+            </a>
+            .
+          </div>
+        )}
+      </div>
     </div>
   );
 }

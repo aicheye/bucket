@@ -9,7 +9,7 @@ import Footer from "../components/footer";
 import Modal from "../components/modal";
 import Navbar from "../components/navbar";
 import Sidebar from "../components/sidebar";
-import { CourseProvider } from "./course-context";
+import { CourseProvider } from "../course-context";
 
 function InnerLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();

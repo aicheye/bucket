@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { formatDates, formatTime } from "../../../../lib/format-utils";
 import { sendTelemetry } from "../../../../lib/telemetry";
 import Modal from "../../../components/modal";
-import { getCategoryColor, useCourses } from "../../course-context";
+import { getCategoryColor, useCourses } from "../../../course-context";
 
 function processSchedule(schedule: any[]) {
   if (!schedule) return [];
@@ -263,7 +263,7 @@ export default function CourseDetailInfoPage() {
                 onClick={handleSectionEditToggle}
               >
                 {selectedCourse.sections &&
-                Object.keys(selectedCourse.sections).length > 0 ? (
+                  Object.keys(selectedCourse.sections).length > 0 ? (
                   isEditingSections ? (
                     <>
                       Done{" "}
@@ -465,7 +465,7 @@ export default function CourseDetailInfoPage() {
                                   />
                                   <span className="w-4">
                                     {!isNaN(Number(item.Weight)) &&
-                                    item.Weight !== ""
+                                      item.Weight !== ""
                                       ? "%"
                                       : ""}
                                   </span>

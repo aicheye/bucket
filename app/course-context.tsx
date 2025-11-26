@@ -10,7 +10,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { sendTelemetry } from "../../lib/telemetry";
+import { sendTelemetry } from "../lib/telemetry";
 
 export interface Course {
   id: string;

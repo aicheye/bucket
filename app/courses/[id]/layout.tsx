@@ -8,7 +8,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { sendTelemetry } from "../../../lib/telemetry";
 import { useLoading } from "../../components/loading-context";
 import Modal from "../../components/modal";
-import { useCourses } from "../course-context";
+import { useCourses } from "../../course-context";
 
 export default function CourseLayout({ children }: { children: ReactNode }) {
   const { id } = useParams();
@@ -160,7 +160,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
                 <input
                   type="number"
                   step="0.25"
-                  className="input input-sm text-lg w-20 text-center bg-base-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
+                  className="input input-sm border border-base-content/30 text-lg w-20 text-center bg-base-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
                   value={credits}
                   onChange={(e) => setCredits(Number(e.target.value))}
                   onBlur={handleCreditsBlur}

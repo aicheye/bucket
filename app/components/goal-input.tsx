@@ -17,7 +17,7 @@ export default function GoalInput({
       <div className="relative flex items-center flex-1 sm:flex-none justify-end">
         <input
           type="number"
-          className="input input-md text-xl w-24 text-right pr-6 bg-base-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
+          className="input input-md text-xl w-24 text-right pr-6 bg-base-100 outline-none border border-base-content/30 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
           placeholder="-"
           value={targetGrade}
           onChange={(e) => setTargetGrade(e.target.value)}

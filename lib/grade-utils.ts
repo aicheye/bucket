@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Course, Item } from "../app/courses/course-context";
+import { Course, Item } from "../app/course-context";
 
 export function calculateSchemeGradeDetails(
   scheme: any[],
@@ -132,9 +132,31 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
   const schemes = course.data["marking-schemes"] || [];
   const placeholderGrades = course.data.placeholder_grades || {};
   const dropLowest = course.data.drop_lowest || {};
+  // Accept either number or numeric-string for backward compatibility
+  let preferredIndex: number | null = null;
+  const rawPref = course.data["preferred-marking-scheme"];
+  if (rawPref !== undefined && rawPref !== null) {
+    const parsed = typeof rawPref === "number" ? rawPref : parseInt(rawPref, 10);
+    preferredIndex = Number.isInteger(parsed) ? parsed : null;
+  }
 
   if (!schemes || schemes.length === 0) return null;
+  // If a preferred scheme index is set and valid, use it
+  if (
+    preferredIndex !== null &&
+    Number.isInteger(preferredIndex) &&
+    preferredIndex >= 0 &&
+    preferredIndex < schemes.length
+  ) {
+    return calculateSchemeGradeDetails(
+      schemes[preferredIndex],
+      courseItems,
+      placeholderGrades,
+      dropLowest,
+    );
+  }
 
+  // Otherwise, fall back to the best scheme (highest current grade)
   let bestDetails = null;
   let bestGrade = -1;
 

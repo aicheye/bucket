@@ -6,7 +6,7 @@ import { executeHasuraAdminQuery } from "../../lib/hasura";
 import authOptions from "../../lib/nextauth";
 import Footer from "../components/footer";
 import Navbar from "../components/navbar";
-import { DauChart, FeatureDailyMultiLine } from "./TelemetryCharts";
+import { DauChart, FeatureDailyMultiLine } from "./telemetry-charts";
 
 export default async function TelemetryPage() {
   const session = await getServerSession(authOptions);

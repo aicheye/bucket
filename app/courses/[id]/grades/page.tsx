@@ -24,7 +24,7 @@ import { useLoading } from "../../../components/loading-context";
 import Modal from "../../../components/modal";
 import RangeBadge from "../../../components/range-badge";
 import ReqAvgBadge from "../../../components/req-avg-badge";
-import { getCategoryColor, Item, useCourses } from "../../course-context";
+import { getCategoryColor, Item, useCourses } from "../../../course-context";
 
 interface ParsedItem {
   name: string;
@@ -392,13 +392,18 @@ export default function CourseGradesPage() {
   }
 
   const [targetGrade, setTargetGrade] = useState<string>("");
+  const [activeSchemeIndex, setActiveSchemeIndex] = useState<number | null>(
+    null,
+  );
 
-  // Calculate best scheme and dropped items
+  // Find best scheme index (used as default active) and its dropped items
   let bestSchemeDroppedItems: string[] = [];
+  let bestScheme: any[] | null = null;
+  let bestOriginalIndex: number | null = null;
   if (selectedCourse?.data["marking-schemes"]?.length > 0) {
     let bestGrade = -1;
 
-    selectedCourse.data["marking-schemes"].forEach((scheme: any[]) => {
+    selectedCourse.data["marking-schemes"].forEach((scheme: any[], idx: number) => {
       const details = calculateSchemeGradeDetails(
         scheme,
         courseItems,
@@ -408,8 +413,84 @@ export default function CourseGradesPage() {
       if (details.currentGrade !== null && details.currentGrade > bestGrade) {
         bestGrade = details.currentGrade;
         bestSchemeDroppedItems = details.droppedItemIds || [];
+        bestScheme = scheme;
+        bestOriginalIndex = idx;
       }
     });
+  }
+
+  // If no active scheme chosen by user, default to best scheme
+  useEffect(() => {
+    // Prefer persisted preferred-marking-scheme if present
+    if (activeSchemeIndex === null) {
+      const rawPref = selectedCourse?.data?.["preferred-marking-scheme"];
+      if (rawPref !== undefined && rawPref !== null) {
+        const parsedPref = typeof rawPref === "number" ? rawPref : parseInt(rawPref, 10);
+        if (
+          Number.isInteger(parsedPref) &&
+          selectedCourse?.data["marking-schemes"] &&
+          parsedPref >= 0 &&
+          parsedPref < selectedCourse.data["marking-schemes"].length
+        ) {
+          setActiveSchemeIndex(parsedPref);
+          return;
+        }
+      }
+
+      if (bestOriginalIndex !== null) {
+        setActiveSchemeIndex(bestOriginalIndex);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bestOriginalIndex, selectedCourse?.id, selectedCourse?.data?.["preferred-marking-scheme"]]);
+
+  const categoryKeptCountMap = new Map<string, number>();
+  const componentMap = new Map<string, any>();
+
+  // Use the active scheme (selected by user) if available, otherwise fallback to bestScheme
+  const usedScheme =
+    activeSchemeIndex !== null && selectedCourse?.data["marking-schemes"]
+      ? selectedCourse.data["marking-schemes"][activeSchemeIndex]
+      : bestScheme;
+
+  const usedDetails =
+    usedScheme && selectedCourse
+      ? calculateSchemeGradeDetails(
+        usedScheme,
+        courseItems,
+        placeholderGrades,
+        dropLowest,
+      )
+      : null;
+
+  const usedDroppedItemIds = usedDetails?.droppedItemIds || [];
+
+  if (usedScheme) {
+    usedScheme.forEach((c) => componentMap.set(c.Component, c));
+
+    for (const component of usedScheme) {
+      const category = component.Component;
+      const compItems = courseItems.filter(
+        (i) => i.data.type === category && i.data.grade && i.data.max_grade,
+      );
+
+      if (compItems.length === 0) continue;
+
+      const scores = compItems
+        .map((i) => {
+          const g = parseFloat(i.data.grade || "0");
+          const m = parseFloat(i.data.max_grade || "0");
+          return { id: i.id, max: m, ratio: m > 0 ? g / m : 0 };
+        })
+        .sort((a, b) => a.ratio - b.ratio);
+
+      const dropCount = dropLowest[category] || 0;
+      const keptScores = scores.slice(dropCount);
+
+      const keptCount = keptScores.length;
+
+      categoryKeptCountMap.set(category, keptCount);
+    }
   }
 
   async function handleSaveTargetGrade() {
@@ -932,6 +1013,10 @@ export default function CourseGradesPage() {
                     .map((item: any, idx: number) => {
                       const { scheme, originalIndex, details } = item;
                       const isHighest = idx === 0;
+                      const isActive =
+                        activeSchemeIndex !== null
+                          ? originalIndex === activeSchemeIndex
+                          : originalIndex === bestOriginalIndex;
 
                       const min = details.currentScore;
                       const max =
@@ -945,7 +1030,25 @@ export default function CourseGradesPage() {
                           className="relative group w-full"
                         >
                           <div
-                            className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full cursor-default ${!isHighest ? "opacity-60 grayscale" : ""}`}
+                            onClick={async () => {
+                              setActiveSchemeIndex(originalIndex);
+                              try {
+                                if (selectedCourse) {
+                                  await updateCourseData(selectedCourse.id, {
+                                    "preferred-marking-scheme": originalIndex,
+                                  });
+                                  sendTelemetry("select_marking_scheme", {
+                                    course_id: selectedCourse.id,
+                                    scheme_index: originalIndex,
+                                  });
+                                }
+                              } catch (e) {
+                                // ignore persistence/telemetry errors
+                              }
+                            }}
+                            role="button"
+                            title={`Activate scheme ${originalIndex + 1}`}
+                            className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full cursor-pointer ${!isActive ? "opacity-60 grayscale" : ""}`}
                           >
                             <div className="flex flex-col justify-between h-full">
                               <div className="flex items-center gap-2 mb-1">
@@ -959,7 +1062,7 @@ export default function CourseGradesPage() {
                               </div>
 
                               <div className="flex items-baseline gap-1">
-                                {!isHighest ? (
+                                {!isActive ? (
                                   <GradeBadge
                                     grade={details.currentGrade!}
                                     disabled={true}
@@ -982,7 +1085,7 @@ export default function CourseGradesPage() {
                                   <ReqAvgBadge
                                     requiredAverage={required}
                                     average={details.currentGrade}
-                                    showTooltip={isHighest}
+                                    showTooltip={isActive}
                                   />
                                 )}
                                 {min !== null && max !== null && (
@@ -1030,6 +1133,9 @@ export default function CourseGradesPage() {
                   <th className="whitespace-nowrap min-w-fit text-right">
                     Grade
                   </th>
+                  <th className="whitespace-nowrap min-w-fit text-right">
+                    Contribution
+                  </th>
                   <th className="whitespace-nowrap min-w-fit w-full">Name</th>
                   <th className="whitespace-nowrap w-fit">Type</th>
                   {hasDueDates && (
@@ -1042,7 +1148,7 @@ export default function CourseGradesPage() {
                 {displayItems.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={hasDueDates ? 5 : 4}
+                      colSpan={hasDueDates ? 6 : 5}
                       className="text-center text-base-content/50 py-8"
                     >
                       No grades found. Add one to get started!
@@ -1050,7 +1156,7 @@ export default function CourseGradesPage() {
                   </tr>
                 ) : (
                   displayItems.map((item) => {
-                    const isDropped = bestSchemeDroppedItems.includes(item.id);
+                    const isDropped = usedDroppedItemIds.includes(item.id);
                     const isNoGrade =
                       !item.data.grade && !item.data.isPlaceholder;
                     const isGreyedOut = isDropped || isNoGrade;
@@ -1094,6 +1200,7 @@ export default function CourseGradesPage() {
                                 ) : (
                                   ""
                                 )}
+
                               </span>
                             </div>
                           ) : (
@@ -1109,6 +1216,64 @@ export default function CourseGradesPage() {
                               )}
                             </span>
                           )}
+                        </td>
+                        <td>
+                          {/* Contribution: earnedContribution/totalContribution */}
+                          {(() => {
+                            const comp = componentMap.get(item.data.type);
+                            const keptCount = categoryKeptCountMap.get(item.data.type);
+                            const gradeRaw = parseFloat(item.data.grade || "0");
+                            const maxRaw = parseFloat(item.data.max_grade || "0");
+
+                            if (!comp || !keptCount || keptCount <= 0 || isNaN(maxRaw) || maxRaw === 0) {
+                              return (
+                                <span className="text-base-content/30 justify-end flex w-full">
+                                  -
+                                </span>
+                              );
+                            }
+
+                            const compWeight = parseFloat(comp.Weight) || 0;
+
+                            // Each kept item in the category has equal share of the component weight
+                            const totalContribution = compWeight / keptCount;
+
+                            // Earned contribution = (grade / itemMax) * totalContribution
+                            const earnedContribution =
+                              item.data.grade === "" || isNaN(gradeRaw) || isNaN(maxRaw) || maxRaw === 0
+                                ? NaN
+                                : (gradeRaw / maxRaw) * totalContribution;
+
+                            if (isNaN(earnedContribution)) {
+                              return (
+                                <div className="flex w-full items-end justify-end gap-1">
+                                  <span className="text-base-content/50">-</span>
+                                  <span className="text-base-content/50">{'/ ' + totalContribution.toFixed(2)}%</span>
+                                </div>
+                              );
+                            }
+
+                            const percentLost = totalContribution - earnedContribution;
+
+                            return (
+                              <div className="flex flex-col w-full items-end min-w-fit">
+                                {percentLost > 0 && !isDropped ? (
+                                  <span
+                                    className={`font-mono font-bold ${isDropped ? " line-through" : ""}`}
+                                  >
+                                    -{percentLost.toFixed(2)}%
+                                  </span>
+                                ) : (
+                                  <span className={`font-mono opacity-50 ${isDropped ? " line-through" : ""}`}>
+                                    {earnedContribution.toFixed(2)}%
+                                  </span>)
+                                }
+                                <span className={`font-mono text-xs opacity-50 ${isDropped ? "line-through decoration-base-content/50" : ""}`}>
+                                  / {totalContribution.toFixed(2)}%
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="font-medium whitespace-nowrap">
                           <div className="flex items-center gap-2">
@@ -1141,15 +1306,17 @@ export default function CourseGradesPage() {
                             {item.data.type}
                           </div>
                         </td>
-                        {hasDueDates && (
-                          <td>
-                            {item.data.due_date
-                              ? new Date(
-                                item.data.due_date + "T00:00:00",
-                              ).toLocaleDateString()
-                              : "-"}
-                          </td>
-                        )}
+                        {
+                          hasDueDates && (
+                            <td>
+                              {item.data.due_date
+                                ? new Date(
+                                  item.data.due_date + "T00:00:00",
+                                ).toLocaleDateString()
+                                : "-"}
+                            </td>
+                          )
+                        }
                         <td>
                           <div className="flex gap-2">
                             <button
@@ -1189,7 +1356,7 @@ export default function CourseGradesPage() {
             </table>
           </div>
         </div>
-      </div>
+      </div >
     </>
   );
 }
