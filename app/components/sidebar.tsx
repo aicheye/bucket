@@ -212,7 +212,7 @@ export default function Sidebar() {
           {sortedFolders.map((folder) => {
             const folderCourses = groupedCourses[folder];
             let totalCurrent = 0;
-            let countCurrent = 0;
+            let totalCurrentCredits = 0;
             let totalMin = 0;
             let totalMax = 0;
             let countMinMax = 0;
@@ -220,8 +220,9 @@ export default function Sidebar() {
             folderCourses.forEach((c) => {
               const details = getCourseGradeDetails(c, items);
               if (details && details.currentGrade !== null) {
-                totalCurrent += details.currentGrade;
-                countCurrent++;
+                const credits = c.credits ?? 0.5;
+                totalCurrent += details.currentGrade * credits;
+                totalCurrentCredits += credits;
 
                 const min = details.currentScore;
                 const max =
@@ -234,7 +235,9 @@ export default function Sidebar() {
             });
 
             const avgCurrent =
-              countCurrent > 0 ? totalCurrent / countCurrent : null;
+              totalCurrentCredits > 0
+                ? totalCurrent / totalCurrentCredits
+                : null;
             const avgMin = countMinMax > 0 ? totalMin / countMinMax : null;
             const avgMax = countMinMax > 0 ? totalMax / countMinMax : null;
 
