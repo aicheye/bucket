@@ -375,8 +375,10 @@ export default function CoursesPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <span className="loading loading-spinner loading-lg"></span>
+      <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+        <div className="skeleton h-8 w-1/3 mb-4"></div>
+        <div className="skeleton h-64 w-full rounded-box"></div>
+        <div className="skeleton h-64 w-full rounded-box"></div>
       </div>
     );
   }
@@ -442,12 +444,13 @@ export default function CoursesPage() {
 
     // 1. Term Average
     let totalCurrent = 0;
-    let countCurrent = 0;
+    let totalCurrentCredits = 0;
     let totalGPA = 0;
-    let countGPA = 0;
+    let totalGPACredits = 0;
     let totalMin = 0;
+    let totalMinCredits = 0;
     let totalMax = 0;
-    let countMinMax = 0;
+    let totalMaxCredits = 0;
 
     // For required average calculation
     let sumCurrentScore = 0;
@@ -455,25 +458,29 @@ export default function CoursesPage() {
 
     let sumTotalWeightGraded = 0;
     let sumTotalSchemeWeight = 0;
+    let numCoursesWithDetails = 0;
 
     currentCourses.forEach((c) => {
       const details = getCourseGradeDetails(c, items);
       if (details) {
+        numCoursesWithDetails++;
+        const credits = c.credits ?? 0.5;
         if (details.currentGrade !== null) {
-          totalCurrent += details.currentGrade;
-          countCurrent++;
+          totalCurrent += details.currentGrade * credits;
+          totalCurrentCredits += credits;
 
-          totalGPA += gradeToGPA(details.currentGrade);
-          countGPA++;
+          totalGPA += gradeToGPA(details.currentGrade) * credits;
+          totalGPACredits += credits;
         }
 
         const min = details.currentScore;
         const max =
           details.currentScore +
           (details.totalSchemeWeight - details.totalWeightGraded);
-        totalMin += min;
-        totalMax += max;
-        countMinMax++;
+        totalMin += min * credits;
+        totalMax += max * credits;
+        totalMinCredits += credits;
+        totalMaxCredits += credits;
 
         sumCurrentScore += details.currentScore;
         sumRemainingWeight +=
@@ -483,29 +490,31 @@ export default function CoursesPage() {
       }
     });
 
-    const termAverage = countMinMax > 0 ? totalCurrent / countMinMax : null;
-    const termGPA = countGPA > 0 ? totalGPA / countGPA : null;
-    const termMin = countMinMax > 0 ? totalMin / countMinMax : null;
-    const termMax = countMinMax > 0 ? totalMax / countMinMax : null;
+    const termAverage =
+      totalCurrentCredits > 0 ? totalCurrent / totalCurrentCredits : null;
+    const termGPA = totalGPACredits > 0 ? totalGPA / totalGPACredits : null;
+    const termMin = totalMinCredits > 0 ? totalMin / totalMinCredits : null;
+    const termMax = totalMaxCredits > 0 ? totalMax / totalMaxCredits : null;
 
     // Calculate Cumulative Average (CAV) and Cumulative GPA (CGPA)
     let totalCAV = 0;
-    let countCAV = 0;
+    let totalCAVCredits = 0;
     let totalCGPA = 0;
-    let countCGPA = 0;
+    let totalCGPACredits = 0;
 
     courses.forEach((c) => {
       const details = getCourseGradeDetails(c, items);
       if (details && details.currentGrade !== null) {
-        totalCAV += details.currentGrade;
-        countCAV++;
-        totalCGPA += gradeToGPA(details.currentGrade);
-        countCGPA++;
+        const credits = c.credits ?? 0.5;
+        totalCAV += details.currentGrade * credits;
+        totalCAVCredits += credits;
+        totalCGPA += gradeToGPA(details.currentGrade) * credits;
+        totalCGPACredits += credits;
       }
     });
 
-    const cav = countCAV > 0 ? totalCAV / countCAV : null;
-    const cgpa = countCGPA > 0 ? totalCGPA / countCGPA : null;
+    const cav = totalCAVCredits > 0 ? totalCAV / totalCAVCredits : null;
+    const cgpa = totalCGPACredits > 0 ? totalCGPA / totalCGPACredits : null;
 
     // Time progress calculation
     let timeProgress = 0;
@@ -555,8 +564,8 @@ export default function CoursesPage() {
         // Sum(CurrentScore_i) + RequiredAvg * Sum(RemainingWeight_i) = Target * N
         // RequiredAvg = (Target * N - Sum(CurrentScore_i)) / Sum(RemainingWeight_i)
 
-        // We use countMinMax as N because that's the number of courses we have details for
-        const numCourses = countMinMax;
+        // We use numCoursesWithDetails as N because that's the number of courses we have details for
+        const numCourses = numCoursesWithDetails;
         if (numCourses > 0) {
           const numerator = target * numCourses - sumCurrentScore;
           requiredAverage = (numerator / sumRemainingWeight) * 100;
@@ -1171,8 +1180,9 @@ export default function CoursesPage() {
               key="courses-card"
             >
               <div className="card-body p-4">
-                <h3 className="card-title text-sm uppercase opacity-70 mb-2">
-                  Courses
+                <h3 className="card-title text-sm uppercase opacity-70 mb-2 flex items-center gap-2">
+                  <span>Courses</span>
+                  <span className="badge badge-sm badge-accent px-2 py-2 items-center"><span className="opacity-80">Total credits:</span> {currentCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Current Courses */}
@@ -1193,7 +1203,12 @@ export default function CoursesPage() {
                       >
                         <div className="card-body p-4">
                           <h2 className="card-title justify-between text-base">
-                            {course.code}
+                            <div className="flex gap-2 items-center">
+                              {course.code}
+                              <div className="text-sm font-normal opacity-70">
+                                ({course.credits})
+                              </div>
+                            </div>
                             <div className="flex items-center gap-2">
                               <button
                                 className="btn btn-xs btn-circle btn-secondary hover:opacity-100"

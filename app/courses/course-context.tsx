@@ -16,6 +16,7 @@ export interface Course {
   id: string;
   code: string;
   term: string;
+  credits: number;
   sections: Record<string, string>;
   data: {
     description: string;
@@ -53,6 +54,14 @@ interface CourseContextType {
     owner_id: string,
   ) => Promise<string | undefined>;
   deleteCourse: (id: string) => Promise<void>;
+  updateCourse: (
+    id: string,
+    data: Partial<{
+      code: string;
+      term: string;
+      credits: number;
+    }>,
+  ) => Promise<void>;
   updateSections: (
     courseId: string,
     component: string,
@@ -128,6 +137,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           term
           data
           sections
+          credits
         }
       }`;
 
@@ -282,6 +292,51 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.error("Error deleting course:", e);
+    }
+  }
+
+  async function updateCourse(
+    id: string,
+    data: Partial<{
+      code: string;
+      term: string;
+      credits: number;
+    }>,
+  ) {
+    // Optimistic update
+    setCourses(
+      courses.map((c) => (c.id === id ? { ...c, ...data } : c)),
+    );
+
+    const mutation = `mutation UpdateCourse($id: uuid!, $_set: courses_set_input!) {
+      update_courses_by_pk(pk_columns: {id: $id}, _set: $_set) {
+        id
+      }
+    }`;
+
+    try {
+      const res = await fetch("/api/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            id: id,
+            _set: data,
+          },
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.data?.update_courses_by_pk) {
+        console.error("Failed to update course", json);
+        fetchCourses();
+      }
+    } catch (e) {
+      console.error("Error updating course:", e);
+      fetchCourses();
     }
   }
 
@@ -614,6 +669,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         fetchCourses,
         addCourse,
         deleteCourse,
+        updateCourse,
         updateSections,
         updateMarkingSchemes,
         updateCourseData,

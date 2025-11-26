@@ -14,12 +14,20 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   const { id } = useParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { courses, loading, deleteCourse, items, deleteItem } = useCourses();
+  const { courses, loading, deleteCourse, items, deleteItem, updateCourse } =
+    useCourses();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [credits, setCredits] = useState(0.5);
   const { showLoading, hideLoading } = useLoading();
 
   const selectedCourse = courses.find((c) => c.id === id);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setCredits(selectedCourse.credits ?? 0.5);
+    }
+  }, [selectedCourse]);
 
   const isGradesView = pathname?.endsWith("/grades");
   const isInfoView = pathname?.endsWith("/info");
@@ -32,6 +40,17 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
       document.title = "Bucket";
     }
   }, [selectedCourse, isGradesView, isInfoView]);
+
+  async function handleCreditsBlur() {
+    if (!selectedCourse || isNaN(credits)) return;
+    if (credits === selectedCourse.credits) return;
+
+    await updateCourse(selectedCourse.id, { credits });
+    await sendTelemetry("update_course_credits", {
+      course_id: selectedCourse.id,
+      credits,
+    });
+  }
 
   async function handleDelete() {
     if (!selectedCourse) return;
@@ -124,13 +143,33 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
       </Modal>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4 md:gap-8">
-          <div className="prose max-w-none">
-            <h1 className="lead text-xl font-bold mb-0">
-              {selectedCourse.data.description}
-            </h1>
-            <h2 className="text-md text-base-content/70">
-              {selectedCourse.code} ({selectedCourse.term})
-            </h2>
+          <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center w-full md:w-auto">
+            <div className="prose max-w-none w-full md:justify-start justify-center md:text-left text-center flex-1">
+              <h1 className="lead text-xl font-bold mb-0">
+                {selectedCourse.data.description}
+              </h1>
+              <h2 className="text-md text-base-content/70 my-0">
+                {selectedCourse.code} ({selectedCourse.term})
+              </h2>
+            </div>
+
+            <div className="hidden md:block border h-10 border-base-content/20"></div>
+
+            <div className="flex flex-row items-center gap-2 form-control card p-2 bg-base-200/50 border border-base-content/10 shadow-sm">
+              <div className="relative flex items-center flex-1 sm:flex-none justify-end">
+                <input
+                  type="number"
+                  step="0.25"
+                  className="input input-sm text-lg w-20 text-center bg-base-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
+                  value={credits}
+                  onChange={(e) => setCredits(Number(e.target.value))}
+                  onBlur={handleCreditsBlur}
+                />
+              </div>
+              <span className="text-sm font-bold uppercase tracking-wider text-base-content/50 mr-1">
+                Credits
+              </span>
+            </div>
           </div>
 
           {selectedCourse.data.outline_url && (

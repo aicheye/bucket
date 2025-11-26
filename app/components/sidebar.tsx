@@ -269,14 +269,25 @@ export default function Sidebar() {
                           : "btn-base"
                           }`}
                       >
-                        <div className="text-left w-full">
-                          <div className="font-bold text-[14px]">
+                        <div className="text-left w-full flex justify-between items-center gap-2">
+                          <div className="min-w-fit font-bold text-[14px]">
                             {course.code}
+                          </div>
+                          <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
+                            <div>
+                              ({course.credits})
+                            </div>
+                            <div className="font-semibold">
+                              {getCourseGradeDetails(course, items).currentGrade.toFixed(2)}%
+                            </div>
                           </div>
                         </div>
                       </Link>
                     ))}
                   </div>
+                </div>
+                <div className="bg-base-200 py-2 px-4 text-xs text-base-content/70 items-center text-right w-full font-mono">
+                  Total credits: <span className="font-bold">{folderCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
                 </div>
               </div>
             );
