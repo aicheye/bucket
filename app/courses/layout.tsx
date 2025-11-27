@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { sendQuery } from "../../lib/graphql";
 import Modal from "../components/modal";
 import { useCourses } from "../course-context";
 
@@ -21,12 +22,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     const checkOnboard = async () => {
       const query = `query GetUser($id: String!) { users_by_pk(id: $id) { onboarded } }`;
       try {
-        const res = await fetch("/api/graphql", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, variables: { id: session.user.id } }),
-        });
-        const j = await res.json();
+        const j = await sendQuery({ query, variables: { id: session.user.id } });
         const onboarded = j?.data?.users_by_pk?.onboarded;
         if (!onboarded) {
           setShowOnboarding(true);
@@ -51,13 +47,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     `;
 
     try {
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: mutation, variables: { id: session.user.id, consent: onboardTelemetry, anon: onboardAnon, onboarded: true } }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { id: session.user.id, consent: onboardTelemetry, anon: onboardAnon, onboarded: true } });
       if (json?.errors) {
         console.error("Failed to save onboarding (GraphQL errors):", json.errors);
         return; // keep the modal open so user can retry

@@ -10,6 +10,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { sendQuery } from "../lib/graphql";
 import { sendTelemetry } from "../lib/telemetry";
 
 export interface Course {
@@ -104,16 +105,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: query,
-          variables: { owner_id: session.user.id },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: query, variables: { owner_id: session.user.id } });
       if (json.data?.items) {
         setItems(json.data.items);
       } else {
@@ -145,20 +137,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         }
       }`;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query,
-          variables: {
-            owner_id: session.user.id,
-          },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: query, variables: { owner_id: session.user.id } });
       if (json.data?.courses) {
         const seasonOrder: Record<string, number> = {
           Winter: 1,
@@ -234,23 +213,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         }
       }`;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            code: code,
-            term: term,
-            data: data,
-            owner_id: owner_id,
-          },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { code: code, term: term, data: data, owner_id: owner_id } });
       console.log("Add course response:", json);
       await fetchCourses();
       return json.data?.insert_courses?.returning?.[0]?.id;
@@ -275,20 +238,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         }
       `;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            id: id,
-          },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { id: id } });
       if (json.data?.delete_courses_by_pk) {
         await fetchCourses();
       } else {
@@ -319,21 +269,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }`;
 
     try {
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            id: id,
-            _set: data,
-          },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { id: id, _set: data } });
       if (!json.data?.update_courses_by_pk) {
         console.error("Failed to update course", json);
         fetchCourses();
@@ -368,21 +304,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     }`;
 
-    const res = await fetch("/api/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          id: courseId,
-          sections: newSections,
-        },
-      }),
-    });
-
-    const json = await res.json();
+    const json = await sendQuery({ query: mutation, variables: { id: courseId, sections: newSections } });
     if (!json.data?.update_courses_by_pk) {
       console.error("Failed to update sections", json);
       fetchCourses();
@@ -447,21 +369,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     }`;
 
-    const res = await fetch("/api/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          id: courseId,
-          data: newData,
-        },
-      }),
-    });
-
-    const json = await res.json();
+    const json = await sendQuery({ query: mutation, variables: { id: courseId, data: newData } });
     if (!json.data?.update_courses_by_pk) {
       console.error("Failed to update marking schemes", json);
       fetchCourses();
@@ -511,21 +419,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     }`;
 
-    const res = await fetch("/api/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          id: courseId,
-          data: mergedData,
-        },
-      }),
-    });
-
-    const json = await res.json();
+    const json = await sendQuery({ query: mutation, variables: { id: courseId, data: mergedData } });
     if (!json.data?.update_courses_by_pk) {
       console.error("Failed to update course data", json);
       fetchCourses();
@@ -547,20 +441,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            data: data,
-            owner_id: owner_id,
-            course_id: courseId,
-          },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { data: data, owner_id: owner_id, course_id: courseId } });
       if (json.data?.insert_items?.returning) {
         await fetchItems();
         // telemetry - item created
@@ -590,16 +471,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: mutation,
-          variables: { id: id },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { id: id } });
       if (json.data?.delete_items_by_pk) {
         // telemetry - item deleted
         try {
@@ -630,19 +502,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const res = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            id: id,
-            data: data,
-          },
-        }),
-      });
-
-      const json = await res.json();
+      const json = await sendQuery({ query: mutation, variables: { id: id, data: data } });
       if (json.data?.update_items_by_pk) {
         await fetchItems();
         // telemetry - item edited

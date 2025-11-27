@@ -18,6 +18,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatTime } from "../../lib/format-utils";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
+import { sendQuery } from "../../lib/graphql";
 import { sendTelemetry } from "../../lib/telemetry";
 import AddCourseHelp from "../components/add-course-help";
 import GoalInput from "../components/goal-input";
@@ -46,15 +47,7 @@ export default function CoursesPage() {
                     }
                 }
             `;
-      fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query,
-          variables: { id: userId },
-        }),
-      })
-        .then((res) => res.json())
+      sendQuery({ query, variables: { id: userId } })
         .then((res) => {
           if (res.data?.users_by_pk?.data) {
             setUserData(res.data.users_by_pk.data);
@@ -406,17 +399,7 @@ export default function CoursesPage() {
             `;
 
       try {
-        await fetch("/api/graphql", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query,
-            variables: {
-              id: userId,
-              data: newUserData,
-            },
-          }),
-        });
+        await sendQuery({ query, variables: { id: userId, data: newUserData } });
       } catch (err) {
         console.error("Failed to save user data", err);
       }

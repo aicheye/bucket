@@ -1042,7 +1042,7 @@ export default function CourseGradesPage() {
                       const required = calculateRequired(scheme);
 
                       return (
-                        <button
+                        <div
                           key={originalIndex}
                           className="relative group w-full"
                         >
@@ -1138,7 +1138,7 @@ export default function CourseGradesPage() {
                               ))}
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                 </div>

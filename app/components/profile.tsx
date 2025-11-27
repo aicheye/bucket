@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { sendQuery } from "../../lib/graphql";
 import AuthComponent from "./auth-button";
 import { useLoading } from "./loading-context";
 import Modal from "./modal";
@@ -46,12 +47,7 @@ export default function Profile() {
     `;
 
     try {
-      const response = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, variables: { id: session.user.id } }),
-      });
-      const result = await response.json();
+      const result = await sendQuery({ query, variables: { id: session.user.id } });
       if (result.data?.users_by_pk) {
         const u = result.data.users_by_pk;
         setTelemetryConsent(u.telemetry_consent ?? false);
@@ -84,22 +80,15 @@ export default function Profile() {
 
 
 
-              const resp = await fetch("/api/graphql", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  query: mutation,
-                  variables: {
-                    id: session.user.id,
-                    name: nameToSet,
-                    email: emailToSet,
-                    image: imageToSet,
-                    anon: false,
-                  },
-                }),
+              const updateResult = await sendQuery({
+                query: mutation, variables: {
+                  id: session.user.id,
+                  name: nameToSet,
+                  email: emailToSet,
+                  image: imageToSet,
+                  anon: false,
+                }
               });
-
-              const updateResult = await resp.json();
 
               if (!updateResult.errors) {
                 // update local state so UI reflects the new values immediately
@@ -236,13 +225,7 @@ export default function Profile() {
         ? { query: mutationEnable, variables: { id: session.user.id, consent: newValue, anon: false } }
         : { query: mutationDisable, variables: { id: session.user.id, consent: newValue } };
 
-      const response = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
+      const result = await sendQuery(payload as any);
 
       if (result.errors) {
         console.error("Error updating telemetry consent:", result.errors);
@@ -336,13 +319,7 @@ export default function Profile() {
         anon: false,
       };
 
-      const response = await fetch("/api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: mutation, variables: vars }),
-      });
-
-      const result = await response.json();
+      const result = await sendQuery({ query: mutation, variables: vars });
       if (result.errors) {
         console.error("Error restoring PII:", result.errors);
         setAlertState({ isOpen: true, message: "Failed to disable anonymous mode." });
@@ -404,12 +381,7 @@ export default function Profile() {
       try {
         const fetchRawUser = async () => {
           const q = `query GetUserProfile($id: String!) { users_by_pk(id: $id) { telemetry_consent anonymous_mode name email image } }`;
-          const r = await fetch("/api/graphql", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: q, variables: { id: session!.user.id } }),
-          });
-          const j = await r.json();
+          const j = await sendQuery({ query: q, variables: { id: session!.user.id } });
           return j?.data?.users_by_pk ?? null;
         };
 
@@ -473,20 +445,7 @@ export default function Profile() {
         }
       `;
 
-      const response = await fetch("/api/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            id: session.user.id,
-          },
-        }),
-      });
-
-      const result = await response.json();
+      const result = await sendQuery({ query: mutation, variables: { id: session.user.id } });
 
       if (result.errors) {
         console.error("Error deleting account:", result.errors);
