@@ -43,12 +43,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <div className="min-h-screen flex flex-col overflow-x-hidden">
               <Navbar showMenuButton={true} className="z-50" />
               <div className="flex flex-1 bg-base-300 min-h-0" style={{ marginTop: 'var(--navbar-total-height)' }}>
-                {/* Desktop sidebar (unchanged) */}
-                <div className="hidden lg:block">
+                {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
+                <div className="h-full hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:h-[calc(100vh - var(--navbar-total-height))] lg:w-64 lg:overflow-y-auto">
                   <Sidebar />
                 </div>
 
-                <div className="flex flex-1 flex-col w-full">
+                {/* Main content area is inset on large screens to avoid overlapping the fixed sidebar */}
+                <div className="flex flex-1 flex-col w-full lg:ml-64">
                   {/* Mobile: drawer that overlays content and appears below the header */}
                   <div className="block lg:hidden w-full">
                     <div className="drawer">

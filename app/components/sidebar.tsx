@@ -170,7 +170,7 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
+    <div className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
       <Modal
         isOpen={alertState.isOpen}
         onClose={closeAlert}
