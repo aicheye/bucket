@@ -37,6 +37,7 @@ export interface Item {
     grade?: string;
     max_grade?: string;
     weight?: string;
+    isPlaceholder?: boolean;
     due_date?: string;
     [key: string]: any;
   };

@@ -37,7 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/xmldom": "^0.1.34",
-    "daisyui": "^5.3.10",
+    "daisyui": "^5.5.5",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "prettier": "^3.6.2",

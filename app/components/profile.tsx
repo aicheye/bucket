@@ -549,9 +549,10 @@ export default function Profile() {
       >
         <p>{alertState.message}</p>
       </Modal>
-      <div
-        tabIndex={0}
-        role="button"
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-label="Open profile menu"
         className="btn btn-ghost btn-circle avatar"
         onMouseDown={(e) => {
           if (document.activeElement === e.currentTarget) {
@@ -572,10 +573,12 @@ export default function Profile() {
             />
           )}
         </div>
-      </div>
+      </button>
       <div
+        role="menu"
+        aria-label="Profile menu"
         tabIndex={0}
-        className="mt-1 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 overflow-y-auto border border-base-content/10"
+        className="mt-1 dropdown-content z-[1] shadow-2xl bg-base-300 rounded-box w-52 overflow-y-auto border border-base-content/10"
       >
         <div className="flex px-4 py-2 mt-2 flex-col gap-1">
           <span className="font-bold text-base text-base-content">
@@ -588,9 +591,9 @@ export default function Profile() {
         <div className="divider my-0 px-4"></div>
         <ul className="menu menu-sm w-full px-2 gap-1">
           <li>
-            <a onClick={() => toggleAnonymous()} className="justify-between">
+            <button type="button" role="menuitem" onClick={() => toggleAnonymous()} className="justify-between w-full text-left">
               <div>
-                <FontAwesomeIcon icon={faEyeLowVision} className="mr-1" />
+                <FontAwesomeIcon icon={faEyeLowVision} className="mr-1" aria-hidden="true" />
                 Incognito
               </div>
               <input
@@ -598,13 +601,14 @@ export default function Profile() {
                 className="toggle toggle-sm toggle-primary"
                 checked={anonymousMode}
                 readOnly
+                aria-hidden="true"
               />
-            </a>
+            </button>
           </li>
           <li>
-            <a onClick={() => toggleTelemetry()} className="justify-between">
+            <button type="button" role="menuitem" onClick={() => toggleTelemetry()} className="justify-between w-full text-left">
               <div>
-                <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" />
+                <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" aria-hidden="true" />
                 Telemetry
               </div>
               <input
@@ -612,19 +616,15 @@ export default function Profile() {
                 className="toggle toggle-sm toggle-primary"
                 checked={telemetryConsent}
                 readOnly
+                aria-hidden="true"
               />
-            </a>
+            </button>
           </li>
           <li>
-            <a onClick={() => signOut({ callbackUrl: "/" })}>Sign out</a>
+            <button type="button" role="menuitem" onClick={() => signOut({ callbackUrl: "/" })} className="w-full text-left">Sign out</button>
           </li>
           <li>
-            <a
-              onClick={() => setShowDeleteConfirm(true)}
-              className="text-error"
-            >
-              Delete Account
-            </a>
+            <button type="button" role="menuitem" onClick={() => setShowDeleteConfirm(true)} className="text-error hover:bg-error hover:text-error-content w-full text-left">Delete Account</button>
           </li>
         </ul>
       </div>

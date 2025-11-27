@@ -104,7 +104,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           <hr className="border-base-content/20" />
           <div className="label cursor-pointer justify-start text-base-content/80 flex w-full">
             <div className="flex flex-col flex-grow gap-1">
-              <span className="label-text"><FontAwesomeIcon icon={faEyeLowVision} /> Incognito Mode</span>
+              <span className="label-text"><FontAwesomeIcon icon={faEyeLowVision} aria-hidden="true" /> Incognito Mode</span>
               <span className="flex-wrap label-text text-base-content/50 text-sm">Scrubs name, email, picture from the user database.</span>
             </div>
             <div>
@@ -123,7 +123,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           <hr className="border-base-content/20" />
           <div className="label cursor-pointer justify-start gap-2 text-base-content/80 flex">
             <div className="flex flex-col flex-grow gap-1">
-              <span className="label-text"><FontAwesomeIcon icon={faArrowTrendUp} /> Send Usage Data</span>
+              <span className="label-text"><FontAwesomeIcon icon={faArrowTrendUp} aria-hidden="true" /> Send Usage Data</span>
               <span className="label-text text-base-content/50 text-sm">Helps us improve Bucket over time. No personal info is sent.</span>
             </div>
             <input

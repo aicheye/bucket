@@ -187,10 +187,10 @@ export default function Sidebar() {
       <Link
         href="/dashboard"
         onClick={closeDrawer}
-        className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base bg-base-300 hover:bg-neutral/20 hover:border-neutral/5"} btn btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+        className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
 
       >
-        <FontAwesomeIcon icon={faGauge} className="w-5 h-5 mr-2" />
+        <FontAwesomeIcon icon={faGauge} className="w-5 h-5 mr-2" aria-hidden="true" />
         Dashboard
       </Link>
 
@@ -210,8 +210,9 @@ export default function Sidebar() {
             onClick={buttonClick}
             className="btn btn-sm btn-circle btn-primary"
             title="Add Course"
+            aria-label="Add course"
           >
-            <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
+            <FontAwesomeIcon icon={faPlus} className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
         {loading ? (

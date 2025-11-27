@@ -18,7 +18,7 @@ export default function Footer() {
             className="btn btn-ghost btn-sm gap-2"
             aria-label="GitHub repository"
           >
-            <span className="text-lg"><FontAwesomeIcon icon={faGithub} className="w-4 h-4" /></span>
+            <span className="text-lg"><FontAwesomeIcon icon={faGithub} className="w-4 h-4" aria-hidden="true" /></span>
             <span className="hidden lg:inline text-sm">GitHub</span>
           </a>
 
@@ -27,7 +27,7 @@ export default function Footer() {
             className="btn btn-ghost btn-sm gap-2"
             aria-label="Email"
           >
-            <span className="text-lg"><FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" /></span>
+            <span className="text-lg"><FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" aria-hidden="true" /></span>
             <span className="hidden lg:inline text-sm">Email</span>
           </a>
 
@@ -38,7 +38,7 @@ export default function Footer() {
             className="btn btn-ghost btn-sm gap-2"
             aria-label="Website"
           >
-            <span className="text-lg"><FontAwesomeIcon icon={faGlobe} className="w-4 h-4" /></span>
+            <span className="text-lg"><FontAwesomeIcon icon={faGlobe} className="w-4 h-4" aria-hidden="true" /></span>
             <span className="hidden lg:inline text-sm">Website</span>
           </a>
         </div>
@@ -48,13 +48,9 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <span>© {new Date().getFullYear()} Sean Yang</span>
             <span>•</span>
-            <a className="link" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">
-              MIT
-            </a>
-            <span>•</span>
-            <a className="link" href="https://scripts.sil.org/OFL" target="_blank" rel="noopener noreferrer">
-              SIL OFL 1.1
-            </a>
+            <Link href="/legal/license" className="link">
+              License
+            </Link>
           </div>
           <span className="hidden sm:inline">•</span>
           <div className="flex items-center gap-1">

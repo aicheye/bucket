@@ -267,19 +267,19 @@ export default function CourseDetailInfoPage() {
                   isEditingSections ? (
                     <>
                       Done{" "}
-                      <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
+                      <FontAwesomeIcon icon={faCheck} className="w-4 h-4" aria-hidden="true" />
                     </>
                   ) : (
                     <>
-                      <FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Edit
+                      <FontAwesomeIcon icon={faEdit} className="w-4 h-4" aria-hidden="true" /> Edit
                       Sections
                     </>
                   )
                 ) : isEditingSections ? (
-                  <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
+                  <FontAwesomeIcon icon={faCheck} className="w-4 h-4" aria-hidden="true" />
                 ) : (
                   <>
-                    <FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Choose
+                    <FontAwesomeIcon icon={faEdit} className="w-4 h-4" aria-hidden="true" /> Choose
                     Sections
                   </>
                 )}
@@ -376,11 +376,11 @@ export default function CourseDetailInfoPage() {
               >
                 {isEditingMarkingSchemes ? (
                   <>
-                    Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
+                    Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" aria-hidden="true" />
                   </>
                 ) : (
                   <>
-                    <FontAwesomeIcon icon={faEdit} className="w-4 h-4" /> Edit
+                    <FontAwesomeIcon icon={faEdit} className="w-4 h-4" aria-hidden="true" /> Edit
                     Schemes
                   </>
                 )}
@@ -488,7 +488,7 @@ export default function CourseDetailInfoPage() {
                               colSpan={2}
                               className="text-center text-base-content/50 py-2"
                             >
-                              <FontAwesomeIcon icon={faPlus} className="mr-2" />{" "}
+                              <FontAwesomeIcon icon={faPlus} className="mr-2" aria-hidden="true" />{" "}
                               Add Component
                             </td>
                           </tr>
@@ -515,7 +515,7 @@ export default function CourseDetailInfoPage() {
               {isEditingMarkingSchemes && (
                 <div className="flex flex-col gap-2 items-center justify-center border border-dashed border-base-content/20 card min-h-[200px]">
                   <button className="btn btn-ghost" onClick={addScheme}>
-                    <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add
+                    <FontAwesomeIcon icon={faPlus} className="mr-2" aria-hidden="true" /> Add
                     Scheme
                   </button>
                 </div>

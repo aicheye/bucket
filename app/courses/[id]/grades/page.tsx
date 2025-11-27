@@ -45,19 +45,36 @@ export default function CourseGradesPage() {
     Record<string, number>
   >({});
 
-  const courseItems = items
+  // Build a base list of items for this course. We don't sort yet because
+  // sorting depends on component weights and kept counts which are derived
+  // from the marking scheme. Ensure `data` exists and provide a default
+  // `weight` so downstream code can safely parse it.
+  const baseCourseItems = items
     .filter((item) => item.course_id === id)
-    .sort((a, b) => {
-      const dateA = a.data.due_date ? new Date(a.data.due_date).getTime() : 0;
-      const dateB = b.data.due_date ? new Date(b.data.due_date).getTime() : 0;
-      if (dateB !== dateA) {
-        return dateB - dateA;
-      }
-      return (a.data.name || "").localeCompare(b.data.name || "", undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
+    .map((item) => {
+      const data = {
+        ...(item.data || {}),
+        // Ensure required fields exist with sensible defaults so TS treats this as an Item
+        name: item.data?.name ?? "",
+        type: item.data?.type ?? "Assignment",
+        grade: item.data?.grade ?? "",
+        max_grade: item.data?.max_grade ?? "",
+        due_date: item.data?.due_date ?? "",
+        isPlaceholder: item.data?.isPlaceholder ?? false,
+        weight:
+          item?.data && item.data.weight !== undefined && item.data.weight !== null
+            ? item.data.weight
+            : "0",
+      };
+      return {
+        ...item,
+        data,
+      } as Item;
     });
+
+  // We'll compute `courseItems` (the sorted list) after we build
+  // `componentMap` and `categoryKeptCountMap` below to avoid accessing
+  // those maps before initialization.
 
   const placeholderItems = Object.entries(placeholderGrades).map(
     ([category, grade]) =>
@@ -77,8 +94,6 @@ export default function CourseGradesPage() {
       }) as Item,
   );
 
-  const displayItems = [...placeholderItems, ...courseItems];
-  const hasDueDates = displayItems.some((item) => item.data.due_date);
 
   const [showGradingSettings, setShowGradingSettings] = useState(false);
   const [dropLowest, setDropLowest] = useState<Record<string, number>>({});
@@ -261,12 +276,6 @@ export default function CourseGradesPage() {
 
     if (itemData.isPlaceholder) {
       const grade = parseFloat(itemData.grade);
-      const max = parseFloat(itemData.max_grade);
-
-      let percentage = 0;
-      if (!isNaN(grade) && !isNaN(max) && max !== 0) {
-        percentage = (grade / max) * 100;
-      }
 
       const newPlaceholders = { ...placeholderGrades };
 
@@ -279,7 +288,7 @@ export default function CourseGradesPage() {
         delete newPlaceholders[editingItem.data.type];
       }
 
-      newPlaceholders[itemData.type] = percentage;
+      newPlaceholders[itemData.type] = grade;
       await updateCourseData(id as string, {
         placeholder_grades: newPlaceholders,
       });
@@ -287,7 +296,7 @@ export default function CourseGradesPage() {
       sendTelemetry("create_placeholder", {
         course_id: id,
         type: itemData.type,
-        percentage: percentage,
+        percentage: grade,
       });
     } else {
       if (editingItem) {
@@ -340,7 +349,7 @@ export default function CourseGradesPage() {
       name: item.data.name || "",
       type: item.data.type || "Assignment",
       grade: item.data.grade || "",
-      max_grade: item.data.max_grade || "",
+      max_grade: item.data.isPlaceholder ? "100" : (item.data.max_grade || ""),
       due_date: item.data.due_date || "",
       isPlaceholder: item.data.isPlaceholder || false,
     });
@@ -406,7 +415,7 @@ export default function CourseGradesPage() {
     selectedCourse.data["marking-schemes"].forEach((scheme: any[], idx: number) => {
       const details = calculateSchemeGradeDetails(
         scheme,
-        courseItems,
+        baseCourseItems,
         placeholderGrades,
         dropLowest,
       );
@@ -457,7 +466,7 @@ export default function CourseGradesPage() {
     usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
         usedScheme,
-        courseItems,
+        baseCourseItems,
         placeholderGrades,
         dropLowest,
       )
@@ -470,28 +479,57 @@ export default function CourseGradesPage() {
 
     for (const component of usedScheme) {
       const category = component.Component;
-      const compItems = courseItems.filter(
-        (i) => i.data.type === category && i.data.grade && i.data.max_grade,
+      // Include incomplete (ungraded) items in the per-item weight calculation
+      // but exclude items that are explicitly dropped. We derive the number of
+      // items that actually share the component weight as: (total items in
+      // category) - (drop count). Note: dropping is determined elsewhere and
+      // `usedDetails.droppedItemIds` contains the dropped item ids for display,
+      // but drop counts configured per-category are used here.
+      const compItemsAll = baseCourseItems.filter(
+        (i) => i.data.type === category
       );
 
-      if (compItems.length === 0) continue;
-
-      const scores = compItems
-        .map((i) => {
-          const g = parseFloat(i.data.grade || "0");
-          const m = parseFloat(i.data.max_grade || "0");
-          return { id: i.id, max: m, ratio: m > 0 ? g / m : 0 };
-        })
-        .sort((a, b) => a.ratio - b.ratio);
-
       const dropCount = dropLowest[category] || 0;
-      const keptScores = scores.slice(dropCount);
+      const totalCount = Math.max(compItemsAll.length - dropCount, 0);
 
-      const keptCount = keptScores.length;
+      if (totalCount === 0) continue;
 
-      categoryKeptCountMap.set(category, keptCount);
+      categoryKeptCountMap.set(category, totalCount);
     }
   }
+
+  // Now that we have `componentMap` and `categoryKeptCountMap` we can
+  // produce the final `courseItems` array, sorted by per-item total
+  // contribution (descending), then due date (ascending), then name.
+  const courseItems = [...baseCourseItems].sort((a, b) => {
+    const compA = componentMap.get(a.data.type);
+    const compB = componentMap.get(b.data.type);
+
+    const weightA = compA ? parseFloat(compA.Weight) || 0 : 0;
+    const weightB = compB ? parseFloat(compB.Weight) || 0 : 0;
+
+    const keptA = Math.max(categoryKeptCountMap.get(a.data.type) || 0, 0);
+    const keptB = Math.max(categoryKeptCountMap.get(b.data.type) || 0, 0);
+
+    const totalContributionA = keptA > 0 ? weightA / keptA : 0;
+    const totalContributionB = keptB > 0 ? weightB / keptB : 0;
+
+    if (totalContributionB !== totalContributionA) {
+      return totalContributionB - totalContributionA; // descending
+    }
+
+    const dateA = a.data.due_date ? new Date(a.data.due_date).getTime() : 0;
+    const dateB = b.data.due_date ? new Date(b.data.due_date).getTime() : 0;
+    if (dateA !== dateB) return dateA - dateB;
+
+    return (b.data.name || "").localeCompare(a.data.name || "", undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+  const displayItems = [...placeholderItems, ...courseItems];
+  const hasDueDates = displayItems.some((item) => item.data.due_date);
 
   async function handleSaveTargetGrade() {
     if (!selectedCourse) return;
@@ -506,46 +544,22 @@ export default function CourseGradesPage() {
     const target = parseFloat(targetGrade);
     if (isNaN(target)) return null;
 
-    let A = 0; // Points banked
-    let B = 0; // Weight available
+    const details = calculateSchemeGradeDetails(
+      scheme,
+      courseItems,
+      placeholderGrades,
+      dropLowest,
+    );
 
-    scheme.forEach((component) => {
-      const weight = parseFloat(component.Weight);
-      if (isNaN(weight)) return;
+    const remainingWeight =
+      details.totalSchemeWeight - details.totalWeightGraded;
+    if (remainingWeight <= 0) return null;
 
-      const compItems = courseItems.filter(
-        (i) => i.data.type === component.Component,
-      );
+    const neededTotal =
+      (target * details.totalSchemeWeight - details.currentGrade! * details.totalWeightGraded) /
+      remainingWeight;
 
-      if (compItems.length === 0) {
-        // No items, entire weight is available
-        B += weight;
-      } else {
-        let sumGrades = 0;
-        let sumMaxAll = 0;
-        let sumMaxUngraded = 0;
-
-        compItems.forEach((i) => {
-          const max = parseFloat(i.data.max_grade || "0");
-          sumMaxAll += max;
-
-          if (i.data.grade !== undefined && i.data.grade !== "") {
-            const grade = parseFloat(i.data.grade);
-            sumGrades += isNaN(grade) ? 0 : grade;
-          } else {
-            sumMaxUngraded += max;
-          }
-        });
-
-        if (sumMaxAll > 0) {
-          A += (sumGrades / sumMaxAll) * weight;
-          B += (sumMaxUngraded / sumMaxAll) * weight;
-        }
-      }
-    });
-
-    if (B === 0) return null;
-    return ((target - A) / B) * 100;
+    return neededTotal;
   }
 
   const currentTypeHasGrades = courseItems.some(
@@ -838,6 +852,7 @@ export default function CourseGradesPage() {
                       isPlaceholder: isChecked,
                       type: newType,
                       name: isChecked ? `${newType} Placeholder` : "",
+                      max_grade: isChecked ? "100" : itemData.max_grade,
                     });
                   }}
                 />
@@ -877,13 +892,13 @@ export default function CourseGradesPage() {
                 const typeHasGrades = courseItems.some(
                   (i) => i.data.type === newType && i.data.grade,
                 );
+                const newIsPlaceholder = typeHasGrades ? false : itemData.isPlaceholder;
                 setItemData({
                   ...itemData,
                   type: newType,
-                  name: itemData.isPlaceholder
-                    ? `${newType} Placeholder`
-                    : itemData.name,
-                  isPlaceholder: typeHasGrades ? false : itemData.isPlaceholder,
+                  name: newIsPlaceholder ? `${newType} Placeholder` : itemData.name,
+                  isPlaceholder: newIsPlaceholder,
+                  max_grade: newIsPlaceholder ? "100" : itemData.max_grade,
                 });
               }}
               disabled={!!editingItem && itemData.isPlaceholder}
@@ -921,6 +936,8 @@ export default function CourseGradesPage() {
                 onChange={(e) =>
                   setItemData({ ...itemData, max_grade: e.target.value })
                 }
+                disabled={itemData.isPlaceholder}
+                title={itemData.isPlaceholder ? "Placeholder max is fixed at 100" : ""}
               />
             </div>
           </div>
@@ -1025,11 +1042,12 @@ export default function CourseGradesPage() {
                       const required = calculateRequired(scheme);
 
                       return (
-                        <div
+                        <button
                           key={originalIndex}
                           className="relative group w-full"
                         >
-                          <div
+                          <button
+                            type="button"
                             onClick={async () => {
                               setActiveSchemeIndex(originalIndex);
                               try {
@@ -1046,7 +1064,7 @@ export default function CourseGradesPage() {
                                 // ignore persistence/telemetry errors
                               }
                             }}
-                            role="button"
+                            aria-pressed={isActive}
                             title={`Activate scheme ${originalIndex + 1}`}
                             className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full cursor-pointer ${!isActive ? "opacity-60 grayscale" : ""}`}
                           >
@@ -1093,7 +1111,7 @@ export default function CourseGradesPage() {
                                 )}
                               </div>
                             )}
-                          </div>
+                          </button>
 
                           <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[1] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
                             <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">
@@ -1120,7 +1138,7 @@ export default function CourseGradesPage() {
                               ))}
                             </div>
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                 </div>
@@ -1225,7 +1243,7 @@ export default function CourseGradesPage() {
                             const gradeRaw = parseFloat(item.data.grade || "0");
                             const maxRaw = parseFloat(item.data.max_grade || "0");
 
-                            if (!comp || !keptCount || keptCount <= 0 || isNaN(maxRaw) || maxRaw === 0) {
+                            if (!comp) {
                               return (
                                 <span className="text-base-content/30 justify-end flex w-full">
                                   -
@@ -1257,7 +1275,11 @@ export default function CourseGradesPage() {
 
                             return (
                               <div className="flex flex-col w-full items-end min-w-fit">
-                                {percentLost > 0 && !isDropped ? (
+                                {isDropped ? (
+                                  <span className="font-mono font-bold">
+                                    -
+                                  </span>
+                                ) : (percentLost > 0 ? (
                                   <span
                                     className={`font-mono font-bold ${isDropped ? " line-through" : ""}`}
                                   >
@@ -1267,7 +1289,7 @@ export default function CourseGradesPage() {
                                   <span className={`font-mono opacity-50 ${isDropped ? " line-through" : ""}`}>
                                     {earnedContribution.toFixed(2)}%
                                   </span>)
-                                }
+                                )}
                                 <span className={`font-mono text-xs opacity-50 ${isDropped ? "line-through decoration-base-content/50" : ""}`}>
                                   / {totalContribution.toFixed(2)}%
                                 </span>
@@ -1323,8 +1345,9 @@ export default function CourseGradesPage() {
                               className="btn btn-ghost btn-xs"
                               onClick={() => openEditItem(item)}
                               title="Edit"
+                              aria-label="Edit item"
                             >
-                              <FontAwesomeIcon icon={faEdit} />
+                              <FontAwesomeIcon icon={faEdit} aria-hidden="true" />
                             </button>
                             <button
                               className={`btn btn-ghost btn-xs ${item.data.isPlaceholder ? "invisible" : ""}`}
@@ -1332,8 +1355,9 @@ export default function CourseGradesPage() {
                                 !item.data.isPlaceholder && duplicateItem(item)
                               }
                               title="Duplicate"
+                              aria-label="Duplicate item"
                             >
-                              <FontAwesomeIcon icon={faCopy} />
+                              <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
                             </button>
                             <button
                               className="btn btn-ghost btn-xs text-error"
@@ -1343,8 +1367,9 @@ export default function CourseGradesPage() {
                                   : deleteItem(item.id)
                               }
                               title="Delete"
+                              aria-label="Delete item"
                             >
-                              <FontAwesomeIcon icon={faTrash} />
+                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                             </button>
                           </div>
                         </td>

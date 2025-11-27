@@ -75,7 +75,7 @@ export default async function TelemetryPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Telemetry</h1>
           <div className="badge badge-secondary badge-lg">
-            <FontAwesomeIcon icon={faLock} />
+            <FontAwesomeIcon icon={faLock} aria-hidden="true" />
             Admin View
           </div>
         </div>

@@ -34,7 +34,7 @@ export default function Navbar({
               aria-label="open sidebar"
               className="btn btn-ghost mr-2 btn-square"
             >
-              <FontAwesomeIcon icon={faBars} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faBars} className="w-5 h-5" aria-hidden="true" />
             </label>
           )}
         </div>
@@ -45,7 +45,7 @@ export default function Navbar({
               className="font-bold text-xl flex items-center gap-2 w-fit py-0 px-2"
               onClick={closeDrawer}
             >
-              <FontAwesomeIcon icon={faFillDrip} className="w-6 h-6" />
+              <FontAwesomeIcon icon={faFillDrip} className="w-6 h-6" aria-hidden="true" />
               Bucket
             </Link>
           </div>

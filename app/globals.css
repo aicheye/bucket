@@ -52,6 +52,7 @@ html, body {
   padding-bottom: 0;
   height: var(--navbar-total-height);
   -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   background-clip: padding-box;
   width: 100%;
 }
@@ -81,5 +82,36 @@ footer {
 /* Prevent header/footer from being scrolled away on iOS bounce */
 .navbar, footer {
   -webkit-overflow-scrolling: touch;
+}
+
+/* Skip link: hidden by default, visible on focus for keyboard users */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 1000;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0,0,0,0.9);
+  color: #fff;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+/* Visible focus styles for keyboard users */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
 }
 

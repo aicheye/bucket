@@ -465,8 +465,8 @@ export default function CoursesPage() {
         sumCurrentScore += details.currentScore;
         sumRemainingWeight +=
           details.totalSchemeWeight - details.totalWeightGraded;
-        sumTotalWeightGraded += details.totalWeightGraded;
-        sumTotalSchemeWeight += details.totalSchemeWeight;
+        sumTotalWeightGraded += details.totalWeightGraded * credits;
+        sumTotalSchemeWeight += details.totalSchemeWeight * credits;
       }
     });
 
@@ -948,7 +948,7 @@ export default function CoursesPage() {
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="card-title text-sm uppercase opacity-70 m-0 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faClock} className="mr-2" />
+                      <FontAwesomeIcon icon={faClock} className="mr-2" aria-hidden="true" />
                       <span>
                         CLASSES ({viewDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()})
                       </span>
@@ -961,8 +961,9 @@ export default function CoursesPage() {
                           prevDay();
                         }}
                         title="Previous day"
+                        aria-label="Previous day"
                       >
-                        <FontAwesomeIcon icon={faChevronLeft} />
+                        <FontAwesomeIcon icon={faChevronLeft} aria-hidden="true" />
                       </button>
                       <button
                         className="btn btn-xs btn-ghost text-sm"
@@ -981,8 +982,9 @@ export default function CoursesPage() {
                           nextDay();
                         }}
                         title="Next day"
+                        aria-label="Next day"
                       >
-                        <FontAwesomeIcon icon={faChevronRight} />
+                        <FontAwesomeIcon icon={faChevronRight} aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -1048,8 +1050,9 @@ export default function CoursesPage() {
                       className="btn btn-xs btn-circle btn-primary"
                       onClick={() => openAddItem(null)}
                       title="Add Deliverable"
+                      aria-label="Add deliverable"
                     >
-                      <FontAwesomeIcon icon={faPlus} />
+                      <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
                     </button>
                   </div>
                   {upcomingDeliverables.length > 0 ? (
@@ -1095,8 +1098,9 @@ export default function CoursesPage() {
                                 e.preventDefault();
                                 handleOpenEditItem(item);
                               }}
+                              aria-label="Edit deliverable"
                             >
-                              <FontAwesomeIcon icon={faPencil} />
+                              <FontAwesomeIcon icon={faPencil} aria-hidden="true" />
                             </button>
                             <button
                               className="btn btn-xs btn-circle btn-ghost text-error"
@@ -1104,8 +1108,9 @@ export default function CoursesPage() {
                                 e.preventDefault();
                                 handleDeleteItem(item.id);
                               }}
+                              aria-label="Delete deliverable"
                             >
-                              <FontAwesomeIcon icon={faTrash} />
+                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                             </button>
                           </div>
                         </div>

@@ -30,7 +30,13 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${lora.variable} bg-base-200 h-full font-serif`}
       >
-        <Providers>{children}</Providers>
+        {/* Skip link for keyboard users */}
+        <a href="#content" className="skip-link">Skip to main content</a>
+        <Providers>
+          <div id="content" tabIndex={-1}>
+            {children}
+          </div>
+        </Providers>
       </body>
     </html>
   );

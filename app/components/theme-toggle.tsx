@@ -1,6 +1,6 @@
 "use client";
 
-import { faBrush } from "@fortawesome/free-solid-svg-icons";
+import { faBrush, faDesktop, faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { sendTelemetry } from "../../lib/telemetry";
@@ -82,33 +82,51 @@ export default function ThemeToggle() {
 
   return (
     <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-ghost">
-        <FontAwesomeIcon icon={faBrush} className="w-5 h-5" />{" "}
+      <button type="button" className="btn btn-ghost" aria-haspopup="menu" aria-label="Theme options">
+        <FontAwesomeIcon
+          icon={
+            theme === "system" ? faDesktop :
+              theme === "light" ? faSun :
+                theme === "dark" ? faMoon :
+                  faBrush
+          }
+          className="w-5 h-5"
+          aria-hidden="true"
+          focusable={false}
+        />{" "}
         <span className="hidden md:block">
           {theme.charAt(0).toUpperCase() + theme.slice(1)}
         </span>
         <svg
           width="12px"
           height="12px"
-          className="h-2 w-2 fill-current opacity-60 inline-block"
+          className="ml-1 h-2 w-2 fill-current opacity-60 inline-block"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 2048 2048"
+          aria-hidden="true"
+          focusable={false}
         >
           <path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path>
         </svg>
-      </div>
+      </button>
       <ul
         tabIndex={0}
+        role="menu"
+        aria-label="Theme selection"
         className="mt-1 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 h-96 overflow-y-auto border border-base-content/10"
       >
         {themes.map((t) => (
           <li key={t}>
             <button
-              className={`btn btn-sm btn-block justify-start ${
-                theme === t ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm btn-block justify-start ${theme === t ? "btn-primary" : "btn-ghost"
+                }`}
+              role="menuitem"
+              type="button"
               onClick={() => handleThemeChange(t)}
             >
+              {t === "system" ? <FontAwesomeIcon icon={faDesktop} className="w-4 h-4" aria-hidden="true" /> : null}
+              {t === "light" ? <FontAwesomeIcon icon={faSun} className="w-4 h-4" aria-hidden="true" /> : null}
+              {t === "dark" ? <FontAwesomeIcon icon={faMoon} className="w-4 h-4" aria-hidden="true" /> : null}
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           </li>
