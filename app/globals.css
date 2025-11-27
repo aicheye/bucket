@@ -22,3 +22,40 @@ html, body {
   overflow-x: hidden;
 }
 
+/* iOS safe-area / sticky header + footer fixes
+   - Make the navbar stick to the top on scroll
+   - Add safe-area padding so the navbar/footer background covers the notch/home-indicator
+   - Ensure background extends into the padding box so overscroll doesn't show white
+*/
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Keep html/body full-height so background covers the entire viewport */
+html, body {
+  height: 100%;
+}
+
+/* Make the DaisyUI navbar sticky and include the safe-area inset in its background */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding-top: var(--safe-area-inset-top);
+  -webkit-backface-visibility: hidden;
+  /* ensure background covers the padded area during overscroll */
+  background-clip: padding-box;
+}
+
+/* Ensure the footer background extends into the bottom safe area */
+footer {
+  padding-bottom: var(--safe-area-inset-bottom);
+  background-clip: padding-box;
+}
+
+/* Prevent header/footer from being scrolled away on iOS bounce */
+.navbar, footer {
+  -webkit-overflow-scrolling: touch;
+}
+

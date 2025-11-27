@@ -54,7 +54,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                     <div className="drawer">
                       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
                       <div className="drawer-content">
-                        <div className="flex flex-1 flex-col w-full py-auto overflow-y-scroll justify-between h-[calc(100vh-64px)]">
+                        <div className="flex flex-1 flex-col w-full py-auto overflow-y-scroll justify-between h-[calc(100vh-64px)] overflow-x-hidden">
                           <div>{children}</div>
                           <div>
                             <Footer />

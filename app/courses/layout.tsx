@@ -141,7 +141,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         </div>
       </Modal >
       <main className="p-4 sm:p-8 w-full">
-        <div className="max-w-6xl mx-auto w-full">
+        <div className="max-w-5xl mx-auto w-full">
           {(status === "loading" && !session) || coursesLoading ? (
             <div className="flex flex-col gap-6 mx-auto w-full">
               <div className="skeleton h-8 w-1/3 mb-4"></div>
