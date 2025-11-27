@@ -18,21 +18,25 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!session?.user?.id) return;
+    if (typeof window === "undefined") return;
+    if (showOnboarding) return;
 
-    const checkOnboard = async () => {
-      const query = `query GetUser($id: String!) { users_by_pk(id: $id) { onboarded } }`;
-      try {
-        const j = await sendQuery({ query, variables: { id: session.user.id } });
-        const onboarded = j?.data?.users_by_pk?.onboarded;
-        if (!onboarded) {
-          setShowOnboarding(true);
+    sendQuery({
+      query: `
+      query GetUserOnboarding($id: String!) {
+        users_by_pk(id: $id) {
+          onboarded
         }
-      } catch (err) {
-        console.error("Failed to check onboarding state:", err);
       }
-    };
-
-    checkOnboard();
+    `, variables: { id: session.user.id }
+    }).then((json) => {
+      if (json?.data?.users_by_pk?.onboarded) return;
+      setShowOnboarding(true);
+    }).catch((err) => {
+      console.error("Failed to fetch user onboarding status:", err);
+      // On error, show the onboarding modal to ensure preferences are set
+      setShowOnboarding(true);
+    });
   }, [session?.user?.id]);
 
   const confirmOnboarding = async () => {
@@ -68,7 +72,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         window.dispatchEvent(new CustomEvent("user-profile-updated"));
       }
 
-      // Successfully saved onboarding state, close modal
+      // Successfully saved onboarding state, close modal and mark seen locally
       setShowOnboarding(false);
     } catch (err) {
       console.error("Failed to save onboarding:", err);
@@ -80,7 +84,9 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col items-center justify-start h-full">
       <Modal
         isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
+        onClose={() => {
+          setShowOnboarding(false);
+        }}
         title="Data & Privacy Preferences"
         onConfirm={confirmOnboarding}
         actions={
@@ -130,8 +136,8 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           <hr className="border-base-content/20" />
         </div>
       </Modal >
-      <main className="p-4 sm:p-8 w-full">
-        <div className="max-w-5xl mx-auto w-full">
+      <main className="p-4 sm:p-8 w-full h-full">
+        <div className="max-w-5xl mx-auto w-full h-full">
           {(status === "loading" && !session) || coursesLoading ? (
             <div className="flex flex-col gap-6 mx-auto w-full">
               <div className="skeleton h-8 w-1/3 mb-4"></div>

@@ -4,18 +4,34 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth/next";
 import { executeHasuraAdminQuery } from "../../lib/hasura";
 import authOptions from "../../lib/nextauth";
-import Footer from "../components/footer";
-import Navbar from "../components/navbar";
 import { DauChart, FeatureDailyMultiLine } from "./telemetry-charts";
 
 export default async function TelemetryPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) return <div>Unauthorized</div>;
+  if (!session) return (
+    <div className="flex h-full flex-col items-center justify-center text-center">
+      <h2 className="text-2xl font-bold text-base-content/70">
+        Not authenticated
+      </h2>
+      <p className="text-base-content/60">
+        Please log in to view telemetry data.
+      </p>
+    </div>
+  );
 
   const adminId = process.env.TELEMETRY_ADMIN_ID;
   if (!adminId || String(session.user?.id) !== String(adminId)) {
-    return <div>Unauthorized</div>;
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-center">
+        <h2 className="text-2xl font-bold text-base-content/70">
+          Not authorized
+        </h2>
+        <p className="text-base-content/60">
+          You do not have permission to view telemetry data.
+        </p>
+      </div>
+    );
   }
 
   // Queries from user request
@@ -40,9 +56,6 @@ export default async function TelemetryPage() {
   const featureDaily = featDailyRes?.data?.telemetry_feature_usage_daily || [];
   const mau = mauRes?.data?.telemetry_mau_30d?.[0]?.mau_30d || 0;
 
-  // Build line chart points
-  const dauPoints = daus.map((d: any, i: number) => [i, d.dau]);
-
   // Group featureDaily by event
   const grouped: Record<string, Array<any>> = {};
   for (const r of featureDaily) {
@@ -58,7 +71,7 @@ export default async function TelemetryPage() {
 
   // For display, pick top 4 features
   feature30.sort((a: any, b: any) => b.event_count_30d - a.event_count_30d);
-  const topFeatures = feature30.slice(0, 10);
+  const topFeatures = feature30;
   const topEvents = topFeatures.map((f: any) => f.event);
   // Only keep grouped data for top events to avoid an overly noisy chart.
   const groupedTop: Record<string, any> = {};
@@ -70,7 +83,6 @@ export default async function TelemetryPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-base-300">
-      <Navbar />
       <main className="flex-1 p-8 max-w-7xl mx-auto space-y-8 w-full">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Telemetry</h1>
@@ -95,20 +107,18 @@ export default async function TelemetryPage() {
         </div>
 
         {/* Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="card bg-base-100 shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">User Growth (DAU)</h2>
-              <DauChart
-                data={daus.map((d: any) => ({ day: d.day, dau: d.dau }))}
-              />
-            </div>
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body">
+            <h2 className="card-title">User Growth (DAU)</h2>
+            <DauChart
+              data={daus.map((d: any) => ({ day: d.day, dau: d.dau }))}
+            />
           </div>
-          <div className="card bg-base-100 shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">Feature Usage Trends</h2>
-              <FeatureDailyMultiLine grouped={groupedTop} />
-            </div>
+        </div>
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body">
+            <h2 className="card-title">Feature Usage Trends</h2>
+            <FeatureDailyMultiLine grouped={groupedTop} />
           </div>
         </div>
 
@@ -147,7 +157,6 @@ export default async function TelemetryPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

@@ -7,7 +7,7 @@ export default function AuthScreen() {
   const { status } = useSession();
 
   return (
-    <div className="flex flex-col justify-center h-full">
+    <div className="flex-1 h-full flex flex-col justify-center items-center">
       <div className="flex flex-col flex-1 gap-8 items-center justify-center mx-auto py-12 px-4 prose max-w-prose w-full">
         {status === "loading" ? (
           <div className="loading loading-spinner loading-lg"></div>
