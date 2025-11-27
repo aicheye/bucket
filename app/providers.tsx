@@ -40,9 +40,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <SessionProvider refetchOnWindowFocus={false}>
         <CourseProvider>
           <Heartbeat>
-            <div className="h-screen flex flex-col overflow-x-hidden">
+            <div className="min-h-screen flex flex-col overflow-x-hidden">
               <Navbar showMenuButton={true} className="z-50" />
-              <div className="flex flex-1 bg-base-300 min-h-0" style={{ height: 'calc(100vh - var(--navbar-total-height))', marginTop: 'var(--navbar-total-height)' }}>
+              <div className="flex flex-1 bg-base-300 min-h-0" style={{ marginTop: 'var(--navbar-total-height)' }}>
                 {/* Desktop sidebar (unchanged) */}
                 <div className="hidden lg:block">
                   <Sidebar />
@@ -54,16 +54,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                     <div className="drawer">
                       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
                       <div className="drawer-content">
-                        <div className="flex flex-1 flex-col w-full py-auto overflow-y-scroll justify-between overflow-x-hidden" style={{ height: 'calc(100vh - var(--navbar-total-height))' }}>
-                          <div>{children}</div>
+                        <div className="flex flex-1 flex-col w-full py-auto overflow-y-auto justify-between overflow-x-hidden min-h-0">
+                          <div className="flex-1 min-h-0">{children}</div>
                           <div>
                             <Footer />
                           </div>
                         </div>
                       </div>
                       <div className="drawer-side">
-                        <label htmlFor="my-drawer-2" className="drawer-overlay" style={{ top: 'var(--navbar-total-height)', height: 'calc(100vh - var(--navbar-total-height))' }}></label>
-                        <div style={{ marginTop: 'var(--navbar-total-height)', height: 'calc(100vh - var(--navbar-total-height))', minHeight: 0 }}>
+                        <label htmlFor="my-drawer-2" className="drawer-overlay" style={{ top: 'calc(var(--navbar-total-height) - 1px)', height: 'calc(100vh - var(--navbar-total-height))' }}></label>
+                        <div style={{ marginTop: 'calc(var(--navbar-total-height) - 1px)', height: 'calc(100vh - var(--navbar-total-height))', minHeight: 0 }}>
                           <Sidebar />
                         </div>
                       </div>
@@ -71,8 +71,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                   </div>
 
                   {/* Large-screen main content (unchanged layout) */}
-                  <div className="hidden lg:flex flex-1 flex-col w-full py-auto overflow-y-scroll justify-between" style={{ height: 'calc(100vh - var(--navbar-total-height))' }}>
-                    <div>{children}</div>
+                  <div className="hidden lg:flex flex-1 flex-col w-full py-auto overflow-y-auto justify-between min-h-0">
+                    <div className="flex-1 min-h-0">{children}</div>
                     <div>
                       <Footer />
                     </div>

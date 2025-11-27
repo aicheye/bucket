@@ -32,6 +32,7 @@ html, body {
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --navbar-height: 64px;
   --navbar-total-height: calc(var(--navbar-height) + var(--safe-area-inset-top));
+  --footer-height: 40px;
 }
 
 /* Keep html/body full-height so background covers the entire viewport */
@@ -48,9 +49,26 @@ html, body {
   right: 0;
   z-index: 50;
   padding-top: var(--safe-area-inset-top);
+  padding-bottom: 0;
   height: var(--navbar-total-height);
   -webkit-backface-visibility: hidden;
   background-clip: padding-box;
+  width: 100%;
+}
+
+/* Inner navbar area (excludes safe-area inset) - centers content vertically */
+.navbar-inner {
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Footer inner wrapper: keep content vertically centered while footer can extend into safe area */
+.footer-inner {
+  min-height: var(--footer-height);
+  display: flex;
+  align-items: center;
   width: 100%;
 }
 
