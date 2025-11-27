@@ -30,6 +30,8 @@ html, body {
 :root {
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --navbar-height: 64px;
+  --navbar-total-height: calc(var(--navbar-height) + var(--safe-area-inset-top));
 }
 
 /* Keep html/body full-height so background covers the entire viewport */
@@ -39,13 +41,17 @@ html, body {
 
 /* Make the DaisyUI navbar sticky and include the safe-area inset in its background */
 .navbar {
-  position: sticky;
+  position: fixed;
+  inset: 0 0 auto 0;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   padding-top: var(--safe-area-inset-top);
+  height: var(--navbar-total-height);
   -webkit-backface-visibility: hidden;
-  /* ensure background covers the padded area during overscroll */
   background-clip: padding-box;
+  width: 100%;
 }
 
 /* Ensure the footer background extends into the bottom safe area */

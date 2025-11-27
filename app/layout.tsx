@@ -26,9 +26,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-base-300">
+    <html lang="en" className="bg-base-200">
       <body
-        className={`${playfair.variable} ${lora.variable} bg-base-300 h-full font-serif`}
+        className={`${playfair.variable} ${lora.variable} bg-base-200 h-full font-serif`}
       >
         <Providers>{children}</Providers>
       </body>
