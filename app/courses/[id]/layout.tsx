@@ -14,14 +14,25 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   const { id } = useParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { courses, loading, deleteCourse, items, deleteItem, updateCourse } =
+  const { courses, loading, deleteCourse, items, deleteItem, updateCourse, optimisticCourse } =
     useCourses();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [credits, setCredits] = useState(0.5);
   const { showLoading, hideLoading } = useLoading();
 
-  const selectedCourse = courses.find((c) => c.id === id);
+  let selectedCourse = courses.find((c) => c.id === id);
+  // Fallback to optimistic course (set before navigation) so UI can render
+  // immediately while real data finishes loading.
+  if (!selectedCourse && optimisticCourse && optimisticCourse.id === id) {
+    selectedCourse = optimisticCourse;
+  }
+
+  const isOptimisticFallback =
+    !!optimisticCourse &&
+    optimisticCourse.id === id &&
+    !courses.some((c) => c.id === id) &&
+    loading;
 
   useEffect(() => {
     if (selectedCourse) {
@@ -118,7 +129,6 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        title="Delete Course"
         onConfirm={handleDelete}
         actions={
           <>
@@ -228,6 +238,13 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
           Grades
         </Link>
       </div>
+
+      {isOptimisticFallback && (
+        <div className="flex flex-col gap-4 mb-4 max-w-5xl mx-auto w-full">
+          <div className="skeleton h-8 w-1/3 mb-2"></div>
+          <div className="skeleton h-48 w-full rounded-box"></div>
+        </div>
+      )}
 
       {children}
     </div>

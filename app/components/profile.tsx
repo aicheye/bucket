@@ -60,6 +60,65 @@ export default function Profile() {
         setUserNameLocal(u.name ?? null);
         setUserEmailLocal(u.email ?? null);
         setPrivacyLoaded(true);
+        // If the DB has no PII but the session does, and the user is not anonymous,
+        // write the session PII back to the DB so the profile isn't blank.
+        try {
+          if (
+            !u.anonymous_mode &&
+            (u.name == null || u.image == null || u.email == null) &&
+            session?.user?.id
+          ) {
+            const nameToSet = u.name ?? session.user.name ?? null;
+            const emailToSet = u.email ?? session.user.email ?? null;
+            const imageToSet = u.image ?? session.user.image ?? null;
+
+            // Only attempt update if we have something to write
+            if (nameToSet || emailToSet || imageToSet) {
+              const mutation = `
+                  mutation UpdateMissingPII($id: String!, $name: String, $email: String, $image: String, $anon: Boolean!) {
+                    update_users_by_pk(pk_columns: {id: $id}, _set: {name: $name, email: $email, image: $image, anonymous_mode: $anon}) {
+                      id
+                    }
+                  }
+                `;
+
+
+
+              const resp = await fetch("/api/graphql", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  query: mutation,
+                  variables: {
+                    id: session.user.id,
+                    name: nameToSet,
+                    email: emailToSet,
+                    image: imageToSet,
+                    anon: false,
+                  },
+                }),
+              });
+
+              const updateResult = await resp.json();
+
+              if (!updateResult.errors) {
+                // update local state so UI reflects the new values immediately
+                setUserNameLocal(nameToSet ?? null);
+                setUserEmailLocal(emailToSet ?? null);
+                setUserImage(imageToSet ?? null);
+                setAnonymousMode(false);
+                // notify other parts of the app that profile changed
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("user-profile-updated"));
+                }
+              } else {
+                console.error("Error updating missing PII:", updateResult.errors);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error attempting to update missing PII:", err);
+        }
       }
     } catch (err) {
       console.error("Error fetching user profile:", err);
@@ -219,7 +278,21 @@ export default function Profile() {
         setAnonymousMode(true);
         // Ensure telemetry is turned off locally
         setTelemetryConsent(false);
+        // Back up current PII to localStorage so it can be restored if the
+        // user disables incognito later. This is stored only in the browser.
+        try {
+          const backup = {
+            name: session?.user?.name ?? null,
+            email: session?.user?.email ?? null,
+            image: session?.user?.image ?? null,
+          };
+          window.localStorage.setItem("user_pii_backup_v1", JSON.stringify(backup));
+        } catch (e) {
+          // ignore storage errors
+        }
+
         const res = await fetch("/api/user/scrub", { method: "POST" });
+
         if (!res.ok) throw new Error("Scrub failed");
         // Refresh profile section from GraphQL so UI updates without a full reload
         await fetchUserProfile();
@@ -237,15 +310,29 @@ export default function Profile() {
         mutation RestorePII($id: String!, $name: String, $email: String, $image: String, $anon: Boolean!) {
           update_users_by_pk(pk_columns: {id: $id}, _set: {name: $name, email: $email, image: $image, anonymous_mode: $anon}) {
             id
+            name
+            email
+            image
+            anonymous_mode
           }
         }
       `;
 
+      // If the session no longer contains PII (e.g., after a refresh while
+      // anonymous), fall back to any backed-up PII we saved before scrubbing.
+      let backup: { name?: string | null; email?: string | null; image?: string | null } | null = null;
+      try {
+        const raw = window.localStorage.getItem("user_pii_backup_v1");
+        if (raw) backup = JSON.parse(raw);
+      } catch (e) {
+        // ignore
+      }
+
       const vars = {
         id: session!.user.id,
-        name: session!.user.name || null,
-        email: session!.user.email || null,
-        image: session!.user.image || null,
+        name: session!.user.name || (backup?.name ?? null) || null,
+        email: session!.user.email || (backup?.email ?? null) || null,
+        image: session!.user.image || (backup?.image ?? null) || null,
         anon: false,
       };
 
@@ -262,9 +349,102 @@ export default function Profile() {
         return;
       }
 
-      setAnonymousMode(false);
-      // Refresh profile section so UI reflects restored PII
-      await fetchUserProfile();
+      // Use the mutation response (authoritative) to update UI immediately
+      const updated = result.data?.update_users_by_pk;
+      if (updated) {
+        setUserNameLocal(updated.name ?? session!.user.name ?? null);
+        setUserEmailLocal(updated.email ?? session!.user.email ?? null);
+        setUserImage(updated.image ?? session!.user.image ?? null);
+        setAnonymousMode(!!updated.anonymous_mode);
+        // Remove backup now that PII has been restored into the DB
+        try {
+          window.localStorage.removeItem("user_pii_backup_v1");
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setAnonymousMode(false);
+      }
+      // Try to refresh the NextAuth client session without a full reload so
+      // the session callback runs and restored PII appears in `useSession`.
+      try {
+        // Dynamic import to avoid SSR/type issues. Try a few approaches to
+        // force next-auth's client to refresh its internal session cache.
+        const nextAuth = await import("next-auth/react");
+        // Preferred: call the internal _getSession with an event hint which
+        // next-auth uses to force a refresh across listeners.
+        if ((nextAuth as any)?._getSession) {
+          try {
+            await (nextAuth as any)._getSession({ event: "storage" });
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        // Next fallback: call the public getSession with event hint (some
+        // next-auth versions accept this).
+        if ((nextAuth as any)?.getSession) {
+          try {
+            await (nextAuth.getSession as any)({ event: "storage" });
+          } catch (e) {
+            try {
+              await nextAuth.getSession();
+            } catch (ee) {
+              // ignore
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to refresh next-auth session:", err);
+      }
+
+      // Re-fetch profile data so UI reflects restored PII. Use polling to
+      // handle any propagation delays and avoid depending on React state
+      // update timing.
+      try {
+        const fetchRawUser = async () => {
+          const q = `query GetUserProfile($id: String!) { users_by_pk(id: $id) { telemetry_consent anonymous_mode name email image } }`;
+          const r = await fetch("/api/graphql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: q, variables: { id: session!.user.id } }),
+          });
+          const j = await r.json();
+          return j?.data?.users_by_pk ?? null;
+        };
+
+        let attempts = 0;
+        const maxAttempts = 6;
+        const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+        let fresh: any = null;
+
+        while (attempts < maxAttempts) {
+          fresh = await fetchRawUser();
+          if (fresh && (!fresh.anonymous_mode) && (fresh.name || fresh.email || fresh.image)) {
+            // update local state immediately and break
+            setTelemetryConsent(fresh.telemetry_consent ?? false);
+            setAnonymousMode(!!fresh.anonymous_mode);
+            setUserImage(fresh.image ?? null);
+            setUserNameLocal(fresh.name ?? null);
+            setUserEmailLocal(fresh.email ?? null);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("user-profile-updated"));
+            }
+            break;
+          }
+          attempts += 1;
+          await delay(250);
+        }
+        // As a last step, call the existing fetchUserProfile to ensure any
+        // other state is synchronized.
+        try {
+          await fetchUserProfile();
+        } catch {
+          // ignore
+        }
+      } catch (e) {
+        // ignore
+      }
     } catch (err) {
       console.error("Failed to disable anonymous mode:", err);
       setAlertState({ isOpen: true, message: "Failed to update anonymous mode." });

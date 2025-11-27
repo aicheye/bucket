@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Footer() {
   return (
-    <footer className="p-4 bg-base-200 text-base-content border-t border-base-content/10 flex flex-col md:flex-row justify-between items-center gap-4">
+    <footer className="p-4 sm:p-2 bg-base-200 text-base-content border-t border-base-content/10 flex flex-col md:flex-row justify-between items-center gap-2 sm:gap-4">
       <div className="flex flex-wrap justify-center gap-2">
         <a
           href="https://github.com/aicheye/bucket"
@@ -34,9 +34,9 @@ export default function Footer() {
           <span className="hidden lg:block text-sm">Website</span>
         </a>
       </div>
-      <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-sm opacity-70 text-center md:text-right">
+      <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-sm text-base-content/70 text-center md:text-right">
         <p>
-          Copyright © {new Date().getFullYear()} Sean Yang{" "}
+          © {new Date().getFullYear()} Sean Yang{" "}
           <a
             className="link"
             href="https://opensource.org/licenses/MIT"
@@ -57,7 +57,6 @@ export default function Footer() {
         </p>
         <div className="hidden md:block border-l h-4 border-base-content/20"></div>
         <p>
-          Read our{" "}
           <a
             target="_blank"
             href="/legal/privacy"

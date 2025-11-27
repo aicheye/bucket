@@ -170,7 +170,7 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
+    <div className="w-64 bg-base-200 h-full overflow-y-auto p-4 flex flex-col sm:gap-4 gap-2 border-r border-base-content/10">
       <Modal
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -184,17 +184,19 @@ export default function Sidebar() {
       >
         <p>{alertState.message}</p>
       </Modal>
-      <button
-        onClick={() => router.push("/dashboard")}
-        className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-ghost bg-base-300/70 hover:bg-primary hover:text-primary-content"} p-2 justify-start w-full text-lg`}
+      <Link
+        href="/dashboard"
+        onClick={closeDrawer}
+        className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base bg-base-300 hover:bg-neutral/20 hover:border-neutral/5"} btn btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+
       >
-        <FontAwesomeIcon icon={faGauge} className="w-5 h-5" />
+        <FontAwesomeIcon icon={faGauge} className="w-5 h-5 mr-2" />
         Dashboard
-      </button>
+      </Link>
 
       <div className="border border-base-content/10 w-full"></div>
 
-      <div className="flex flex-col gap-4 flex-1">
+      <div className="flex flex-col sm:gap-4 gap-2 flex-1">
         <div className="flex justify-between items-center">
           <input
             onChange={fileChange}
@@ -328,9 +330,9 @@ export default function Sidebar() {
         {!loading && courses.length === 0 && (
           <div className="text-center text-sm opacity-50 mt-4">
             No courses yet. Click + to add one. Not sure how? See the{" "}
-            <a target="_blank" href="/help" className="underline">
+            <Link target="_blank" href="/help" className="underline">
               help page
-            </a>
+            </Link>
             .
           </div>
         )}

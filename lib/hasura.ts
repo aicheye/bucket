@@ -24,7 +24,7 @@ export async function executeHasuraQuery(
     throw new Error("GRAPHQL_URL is not defined");
   }
 
-  console.log(`Executing Hasura query against ${process.env.GRAPHQL_URL}`);
+  //console.log(`Executing Hasura query with query: ${query}, variables: ${JSON.stringify(variables)}`);
 
   try {
     const res = await fetch(process.env.GRAPHQL_URL!, {
@@ -44,6 +44,8 @@ export async function executeHasuraQuery(
       console.error("Response body:", text);
       throw new Error(`Hasura fetch failed: ${res.statusText}`);
     }
+
+    //console.log("Response JSON:", await res.clone().json());
 
     return res.json();
   } catch (error) {

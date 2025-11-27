@@ -47,6 +47,8 @@ interface CourseContextType {
   courses: Course[];
   items: Item[];
   fetchCourses: () => Promise<void>;
+  optimisticCourse?: Course | null;
+  setOptimisticCourse: (c: Course | null) => void;
   addCourse: (
     code: string,
     term: string,
@@ -85,6 +87,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [optimisticCourse, setOptimisticCourse] = useState<Course | null>(null);
 
   async function fetchItems() {
     if (!session?.user?.id) return;
@@ -677,6 +680,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         deleteItem,
         updateItem,
         loading,
+        optimisticCourse,
+        setOptimisticCourse,
       }}
     >
       {children}

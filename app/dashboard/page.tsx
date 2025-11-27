@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  faBook,
   faCalendarDay,
   faChevronLeft,
   faChevronRight,
@@ -14,7 +15,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatTime } from "../../lib/format-utils";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendTelemetry } from "../../lib/telemetry";
@@ -28,7 +29,7 @@ import { Item, useCourses } from "../course-context";
 
 export default function CoursesPage() {
   const { data: session, status } = useSession();
-  const { courses, loading, items, addItem, updateItem, deleteItem } =
+  const { courses, loading, items, addItem, updateItem, deleteItem, setOptimisticCourse } =
     useCourses();
   const [termGoal, setTermGoal] = useState<string>("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,32 +79,7 @@ export default function CoursesPage() {
     isPlaceholder: false,
   });
 
-  // Detect available width for the term progress card and switch visuals
-  const progressRef = useRef<HTMLDivElement | null>(null);
-  const [showRadials, setShowRadials] = useState(true);
-
-  useEffect(() => {
-    if (!progressRef.current) return;
-
-    const threshold = 380; // px required to comfortably show two 6rem radials side-by-side (increased to prefer bars on small screens)
-
-    const checkWidth = (w: number) => {
-      setShowRadials(w >= threshold);
-    };
-
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        checkWidth(entry.contentRect.width);
-      }
-    });
-
-    ro.observe(progressRef.current);
-
-    // initial check
-    checkWidth(progressRef.current.getBoundingClientRect().width);
-
-    return () => ro.disconnect();
-  }, []);
+  // progress bars: always stacked, no resize observer or radial visuals
 
   function getCourseTypes(courseId: string) {
     const course = courses.find((c) => c.id === courseId);
@@ -305,12 +281,16 @@ export default function CoursesPage() {
         // remove param but preserve other params if any
         const url = new URL(window.location.href);
         url.searchParams.delete("date");
-        router.replace(url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : ""));
+        // Update the URL without triggering a Next.js navigation so the
+        // client-side document.title and state are preserved.
+        const newUrl = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
+        window.history.replaceState(null, "", newUrl);
       }
     } else if (param !== isoLocal) {
       const url = new URL(window.location.href);
       url.searchParams.set("date", isoLocal);
-      router.replace(url.pathname + "?" + url.searchParams.toString());
+      const newUrl = url.pathname + "?" + url.searchParams.toString();
+      window.history.replaceState(null, "", newUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
@@ -390,7 +370,7 @@ export default function CoursesPage() {
           Not authenticated
         </h2>
         <p className="text-base-content/60">
-          Please log in to view your courses.
+          Please log in to view your dashboard.
         </p>
       </div>
     );
@@ -498,23 +478,41 @@ export default function CoursesPage() {
 
     // Calculate Cumulative Average (CAV) and Cumulative GPA (CGPA)
     let totalCAV = 0;
-    let totalCAVCredits = 0;
     let totalCGPA = 0;
-    let totalCGPACredits = 0;
+    let totalCredits = 0;
+    // Credits earned: sum of credits for courses with >=50% (or estimated >=50%)
+    let creditsEarned = 0;
 
     courses.forEach((c) => {
       const details = getCourseGradeDetails(c, items);
       if (details && details.currentGrade !== null) {
         const credits = c.credits ?? 0.5;
         totalCAV += details.currentGrade * credits;
-        totalCAVCredits += credits;
         totalCGPA += gradeToGPA(details.currentGrade) * credits;
-        totalCGPACredits += credits;
+        totalCredits += credits;
+      }
+      // Determine credits-earned eligibility based on >=50% rule.
+      if (details) {
+        const credits = c.credits ?? 0.5;
+        const hasCurrentGrade = details.currentGrade !== null;
+        // estimated final percent based on current scored points over total scheme weight
+        const estimatedPercent =
+          details.totalSchemeWeight > 0
+            ? (details.currentScore / details.totalSchemeWeight) * 100
+            : null;
+
+        const meetsThreshold =
+          (hasCurrentGrade && (details.currentGrade ?? 0) >= 50) ||
+          (estimatedPercent !== null && estimatedPercent >= 50);
+
+        if (meetsThreshold) {
+          creditsEarned += credits;
+        }
       }
     });
 
-    const cav = totalCAVCredits > 0 ? totalCAV / totalCAVCredits : null;
-    const cgpa = totalCGPACredits > 0 ? totalCGPA / totalCGPACredits : null;
+    const cav = totalCredits > 0 ? totalCAV / totalCredits : null;
+    const cgpa = totalCredits > 0 ? totalCGPA / totalCredits : null;
 
     // Time progress calculation
     let timeProgress = 0;
@@ -621,8 +619,6 @@ export default function CoursesPage() {
     todaysClasses.sort((a, b) => {
       const timeA = a["Start Time"];
       const timeB = b["Start Time"];
-
-      console.log("Comparing times:", timeA, timeB);
 
       const hA =
         typeof timeA === "object" ? timeA.hours : parseInt(timeA.split(":")[0]);
@@ -833,7 +829,7 @@ export default function CoursesPage() {
               {cav !== null && (
                 <div className="flex flex-col items-center sm:items-end">
                   <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
-                    Cumulative Avg
+                    Cumulative Average
                   </span>
                   <div className="flex items-center gap-2">
                     <span
@@ -856,6 +852,18 @@ export default function CoursesPage() {
                   </span>
                 </div>
               )}
+              {
+                creditsEarned > 0 && (
+                  <div className="flex flex-col items-center sm:items-end">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                      Credits Earned
+                    </span>
+                    <span className="text-2xl font-black tracking-tight leading-none">
+                      {creditsEarned}
+                    </span>
+                  </div>
+                )
+              }
             </div>
           )}
         </div>
@@ -905,116 +913,23 @@ export default function CoursesPage() {
                     />
                   )}
                 </div>
-                {/* Stacked progress bars card for small screens: show below the term average/gpa card */}
-                <div className="lg:hidden w-full">
-                  <div className="card bg-base-100 shadow-sm p-4 w-full">
-                    <div className="text-xs font-bold uppercase opacity-70 mb-2">
-                      Term Progress
-                    </div>
-                    <progress
-                      className="progress progress-primary w-full h-3 mb-4"
-                      value={timeProgress}
-                      max="100"
-                    ></progress>
-                    <div className="text-xs font-bold uppercase opacity-70 mb-2">
-                      Weight Completed
-                    </div>
-                    <progress
-                      className="progress progress-secondary w-full h-3"
-                      value={weightCompletedPercent}
-                      max="100"
-                    ></progress>
-                  </div>
-                </div>
-
-                <div className="flex justify-center items-center lg:block hidden">
-                  <div
-                    ref={progressRef}
-                    className="card bg-base-100 shadow-sm flex flex-col lg:flex-row items-center gap-2 w-full h-full p-4 lg:justify-around justify-center"
-                  >
-                    <div className="flex flex-col justify-center items-center w-full lg:w-auto">
-                      {showRadials ? (
-                        <div className="flex flex-col items-center">
-                          <div className="m-2 p-3 bg-primary card shadow-sm">
-                            <div
-                              className="radial-progress text-primary-content"
-                              style={
-                                {
-                                  "--value": timeProgress,
-                                  "--size": "6rem",
-                                  "--thickness": "1rem",
-                                } as React.CSSProperties
-                              }
-                              role="progressbar"
-                            >
-                              <span className="text-xl font-bold">
-                                {timeProgress.toFixed(0)}%
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-xs text-base-content/70 font-bold">
-                            Term Progress
-                          </span>
+                <div className="md:col-span-3 flex justify-center items-center">
+                  <div className="card bg-base-100 shadow-sm w-full max-w-4xl p-6">
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold uppercase text-base-content/70">Term Progress</span>
+                          <span className="text-sm font-bold">{timeProgress.toFixed(0)}%</span>
                         </div>
-                      ) : (
-                        <div className="w-full px-2">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-bold">
-                              Term Progress
-                            </span>
-                            <span className="text-sm font-bold">
-                              {timeProgress.toFixed(0)}%
-                            </span>
-                          </div>
-                          <progress
-                            className="progress progress-primary w-full h-3"
-                            value={timeProgress}
-                            max="100"
-                          ></progress>
+                        <progress className="progress progress-primary w-full h-3" value={timeProgress} max="100"></progress>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold uppercase text-base-content/70">Weight Completed</span>
+                          <span className="text-sm font-bold">{weightCompletedPercent.toFixed(0)}%</span>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col justify-center items-center w-full lg:w-auto">
-                      {showRadials ? (
-                        <div className="flex flex-col items-center">
-                          <div className="m-2 p-3 bg-secondary card shadow-sm">
-                            <div
-                              className="radial-progress text-secondary-content"
-                              style={
-                                {
-                                  "--value": weightCompletedPercent,
-                                  "--size": "6rem",
-                                  "--thickness": "1rem",
-                                } as React.CSSProperties
-                              }
-                              role="progressbar"
-                            >
-                              <span className="text-xl font-bold">
-                                {weightCompletedPercent.toFixed(0)}%
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-xs text-base-content/70 font-bold">
-                            Weight Completed
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="w-full px-2">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-bold">
-                              Weight Completed
-                            </span>
-                            <span className="text-sm font-bold">
-                              {weightCompletedPercent.toFixed(0)}%
-                            </span>
-                          </div>
-                          <progress
-                            className="progress progress-secondary w-full h-3"
-                            value={weightCompletedPercent}
-                            max="100"
-                          ></progress>
-                        </div>
-                      )}
+                        <progress className="progress progress-secondary w-full h-3" value={weightCompletedPercent} max="100"></progress>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1069,6 +984,20 @@ export default function CoursesPage() {
                           href={`/courses/${cls.courseId}/info`}
                           key={i}
                           className="flex-grow max-h-[6rem] items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
+                          onClick={(e) => {
+                            // Optimistically provide the course object so the course layout
+                            // can render immediately while the real data finishes loading.
+                            try {
+                              e.preventDefault();
+                              const c = courses.find((x) => x.id === cls.courseId) || null;
+                              setOptimisticCourse && setOptimisticCourse(c);
+                              router.push(`/courses/${cls.courseId}/info`);
+                            } catch (err) {
+                              // fallback to normal navigation
+                              // eslint-disable-next-line no-console
+                              console.error(err);
+                            }
+                          }}
                         >
                           <div className="flex-1">
                             <div className="font-bold text-sm">
@@ -1124,6 +1053,12 @@ export default function CoursesPage() {
                           <Link
                             href={`/courses/${item.course_id}/grades`}
                             className="flex-1 justify-between flex items-center gap-3"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const c = courses.find((x) => x.id === item.course_id) || null;
+                              setOptimisticCourse && setOptimisticCourse(c);
+                              router.push(`/courses/${item.course_id}/grades`);
+                            }}
                           >
                             <div className="">
                               <div className="font-bold text-sm">
@@ -1181,10 +1116,11 @@ export default function CoursesPage() {
             >
               <div className="card-body p-4">
                 <h3 className="card-title text-sm uppercase opacity-70 mb-2 flex items-center gap-2">
-                  <span>Courses</span>
+                  <span><FontAwesomeIcon icon={faBook} className="mr-2" />
+                    Courses</span>
                   <span className="badge badge-sm badge-accent px-2 py-2 items-center"><span className="opacity-80">Total credits:</span> {currentCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {/* Current Courses */}
                   {currentCourses.map((course) => {
                     const details = getCourseGradeDetails(course, items);
@@ -1200,6 +1136,11 @@ export default function CoursesPage() {
                         key={course.id}
                         href={`/courses/${course.id}/info`}
                         className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setOptimisticCourse && setOptimisticCourse(course);
+                          router.push(`/courses/${course.id}/info`);
+                        }}
                       >
                         <div className="card-body p-4">
                           <h2 className="card-title justify-between text-base">

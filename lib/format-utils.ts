@@ -2,8 +2,6 @@ export function formatTime(time: { hours: number; minutes: number } | string) {
   if (!time) return "";
   if (typeof time === "string") return time;
 
-  console.log("Formatting time object:", time);
-
   let h = time.hours;
   const m = time.minutes.toString().padStart(2, "0");
 
