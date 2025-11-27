@@ -57,11 +57,11 @@ export default function Footer() {
             </a>
           </div>
           <span className="hidden sm:inline">•</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Link href="/legal/privacy" className="link">
               Privacy
             </Link>
-            <span>•</span>
+            &
             <Link href="/legal/terms" className="link">
               Terms
             </Link>

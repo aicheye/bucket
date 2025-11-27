@@ -828,8 +828,11 @@ export default function CoursesPage() {
             <div className="flex gap-6 items-start">
               {cav !== null && (
                 <div className="flex flex-col items-center sm:items-end">
-                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                  <span className="sm:block hidden text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
                     Cumulative Average
+                  </span>
+                  <span className="sm:hidden block text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                    CAV
                   </span>
                   <div className="flex items-center gap-2">
                     <span
@@ -844,8 +847,11 @@ export default function CoursesPage() {
               )}
               {cgpa !== null && (
                 <div className="flex flex-col items-center sm:items-end">
-                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                  <span className="sm:block hidden text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
                     Cumulative GPA
+                  </span>
+                  <span className="sm:hidden block text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                    CGPA
                   </span>
                   <span className="text-2xl font-black tracking-tight leading-none">
                     {cgpa.toFixed(2)}
@@ -855,8 +861,11 @@ export default function CoursesPage() {
               {
                 creditsEarned > 0 && (
                   <div className="flex flex-col items-center sm:items-end">
-                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                    <span className="sm:block hidden text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
                       Credits Earned
+                    </span>
+                    <span className="sm:hidden block text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                      Credits
                     </span>
                     <span className="text-2xl font-black tracking-tight leading-none">
                       {creditsEarned}
