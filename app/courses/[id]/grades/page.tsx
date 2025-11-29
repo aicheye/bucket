@@ -25,7 +25,6 @@ import Modal from "../../../components/modal";
 import RangeBadge from "../../../components/range-badge";
 import ReqAvgBadge from "../../../components/req-avg-badge";
 import { getCategoryColor, Item, useCourses } from "../../../course-context";
-import { get } from "http";
 
 interface ParsedItem {
   name: string;
@@ -610,8 +609,7 @@ export default function CourseGradesPage() {
     const remainingCount = itemsInCategory.filter((i) => i.data.grade === "" && !i.data.isPlaceholder).length;
 
     // Contribution: sum of per-item earned contributions using same logic as item rows
-    const perItemContribution = markedCount > 0 ? compWeight / markedCount : 0;
-
+    const perItemContribution = markedCount > 0 ? compWeight / (includedItems.length - remainingCount) : 0;
     let earnedContributionSum = 0;
     let hasAnyContribution = false;
 
@@ -1236,7 +1234,7 @@ export default function CourseGradesPage() {
                         <span className="text-base-content/50 font-mono">/{s.totalComponent.toFixed(2)}%</span>
                       ) : (
                         <div className="flex flex-col items-end">
-                          {s.earnedContributionSum - s.totalComponent < 0 ? (
+                          {s.earnedContributionSum - s.totalComponent < -0.005 ? (
                             <span className="font-mono font-bold">{(s.earnedContributionSum - s.totalComponent).toFixed(2)}%</span>
                           ) : (
                             <span className="font-mono opacity-50">{s.earnedContributionSum.toFixed(2)}%</span>
