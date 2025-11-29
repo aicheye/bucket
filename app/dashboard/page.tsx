@@ -975,7 +975,7 @@ export default function CoursesPage() {
                     <div className="flex flex-col h-full gap-2">
                       {todaysClasses.slice(0, 6).map((cls, i) => (
                         <Link
-                          href={`/courses/${cls.courseId}/info`}
+                          href={`/courses/${cls.courseId}`}
                           key={i}
                           className="flex-grow max-h-[6rem] items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
                           onClick={(e) => {
@@ -985,7 +985,7 @@ export default function CoursesPage() {
                               e.preventDefault();
                               const c = courses.find((x) => x.id === cls.courseId) || null;
                               setOptimisticCourse && setOptimisticCourse(c);
-                              router.push(`/courses/${cls.courseId}/info`);
+                              router.push(`/courses/${cls.courseId}`);
                             } catch (err) {
                               // fallback to normal navigation
                               // eslint-disable-next-line no-console
@@ -1131,7 +1131,7 @@ export default function CoursesPage() {
                     return (
                       <Link
                         key={course.id}
-                        href={`/courses/${course.id}/info`}
+                        href={`/courses/${course.id}`}
                         className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
                         onClick={(e) => {
                           e.preventDefault();

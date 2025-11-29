@@ -169,6 +169,38 @@ export default function Sidebar() {
     return b.localeCompare(a); // Fallback to string compare descending
   });
 
+  // Calculate term progress for current term
+  const currentTerm = sortedFolders.length > 0 ? sortedFolders[0] : null;
+
+  let timeProgress = 0;
+  if (currentTerm) {
+    const [season, yearStr] = currentTerm.split(" ");
+    const year = parseInt(yearStr);
+    let startDate: Date, endDate: Date;
+
+    if (season === "Winter") {
+      startDate = new Date(year, 0, 1); // Jan 1
+      endDate = new Date(year, 3, 30); // Apr 30
+    } else if (season === "Spring") {
+      startDate = new Date(year, 4, 1); // May 1
+      endDate = new Date(year, 7, 31); // Aug 31
+    } else {
+      // Fall
+      startDate = new Date(year, 8, 1); // Sep 1
+      endDate = new Date(year, 11, 31); // Dec 31
+    }
+
+    const today = new Date();
+    const totalDays =
+      (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    const elapsedDays =
+      (today.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    let progress = (elapsedDays / totalDays) * 100;
+    if (progress < 0) progress = 0;
+    if (progress > 100) progress = 100;
+    timeProgress = progress;
+  }
+
   return (
     <div className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
       <Modal
@@ -266,7 +298,7 @@ export default function Sidebar() {
                     onChange={() => toggleFolder(folder)}
                     className="min-h-0 p-0"
                   />
-                  <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex items-center align-center gap-2">
+                  <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex gap-2">
                     <div className="flex items-center gap-2 text-md">
                       {folder}
                     </div>
@@ -303,8 +335,8 @@ export default function Sidebar() {
                       ))}
                     </div>
                   </div>
-                  <div className="bg-base-300 py-2 px-4 text-xs text-base-content/70 items-center text-right w-full font-mono">
-                    Total credits: <span className="font-bold">{folderCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
+                  <div className="bg-base-300 p-2 pr-4 text-xs text-base-content/70 text-right w-full font-mono flex flex-col gap-1">
+                    <span>Total credits: <span className="font-bold">{folderCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span></span>
                   </div>
                 </div>
               );

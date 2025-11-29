@@ -214,11 +214,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }`;
 
       const json = await sendQuery({ query: mutation, variables: { code: code, term: term, data: data, owner_id: owner_id } });
-      console.log("Add course response:", json);
       await fetchCourses();
       return json.data?.insert_courses?.returning?.[0]?.id;
     } catch (error) {
-      console.error("Error adding course:", error);
     } finally {
       setLoading(false);
     }
@@ -559,46 +557,28 @@ export function useCourses() {
 
 export const CATEGORY_COLORS = [
   "bg-red-600",
-  "bg-orange-600",
   "bg-amber-600",
-  "bg-yellow-600",
-  "bg-lime-600",
   "bg-green-600",
-  "bg-emerald-600",
   "bg-teal-600",
-  "bg-cyan-600",
-  "bg-sky-600",
   "bg-blue-600",
-  "bg-indigo-600",
-  "bg-violet-600",
   "bg-purple-600",
-  "bg-fuchsia-600",
-  "bg-pink-600",
-  "bg-rose-600",
 ];
 
-const assignedColors: Record<string, string> = {};
-const usedIndices: Record<number, string> = {};
+export function getCategoryColor(name: string, types: any[]): string {
+  if (!name || !types) {
+    return CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)];
+  }
 
-export function getCategoryColor(name: string) {
-  if (assignedColors[name]) return assignedColors[name];
+  const sorted = [...types].sort();
+  const index = sorted.indexOf(name);
 
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const s = String(types[0]);
+  for (let i = 0; i < s.length; i++) {
+    hash = s.charCodeAt(i) + ((hash << 5) - hash);
   }
+  const offset = Math.abs(hash) % CATEGORY_COLORS.length;
 
-  let index = Math.abs(hash) % CATEGORY_COLORS.length;
-  const startIndex = index;
-
-  while (usedIndices[index] !== undefined && usedIndices[index] !== name) {
-    index = (index + 1) % CATEGORY_COLORS.length;
-    if (index === startIndex) {
-      return CATEGORY_COLORS[startIndex];
-    }
-  }
-
-  usedIndices[index] = name;
-  assignedColors[name] = CATEGORY_COLORS[index];
-  return assignedColors[name];
+  if (index === -1) return CATEGORY_COLORS[offset];
+  return CATEGORY_COLORS[(index + offset) % CATEGORY_COLORS.length];
 }

@@ -292,9 +292,9 @@ export default function CourseDetailInfoPage() {
                     {isEditingSections && <th></th>}
                     <th>Section</th>
                     <th>Component</th>
-                    <th className="min-w-fit">Days</th>
-                    <th className="min-w-fit">Time</th>
-                    <th className="min-w-fit">Location</th>
+                    <th>Days</th>
+                    <th>Time</th>
+                    <th>Location</th>
                     <th>Instructors</th>
                   </tr>
                 </thead>
@@ -324,12 +324,12 @@ export default function CourseDetailInfoPage() {
                       )}
                       <td>{info.Section}</td>
                       <td>{info.Component}</td>
-                      <td className="min-w-fit">
+                      <td className="min-w-32">
                         {info["Meet Dates"] && info["Meet Dates"].length <= 3
                           ? formatDates(info["Meet Dates"])
                           : info["Days of Week"]?.join(", ")}
                       </td>
-                      <td className="min-w-fit">
+                      <td className="text-nowrap">
                         {typeof info["Start Time"] === "object"
                           ? formatTime(info["Start Time"])
                           : info["Start Time"]}{" "}
@@ -339,10 +339,10 @@ export default function CourseDetailInfoPage() {
                           : info["End Time"]}
                       </td>
                       <td className="min-w-fit">{info.Location}</td>
-                      <td>
+                      <td className="flex flex-col gap-2">
                         {info.Instructors?.map((inst: any) => (
                           <div key={inst.Email}>
-                            {inst.Name}{" "}
+                            <p>{inst.Name}</p>
                             <a
                               href={`mailto:${inst.Email}`}
                               className="text-xs opacity-50"
@@ -447,7 +447,11 @@ export default function CourseDetailInfoPage() {
                               ) : (
                                 <div className="flex items-center gap-2">
                                   <div
-                                    className={`badge badge-xs ${getCategoryColor(item.Component)}`}
+                                    className={`badge badge-xs 
+                                      ${getCategoryColor(
+                                      item.Component,
+                                      selectedCourse?.data["marking-schemes"]?.flat().map((s: any) => s.Component) || []
+                                    )}`}
                                   ></div>
                                   {item.Component}
                                 </div>

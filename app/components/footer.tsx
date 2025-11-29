@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-base-200 border-t border-base-content/10" role="contentinfo">
-      <div className="mx-auto px-4 py-4 sm:py-2 flex flex-col md:flex-row md:py-1 items-center justify-between gap-2">
+      <div className="mx-auto p-4 flex flex-col md:flex-row items-center justify-between gap-2">
         {/* Left: action links */}
         <div className="flex flex-wrap items-center gap-2">
           <a

@@ -25,6 +25,7 @@ import Modal from "../../../components/modal";
 import RangeBadge from "../../../components/range-badge";
 import ReqAvgBadge from "../../../components/req-avg-badge";
 import { getCategoryColor, Item, useCourses } from "../../../course-context";
+import { get } from "http";
 
 interface ParsedItem {
   name: string;
@@ -573,6 +574,70 @@ export default function CourseGradesPage() {
 
   if (!selectedCourse) return null;
 
+  // Compute per-type aggregates for the "Item Types Averages" table
+  const showRemaining = allTypes.length > 1;
+
+  const typeStats = (usedScheme ? usedScheme.map((c: any) => c.Component) : allTypes).map((category: string) => {
+    const comp = componentMap.get(category);
+    const compWeight = comp ? parseFloat(comp.Weight) || 0 : 0;
+    const keptCount = Math.max(categoryKeptCountMap.get(category) || 0, 0);
+
+    // Items to consider include placeholders (from displayItems) and real items
+    const itemsInCategory = displayItems.filter((i) => i.data.type === category);
+
+    // Exclude dropped items from contribution/average calculations
+    const includedItems = itemsInCategory.filter((i) => !usedDroppedItemIds.includes(i.id));
+
+    // Graded items are those with a non-empty grade
+    const gradedItems = includedItems.filter((i) => i.data.grade !== "");
+
+    // Average percent across graded items (grade/max * 100)
+    const gradePercents = gradedItems
+      .map((it) => {
+        const g = parseFloat(it.data.grade || "0");
+        const m = parseFloat(it.data.max_grade || "0");
+        if (isNaN(g) || isNaN(m) || m === 0) return NaN;
+        return (g / m) * 100;
+      })
+      .filter((v) => !isNaN(v));
+
+    const averagePercent =
+      gradePercents.length > 0
+        ? gradePercents.reduce((a, b) => a + b, 0) / gradePercents.length
+        : null;
+
+    const markedCount = itemsInCategory.filter((i) => i.data.grade !== "" && !i.data.isPlaceholder).length;
+    const remainingCount = itemsInCategory.filter((i) => i.data.grade === "" && !i.data.isPlaceholder).length;
+
+    // Contribution: sum of per-item earned contributions using same logic as item rows
+    const perItemContribution = markedCount > 0 ? compWeight / markedCount : 0;
+
+    let earnedContributionSum = 0;
+    let hasAnyContribution = false;
+
+    includedItems.forEach((it) => {
+      const g = parseFloat(it.data.grade || "0");
+      const m = parseFloat(it.data.max_grade || "0");
+      if (it.data.grade === "" || isNaN(g) || isNaN(m) || m === 0) return;
+      earnedContributionSum += (g / m) * perItemContribution;
+      hasAnyContribution = true;
+    });
+
+    const totalComponent = compWeight;
+
+    return {
+      category,
+      compWeight,
+      keptCount,
+      averagePercent,
+      earnedContributionSum: hasAnyContribution ? earnedContributionSum : null,
+      totalComponent,
+      markedCount,
+      remainingCount,
+      itemsCount: itemsInCategory.length,
+    };
+  });
+
   return (
     <>
       <Modal
@@ -740,7 +805,7 @@ export default function CourseGradesPage() {
                       <td>
                         <div className="flex items-center gap-2">
                           <div
-                            className={`badge badge-xs ${getCategoryColor(t)}`}
+                            className={`badge badge-xs ${getCategoryColor(t, getCourseTypes())}`}
                           ></div>
                           <span className="font-medium">{t}</span>
                         </div>
@@ -960,8 +1025,8 @@ export default function CourseGradesPage() {
       </Modal>
 
       <div className="card bg-base-100 shadow-md">
-        <div className="card-body p-4 sm:p-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="card-body p-4 sm:p-8 gap-4 sm:gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
               <div className="flex items-center gap-2">
                 <h2 className="card-title text-2xl">Grades</h2>
@@ -1009,7 +1074,7 @@ export default function CourseGradesPage() {
           </div>
           {selectedCourse.data["marking-schemes"]?.length > 0 &&
             displayItems.length > 0 && (
-              <div className="bg-base-200/40 card p-4 mb-6 border border-base-content/5 shadow-sm">
+              <div className="bg-base-200/40 card p-4 border border-base-content/5 shadow-sm">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-4xl">
                   {selectedCourse.data["marking-schemes"]
                     .map((scheme: any[], idx: number) => ({
@@ -1125,7 +1190,7 @@ export default function CourseGradesPage() {
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
-                                      className={`badge badge-xs ${getCategoryColor(s.Component)}`}
+                                      className={`badge badge-xs ${getCategoryColor(s.Component, getCourseTypes())}`}
                                     ></div>
                                     <span className="font-medium">
                                       {s.Component}
@@ -1143,7 +1208,64 @@ export default function CourseGradesPage() {
                     })}
                 </div>
               </div>
-            )}{" "}
+            )}
+
+          <div className="overflow-x-auto border border-base-content/10 rounded-box">
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th className="text-right">Avg Grade</th>
+                  <th className="text-right">Contribution</th>
+                  <th className="w-full">Type</th>
+                  <th>Marked</th>
+                  {showRemaining && <th>Remaining</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {typeStats.map((s) => (
+                  <tr key={s.category}>
+                    <td className="text-right">
+                      {s.averagePercent === null ? (
+                        <span className="text-base-content/50">-</span>
+                      ) : (
+                        <span className="font-mono font-bold">{s.averagePercent.toFixed(2)}%</span>
+                      )}
+                    </td>
+                    <td className="text-right">
+                      {s.earnedContributionSum === null ? (
+                        <span className="text-base-content/50 font-mono">/{s.totalComponent.toFixed(2)}%</span>
+                      ) : (
+                        <div className="flex flex-col items-end">
+                          {s.earnedContributionSum - s.totalComponent < 0 ? (
+                            <span className="font-mono font-bold">{(s.earnedContributionSum - s.totalComponent).toFixed(2)}%</span>
+                          ) : (
+                            <span className="font-mono opacity-50">{s.earnedContributionSum.toFixed(2)}%</span>
+                          )
+                          }
+                          <span className="text-xs opacity-50">/ {s.totalComponent.toFixed(2)}%</span>
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className={`badge badge-xs ${getCategoryColor(s.category, getCourseTypes())}`}></div>
+                        <span className="font-medium">{s.category}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="font-mono">{s.markedCount}</span>
+                    </td>
+                    {showRemaining && (
+                      <td>
+                        <span className="font-mono">{s.remainingCount}</span>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
           <div className="overflow-x-auto border border-base-content/10 rounded-box">
             <table className="table w-full">
               <thead>
@@ -1264,9 +1386,8 @@ export default function CourseGradesPage() {
 
                             if (isNaN(earnedContribution)) {
                               return (
-                                <div className="flex w-full items-end justify-end gap-1">
-                                  <span className="text-base-content/50">-</span>
-                                  <span className="text-base-content/50">{'/ ' + totalContribution.toFixed(2)}%</span>
+                                <div className="flex w-full items-end justify-end gap-1 font-mono">
+                                  <span className="text-base-content/50">/{totalContribution.toFixed(2)}%</span>
                                 </div>
                               );
                             }
@@ -1323,7 +1444,7 @@ export default function CourseGradesPage() {
                         </td>
                         <td>
                           <div
-                            className={`badge ${getCategoryColor(item.data.type)} text-white border-none max-w-[120px] truncate block lg:max-w-none lg:whitespace-nowrap lg:h-auto ${isDropped ? "opacity-50" : ""}`}
+                            className={`badge ${getCategoryColor(item.data.type, getCourseTypes())} text-white border-none max-w-[120px] truncate block lg:max-w-none lg:whitespace-nowrap lg:h-auto ${isDropped ? "opacity-50" : ""}`}
                           >
                             {item.data.type}
                           </div>
