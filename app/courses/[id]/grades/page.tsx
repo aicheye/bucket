@@ -1231,7 +1231,7 @@ export default function CourseGradesPage() {
                     </td>
                     <td className="text-right">
                       {s.earnedContributionSum === null ? (
-                        <span className="text-base-content/50 font-mono">/{s.totalComponent.toFixed(2)}%</span>
+                        <span className="text-base-content/50">/ {s.totalComponent.toFixed(2)}%</span>
                       ) : (
                         <div className="flex flex-col items-end">
                           {s.earnedContributionSum - s.totalComponent < -0.005 ? (
@@ -1384,8 +1384,8 @@ export default function CourseGradesPage() {
 
                             if (isNaN(earnedContribution)) {
                               return (
-                                <div className="flex w-full items-end justify-end gap-1 font-mono">
-                                  <span className="text-base-content/50">/{totalContribution.toFixed(2)}%</span>
+                                <div className="flex w-full items-end justify-end">
+                                  <span className="text-base-content/50">/ {totalContribution.toFixed(2)}%</span>
                                 </div>
                               );
                             }
