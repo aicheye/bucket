@@ -603,18 +603,21 @@ export default function CourseGradesPage() {
               <button
                 className="btn btn-soft btn-md flex-1 sm:flex-none"
                 onClick={() => setShowGradingSettings(true)}
+                title="Grading settings"
               >
                 <FontAwesomeIcon icon={faCog} /> Grading
               </button>
               <button
                 className="btn btn-soft btn-md flex-1 sm:flex-none"
                 onClick={() => setIsImporting(true)}
+                title="Import grades"
               >
                 <FontAwesomeIcon icon={faFileImport} /> Import
               </button>
               <button
                 className="btn btn-primary btn-md flex-1 sm:flex-none"
                 onClick={openAddItem}
+                title="Add item"
               >
                 <FontAwesomeIcon icon={faPlus} /> Add
               </button>

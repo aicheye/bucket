@@ -40,10 +40,18 @@ const Heartbeat = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-export default function Providers({ children, session }: { children: React.ReactNode; session?: Session | null; }) {
+export default function Providers({
+  children,
+  session,
+}: {
+  children: React.ReactNode;
+  session?: Session | null;
+}) {
   const pathname = usePathname();
   const showSidebar =
-    pathname?.startsWith("/courses") || pathname === "/dashboard" || pathname === "/calendar";
+    pathname?.startsWith("/courses") ||
+    pathname === "/dashboard" ||
+    pathname === "/calendar";
   const authScreen = pathname?.startsWith("/api/auth/signin");
   const gradesScreen = pathname?.endsWith("/grades");
   const infoScreen = pathname?.endsWith("/info");
@@ -105,15 +113,14 @@ export default function Providers({ children, session }: { children: React.React
                             htmlFor="my-drawer-2"
                             className="drawer-overlay"
                             style={{
-                              top: "calc(var(--navbar-total-height) - 1px)",
+                              top: "calc(var(--navbar-total-height))",
                               height:
                                 "calc(100vh - var(--navbar-total-height))",
                             }}
                           ></label>
                           <div
                             style={{
-                              marginTop:
-                                "calc(var(--navbar-total-height) - 1px)",
+                              marginTop: "calc(var(--navbar-total-height)  )",
                               height:
                                 "calc(100vh - var(--navbar-total-height))",
                               minHeight: 0,

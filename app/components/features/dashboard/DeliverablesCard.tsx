@@ -88,6 +88,7 @@ export default function DeliverablesCard({
                     onEditDeliverable(item);
                   }}
                   aria-label="Edit deliverable"
+                  title="Edit deliverable"
                 >
                   <FontAwesomeIcon icon={faPencil} aria-hidden="true" />
                 </button>
@@ -98,6 +99,7 @@ export default function DeliverablesCard({
                     onDeleteDeliverable(item.id);
                   }}
                   aria-label="Delete deliverable"
+                  title="Delete deliverable"
                 >
                   <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                 </button>

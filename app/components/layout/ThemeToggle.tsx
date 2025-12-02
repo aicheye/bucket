@@ -112,13 +112,17 @@ export default function ThemeToggle() {
   }, []);
 
   return (
-    <div ref={rootRef} className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}>
+    <div
+      ref={rootRef}
+      className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}
+    >
       <button
         type="button"
         className="btn btn-ghost"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Theme options"
+        title="Theme options"
         onMouseDown={(e) => {
           e.preventDefault();
           setOpen((v) => !v);
@@ -163,11 +167,13 @@ export default function ThemeToggle() {
         {themes.map((t) => (
           <li key={t}>
             <button
-              className={`btn btn-sm btn-block justify-start ${theme === t ? "btn-primary" : "btn-ghost"
-                }`}
+              className={`btn btn-sm btn-block justify-start ${
+                theme === t ? "btn-primary" : "btn-ghost"
+              }`}
               role="menuitem"
               type="button"
               onClick={() => handleThemeChange(t)}
+              title={t.charAt(0).toUpperCase() + t.slice(1)}
             >
               {t === "system" ? (
                 <FontAwesomeIcon
@@ -198,5 +204,3 @@ export default function ThemeToggle() {
     </div>
   );
 }
-
-

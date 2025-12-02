@@ -41,6 +41,13 @@ export default function ScheduleCard({
               "btn btn-sm btn-soft" + (isEditingSections ? " btn-success" : "")
             }
             onClick={onToggleEdit}
+            title={
+              isEditingSections
+                ? "Done"
+                : sections && Object.keys(sections).length > 0
+                  ? "Edit Sections"
+                  : "Choose Sections"
+            }
           >
             {sections && Object.keys(sections).length > 0 ? (
               isEditingSections ? (

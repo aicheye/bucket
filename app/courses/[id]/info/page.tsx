@@ -227,6 +227,7 @@ export default function CourseDetailInfoPage() {
             <button
               className="btn"
               onClick={() => setShowSectionConfirm(false)}
+              title="Cancel"
             >
               Cancel
             </button>

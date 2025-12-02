@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import AuthButton from "../../../components/ui/AuthButton";
+import { APP_NAME } from "../../../../lib/constants";
 
 function AuthPage({ error }: { error?: string | string[] }) {
   const { status } = useSession();
@@ -32,7 +33,7 @@ function AuthPage({ error }: { error?: string | string[] }) {
             <AuthButton />
 
             <p className="text-base-content text-md font-medium text-center">
-              Bucket helps you organize your courses, track grades and
+              {APP_NAME} helps you organize your courses, track grades and
               assignments, and plan your term — all in one place. See the{" "}
               <a target="_blank" href="/help" className="link link-primary">
                 help page

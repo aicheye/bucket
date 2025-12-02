@@ -1,128 +1,134 @@
+import { Metadata } from "next";
+import { APP_NAME } from "../../lib/constants";
 import AddCourseHelp from "../components/features/AddCourseHelp";
+import ProsePageContainer from "../components/features/ProsePageContainer";
+
+export const metadata: Metadata = {
+  title: `${APP_NAME} | Help & FAQ`,
+};
 
 export default function HelpPage() {
   return (
-    <div className="flex-1 max-w-3xl mx-auto py-12 px-4 w-full text-base-content flex flex-col gap-8">
+    <ProsePageContainer>
       <h1 className="text-4xl font-bold">Help & FAQ</h1>
-      <section className="flex flex-col gap-4">
+
+      <section id="getting-started" className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Getting Started</h2>
         <p>
-          To get started with Bucket, sign in using your Google account. Once
-          signed in, you can create and manage your courses.
+          Sign in with your Google account, then create a new course from the
+          dashboard. Courses appear in the sidebar for quick access.
         </p>
       </section>
-      <AddCourseHelp />
-      <section className="flex flex-col gap-4">
+
+      <section id="add-course" className="flex flex-col gap-4">
+        <AddCourseHelp />
+      </section>
+
+      <section id="managing-courses" className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Managing Courses</h2>
         <p>
-          Click on a course in the sidebar to view and manage its details. You
-          can edit course information or delete the course if needed.
+          Click a course in the sidebar to view details. From a course page you
+          can add items (assignments, exams), edit the marking scheme, or delete
+          the course. Deleting a course removes its grades and settings
+          permanently.
         </p>
       </section>
-      <section className="flex flex-col gap-4" id="grade-calculation">
+
+      <section id="grade-calculation" className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Grade Calculation</h2>
-        <p>
-          Bucket calculates your grades based on the marking schemes defined for
-          each course.
-        </p>
+        <p>{APP_NAME} computes several useful metrics from your course data:</p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li>
-            <strong>Current Grade:</strong> This is your weighted average based
-            on the items you have received grades for so far. It ignores any
-            items that are not yet graded.
+            <strong>Current Grade:</strong> Weighted average of graded items —
+            ungraded items are ignored for this value.
           </li>
           <li>
-            <strong>Term Average:</strong> The average of your current grades
-            for all courses in the current term.
+            <strong>Term Average / Term GPA:</strong> Aggregated across all
+            courses in the current term. GPA uses the OUAC scale conversion.
           </li>
           <li>
-            <strong>Term GPA:</strong> The average GPA of all courses in the
-            current term, calculated by converting each course&apos;s percentage
-            grade to a 4.0 scale according to{" "}
-            <a
-              href="https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table/#conversion-table"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link link-primary"
-            >
-              OUAC Scale 3
-            </a>
-            .
+            <strong>Cumulative Average / CGPA:</strong> Aggregated across all
+            terms and courses.
           </li>
           <li>
-            <strong>Cumulative Average (CAV):</strong> The average of your final
-            (or current) grades across all courses in all terms.
+            <strong>Credits Earned:</strong> Total credits from passing courses
+            (&ge; 50%).
           </li>
           <li>
-            <strong>Cumulative GPA (CGPA):</strong> The average GPA across all
-            courses in all terms.
+            <strong>Range (Min / Max):</strong> Minimum and maximum possible
+            final grades based on remaining ungraded items.
           </li>
           <li>
-            <strong>Credits Earned:</strong> The total number of credits you
-            have earned from all courses (completed and in progress) with a
-            final grade of passing grade (&ge;50%).
+            <strong>Required to Goal:</strong> Average percentage needed on all
+            remaining items to reach a set target grade.
           </li>
           <li>
-            <strong>Range:</strong> The range shows your minimum and maximum
-            possible final grade.
-            <ul className="list-disc list-inside ml-6 mt-1 text-sm opacity-80">
-              <li>
-                <strong>Min:</strong> Assumes you get 0% on all remaining
-                ungraded items.
-              </li>
-              <li>
-                <strong>Max:</strong> Assumes you get 100% on all remaining
-                ungraded items.
-              </li>
-            </ul>
+            <strong>Contribution:</strong> How much each graded item affects the
+            overall percentage (positive when above average, negative when
+            below).
           </li>
           <li>
-            <strong>Required to Goal:</strong> If you set a target grade, this
-            tells you what average percentage you need to achieve on all
-            remaining ungraded items to reach that goal.
-          </li>
-          <li>
-            <strong>Contribution:</strong> This shows how much each individual
-            item deducts from your overall grade. For example, an item worth 10%
-            of the course that you scored 80% on deducts -2% from your overall
-            grade. If you earned 100% on that item, the contribution instead
-            shows 10% (the full weight).
-          </li>
-          <li>
-            <strong>Category Weights:</strong> If your course uses categories
-            (e.g., Homework, Exams), each category&apos;s weight towards the
-            final grade is displayed in the marking scheme.
-          </li>
-          <li>
-            <strong>Time Progress:</strong> This indicates how far along you are
-            in the term based on the current date relative to the start and end
-            dates of the term.
+            <strong>Category Weights:</strong> Weights for categories (Homework,
+            Exams, etc.) appear in the marking scheme and affect calculations.
           </li>
         </ul>
         <p className="text-sm opacity-70 mt-2">
-          Note: If a category has no graded items yet, its weight is distributed
-          proportionally among the other categories for the &quot;Current
-          Grade&quot; calculation.
+          Note: If a category has no graded items yet, its weight is
+          proportionally distributed for the <em>Current Grade</em> view.
         </p>
       </section>
-      <section className="flex flex-col gap-4">
+
+      <section id="account-deletion" className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Account Deletion</h2>
         <p>
-          To delete your account, go to your profile settings and click
-          &quot;Delete Account&quot;. This will remove your user data and all
-          associated courses permanently.
+          To delete your account, open your profile settings and choose
+          &quot;Delete Account&quot;. This permanently removes your user data
+          and all associated courses.
         </p>
       </section>
-      <section className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold">Contact Support</h2>
+
+      <section id="faq" className="flex flex-col gap-4">
+        <h2 className="text-2xl font-semibold">Frequently Asked Questions</h2>
+        <dl className="space-y-4">
+          <div>
+            <dt className="font-semibold">How are grades rounded?</dt>
+            <dd className="mt-1">
+              Although grades are shown rounded to 0, 1, or 2 decimal places,
+              the underlying calculations use full precision to ensure accuracy.
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold">
+              Can I import grades from other sites?
+            </dt>
+            <dd className="mt-1">
+              You can import grades using the parser endpoints under the API —
+              see the import grades modal on the Grades page.
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold">
+              Why does my current grade differ from the syllabus?
+            </dt>
+            <dd className="mt-1">
+              Current Grade ignores ungraded items; the syllabus final grade
+              assumes all items are weighted and some may be future or
+              estimated.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="contact" className="flex flex-col gap-4">
+        <h2 className="text-2xl font-semibold">Contact / Feedback</h2>
         <p>
-          If you have need further assistance, feel free to reach out to me at{" "}
-          <a href="mailto:sean@seanyang.me" className="underline">
+          Report bugs or request features by emailing
+          <a href="mailto:sean@seanyang.me" className="underline ml-1">
             sean@seanyang.me
           </a>
           .
         </p>
       </section>
-    </div>
+    </ProsePageContainer>
   );
 }

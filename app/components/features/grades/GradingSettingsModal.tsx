@@ -34,10 +34,10 @@ export default function GradingSettingsModal({
       onConfirm={onSave}
       actions={
         <>
-          <button className="btn" onClick={onClose}>
+          <button className="btn" onClick={onClose} title="Cancel">
             Cancel
           </button>
-          <button className="btn btn-primary" onClick={onSave}>
+          <button className="btn btn-primary" onClick={onSave} title="Save">
             Save
           </button>
         </>

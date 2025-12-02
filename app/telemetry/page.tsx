@@ -2,6 +2,7 @@ import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth/next";
+import { APP_NAME } from "../../lib/constants";
 import {
   GET_TELEMETRY_DAU,
   GET_TELEMETRY_FEATURE_USAGE_30D,
@@ -196,5 +197,5 @@ export default async function TelemetryPage() {
 }
 
 export const metadata: Metadata = {
-  title: "Bucket | Telemetry",
+  title: `${APP_NAME} | Telemetry`,
 };

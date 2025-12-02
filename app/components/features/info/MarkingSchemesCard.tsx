@@ -59,6 +59,7 @@ export default function MarkingSchemesCard({
               "btn btn-sm btn-soft" + (isEditing ? " btn-success" : "")
             }
             onClick={onToggleEdit}
+            title={isEditing ? "Done" : "Edit Schemes"}
           >
             {isEditing ? (
               <>
@@ -88,6 +89,7 @@ export default function MarkingSchemesCard({
                 <button
                   className="btn btn-xs btn-circle btn-error border-base-content/20 absolute -top-2 -right-2 z-10 shadow-md"
                   onClick={() => onRemoveScheme(i)}
+                  title="Remove scheme"
                 >
                   ✕
                 </button>
@@ -211,7 +213,11 @@ export default function MarkingSchemesCard({
           ))}
           {isEditing && (
             <div className="flex flex-col gap-2 items-center justify-center border border-dashed border-base-content/20 card min-h-[200px]">
-              <button className="btn btn-ghost" onClick={onAddScheme}>
+              <button
+                className="btn btn-ghost"
+                onClick={onAddScheme}
+                title="Add Scheme"
+              >
                 <FontAwesomeIcon
                   icon={faPlus}
                   className="mr-2"

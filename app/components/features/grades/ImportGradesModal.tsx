@@ -49,7 +49,7 @@ export default function ImportGradesModal({
       }
       actions={
         <>
-          <button className="btn" onClick={onClose}>
+          <button className="btn" onClick={onClose} title="Cancel">
             Cancel
           </button>
           {importStep === 1 ? (
@@ -57,11 +57,16 @@ export default function ImportGradesModal({
               className="btn btn-primary"
               onClick={onParse}
               disabled={!importText.trim()}
+              title="Next"
             >
               Next
             </button>
           ) : (
-            <button className="btn btn-primary" onClick={onConfirm}>
+            <button
+              className="btn btn-primary"
+              onClick={onConfirm}
+              title={`Import ${parsedItems.length} Items`}
+            >
               Import {parsedItems.length} Items
             </button>
           )}

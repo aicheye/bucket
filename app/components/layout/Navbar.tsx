@@ -3,6 +3,7 @@
 import { faBars, faFillDrip } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
+import { APP_NAME, APP_VERSION } from "../../../lib/constants";
 import Profile from "./Profile";
 import ThemeToggle from "./ThemeToggle";
 
@@ -44,7 +45,7 @@ export default function Navbar({
             </label>
           )}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 flex flex-row items-center gap-2">
           <div className="flex btn btn-ghost normal-case text-xl w-fit p-0">
             <Link
               href="/"
@@ -56,7 +57,12 @@ export default function Navbar({
                 className="w-6 h-6"
                 aria-hidden="true"
               />
-              Bucket
+              <span className="flex items-baseline gap-2">
+                {APP_NAME}{" "}
+                <span className="text-sm text-gray-500 font-semibold italic">
+                  {APP_VERSION}
+                </span>
+              </span>
             </Link>
           </div>
         </div>

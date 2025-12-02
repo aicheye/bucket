@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { APP_NAME } from "../../../lib/constants";
 import ProsePageContainer from "../../components/features/ProsePageContainer";
 
 export const metadata: Metadata = {
-  title: "Bucket | Terms of Service",
+  title: `${APP_NAME} | Terms of Service`,
 };
 
 export default function TermsPage() {

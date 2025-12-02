@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { APP_NAME } from "../../../lib/constants";
 import ProsePageContainer from "../../components/features/ProsePageContainer";
+import Line from "../../components/ui/Line";
 
 export const metadata: Metadata = {
-  title: "Bucket | License",
+  title: `${APP_NAME} | License`,
 };
 
 function MITLicense() {
@@ -302,7 +304,7 @@ export default function LicensesPage() {
           <li>GitHub Copilot Raptor Mini</li>
         </ul>
       </div>
-      <div className="border-base-content/10 border-t"></div>
+      <Line direction="hor" className="w-full" />
       <div className="flex flex-col gap-4">
         <h1 className="text-4xl font-bold">Application License</h1>
         <p>
@@ -346,7 +348,7 @@ export default function LicensesPage() {
           .
         </p>
       </div>
-      <div className="border-base-content/10 border-t"></div>
+      <Line direction="hor" className="w-full" />
       <MITLicense />
     </ProsePageContainer>
   );

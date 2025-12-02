@@ -5,7 +5,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
+import { APP_NAME } from "../../../lib/constants";
 import { sendTelemetry } from "../../../lib/telemetry";
+import Line from "../../components/ui/Line";
 import Modal from "../../components/ui/Modal";
 import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
@@ -53,9 +55,9 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (selectedCourse) {
       const tab = isGradesView ? "Grades" : isInfoView ? "Info" : "Grades";
-      document.title = `Bucket | ${selectedCourse.code} - ${tab}`;
+      document.title = `${APP_NAME} | ${selectedCourse.code} - ${tab}`;
     } else {
-      document.title = "Bucket";
+      document.title = APP_NAME;
     }
   }, [selectedCourse, isGradesView, isInfoView]);
 
@@ -123,6 +125,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
         <button
           className="btn btn-primary mt-4"
           onClick={() => router.push("/courses")}
+          title="Back to Courses"
         >
           Back to Courses
         </button>
@@ -142,6 +145,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               className="btn"
               onClick={() => setShowDeleteConfirm(false)}
               disabled={isDeleting}
+              title="Cancel"
             >
               Cancel
             </button>
@@ -149,6 +153,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               className="btn btn-error"
               onClick={handleDelete}
               disabled={isDeleting}
+              title={isDeleting ? "Deleting..." : "Delete"}
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </button>
@@ -169,7 +174,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               </h2>
             </div>
 
-            <div className="hidden md:block border h-10 border-base-content/20"></div>
+            <Line direction="ver" className="h-10 hidden md:block" />
 
             <div className="flex flex-row items-center gap-2 form-control card p-2 bg-base-200/50 border border-base-content/10 shadow-sm">
               <div className="relative flex items-center flex-1 sm:flex-none justify-end">
@@ -190,7 +195,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
 
           {selectedCourse.data.outline_url && (
             <>
-              <div className="hidden md:block border h-10 border-base-content/20"></div>
+              <Line direction="ver" className="h-10 hidden md:block" />
               <a
                 href={selectedCourse.data.outline_url}
                 target="_blank"
@@ -225,32 +230,34 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <div
-        role="tablist"
-        className="tabs tabs-box bg-base-200/50 p-1 gap-1 w-fit"
-      >
-        <Link
-          role="tab"
-          href={`/courses/${id}/info`}
-          className={`tab px-8 transition-all duration-200 ${isInfoView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}
+      <div className="flex flex-row items-center justify-center md:justify-start w-full">
+        <div
+          role="tablist"
+          className="tabs tabs-box bg-base-200/50 p-1 gap-1 w-fit"
         >
-          Info
-        </Link>
-        <Link
-          role="tab"
-          href={`/courses/${id}/grades`}
-          className={`tab px-8 transition-all duration-200 ${isGradesView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}
-        >
-          Grades
-        </Link>
-      </div>
-
-      {isOptimisticFallback && (
-        <div className="flex flex-col gap-4 mb-4 max-w-5xl mx-auto w-full">
-          <div className="skeleton h-8 w-1/3 mb-2"></div>
-          <div className="skeleton h-48 w-full rounded-box"></div>
+          <Link
+            role="tab"
+            href={`/courses/${id}/info`}
+            className={`tab px-8 transition-all duration-200 ${isInfoView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}
+          >
+            Info
+          </Link>
+          <Link
+            role="tab"
+            href={`/courses/${id}/grades`}
+            className={`tab px-8 transition-all duration-200 ${isGradesView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}
+          >
+            Grades
+          </Link>
         </div>
-      )}
+
+        {isOptimisticFallback && (
+          <div className="flex flex-col gap-4 mb-4 max-w-5xl mx-auto w-full">
+            <div className="skeleton h-8 w-1/3 mb-2"></div>
+            <div className="skeleton h-48 w-full rounded-box"></div>
+          </div>
+        )}
+      </div>
 
       {children}
     </div>

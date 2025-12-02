@@ -1,6 +1,10 @@
 "use client";
 
-import { faCalendar, faGauge, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCircleQuestion,
+  faGauge,
+  faPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -12,6 +16,7 @@ import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
 import { useAlertState } from "../../hooks/useAlertState";
 import GradeBadge from "../features/GradeBadge";
+import Line from "../ui/Line";
 import Modal from "../ui/Modal";
 
 interface SidebarProps {
@@ -159,7 +164,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
 
   return (
     <div
-      className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10"
+      className="h-[calc(100vh-var(--navbar-height))] w-64 bg-base-200 overflow-y-auto p-4 flex flex-col border-r border-base-content/10"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       <Modal
@@ -168,178 +173,199 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
         title="Notice"
         onConfirm={closeAlert}
         actions={
-          <button className="btn" onClick={closeAlert}>
+          <button className="btn" onClick={closeAlert} title="Close">
             Close
           </button>
         }
       >
         <p>{alertState.message}</p>
       </Modal>
-      <div className="flex flex-col gap-3">
+
+      <div className="flex flex-col h-full gap-4 overflow-y-auto">
+        <div className="flex-1 flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/dashboard"
+              onClick={closeDrawer}
+              className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+            >
+              <FontAwesomeIcon
+                icon={faGauge}
+                className="w-5 h-5 mr-2"
+                aria-hidden="true"
+              />
+              Dashboard
+            </Link>
+          </div>
+
+          <Line direction="hor" className="w-full" />
+
+          <div className="flex flex-col sm:gap-4 gap-2 flex-1">
+            <div className="flex justify-between items-center">
+              <input
+                onChange={fileChange}
+                type="file"
+                id="outlineInput"
+                accept=".html"
+                style={{ display: "none" }}
+              />
+              <h2 className="font-bold text-lg">Courses</h2>
+              <button
+                onClick={buttonClick}
+                className="btn btn-sm btn-circle btn-primary"
+                title="Add Course"
+                aria-label="Add course"
+              >
+                <FontAwesomeIcon
+                  icon={faPlus}
+                  className="w-4 h-4"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+            {loading ? (
+              <div className="flex flex-col gap-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="skeleton h-16 w-full shrink-0"></div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {sortedFolders.map((folder) => {
+                  const folderCourses = groupedCourses[folder];
+                  let totalCurrent = 0;
+                  let totalCurrentCredits = 0;
+
+                  folderCourses.forEach((c) => {
+                    const details = getCourseGradeDetails(c, items);
+                    if (details && details.currentGrade !== null) {
+                      const credits = c.credits ?? 0.5;
+                      totalCurrent += details.currentGrade * credits;
+                      totalCurrentCredits += credits;
+                    }
+                  });
+
+                  const avgCurrent =
+                    totalCurrentCredits > 0
+                      ? totalCurrent / totalCurrentCredits
+                      : null;
+
+                  return (
+                    <div
+                      key={folder}
+                      className="collapse collapse-arrow border border-base-content/10 rounded-box"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={expandedFolders[folder] ?? true}
+                        onChange={() => toggleFolder(folder)}
+                        className="min-h-0 p-0"
+                      />
+                      <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex gap-2">
+                        <div className="flex items-center gap-2 text-md">
+                          {folder}
+                        </div>
+                        {avgCurrent !== null && (
+                          <GradeBadge grade={avgCurrent} size="sm" />
+                        )}
+                      </div>
+                      <div className="collapse-content p-0 bg-base-300">
+                        <div className="card bg-base-100 flex flex-col gap-2 p-2 py-3">
+                          {groupedCourses[folder].map((course) => (
+                            <Link
+                              key={course.id}
+                              href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : ""}`}
+                              onClick={closeDrawer}
+                              className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
+                                pathname?.startsWith(`/courses/${course.id}/`)
+                                  ? "btn-primary"
+                                  : "btn-base"
+                              }`}
+                            >
+                              <div className="text-left w-full flex justify-between items-center gap-2">
+                                <div className="min-w-fit font-bold text-[14px]">
+                                  {course.code}
+                                </div>
+                                <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
+                                  <div>({course.credits})</div>
+                                  <div className="font-semibold">
+                                    {getCourseGradeDetails(course, items) ? (
+                                      <span>
+                                        {getCourseGradeDetails(
+                                          course,
+                                          items,
+                                        ).currentGrade.toFixed(1)}
+                                        %
+                                      </span>
+                                    ) : (
+                                      ""
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-base-300 p-2 pr-4 text-xs text-base-content/70 text-right w-full font-mono flex flex-col gap-1">
+                        <span>
+                          Total credits:{" "}
+                          <span className="font-bold">
+                            {folderCourses.reduce(
+                              (sum, c) => sum + (c.credits || 0),
+                              0,
+                            )}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {uncategorizedCourses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}/grades`}
+                    onClick={closeDrawer}
+                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
+                      pathname?.startsWith(`/courses/${course.id}/`)
+                        ? "btn-primary bg-primary"
+                        : ""
+                    }`}
+                  >
+                    <div className="text-left w-full text-primary-content">
+                      <div className="font-bold">{course.code}</div>
+                      <div className="text-xs opacity-70">{course.term}</div>
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
+            {!loading && courses.length === 0 && (
+              <div className="text-center text-sm opacity-50 mt-4">
+                No courses yet. Click + to add one. Not sure how? See the{" "}
+                <Link target="_blank" href="/help" className="underline">
+                  help page
+                </Link>
+                .
+              </div>
+            )}
+          </div>
+        </div>
         <Link
-          href="/dashboard"
+          className="btn btn-info btn-md btn-soft"
+          title="Help"
+          aria-label="Help"
+          href="/help"
           onClick={closeDrawer}
-          className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
         >
           <FontAwesomeIcon
-            icon={faGauge}
-            className="w-5 h-5 mr-2"
+            icon={faCircleQuestion}
+            className="w-5 h-5 text-lg"
             aria-hidden="true"
           />
-          Dashboard
+          Help & FAQ
         </Link>
-      </div>
-
-      <div className="border-t border-base-content/10 w-full"></div>
-
-      <div className="flex flex-col sm:gap-4 gap-2 flex-1">
-        <div className="flex justify-between items-center">
-          <input
-            onChange={fileChange}
-            type="file"
-            id="outlineInput"
-            accept=".html"
-            style={{ display: "none" }}
-          />
-          <h2 className="font-bold text-lg">Courses</h2>
-          <button
-            onClick={buttonClick}
-            className="btn btn-sm btn-circle btn-primary"
-            title="Add Course"
-            aria-label="Add course"
-          >
-            <FontAwesomeIcon
-              icon={faPlus}
-              className="w-4 h-4"
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-        {loading ? (
-          <div className="flex flex-col gap-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton h-16 w-full shrink-0"></div>
-            ))}
-          </div>
-        ) : (
-          <>
-            {sortedFolders.map((folder) => {
-              const folderCourses = groupedCourses[folder];
-              let totalCurrent = 0;
-              let totalCurrentCredits = 0;
-
-              folderCourses.forEach((c) => {
-                const details = getCourseGradeDetails(c, items);
-                if (details && details.currentGrade !== null) {
-                  const credits = c.credits ?? 0.5;
-                  totalCurrent += details.currentGrade * credits;
-                  totalCurrentCredits += credits;
-                }
-              });
-
-              const avgCurrent =
-                totalCurrentCredits > 0
-                  ? totalCurrent / totalCurrentCredits
-                  : null;
-
-              return (
-                <div
-                  key={folder}
-                  className="collapse collapse-arrow border border-base-content/10 rounded-box"
-                >
-                  <input
-                    type="checkbox"
-                    checked={expandedFolders[folder] ?? true}
-                    onChange={() => toggleFolder(folder)}
-                    className="min-h-0 p-0"
-                  />
-                  <div className="collapse-title bg-base-300 font-bold min-h-0 py-2 px-4 flex gap-2">
-                    <div className="flex items-center gap-2 text-md">
-                      {folder}
-                    </div>
-                    {avgCurrent !== null && (
-                      <GradeBadge grade={avgCurrent} size="sm" />
-                    )}
-                  </div>
-                  <div className="collapse-content p-0 bg-base-300">
-                    <div className="card bg-base-100 flex flex-col gap-2 p-2 py-3">
-                      {groupedCourses[folder].map((course) => (
-                        <Link
-                          key={course.id}
-                          href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : ""}`}
-                          onClick={closeDrawer}
-                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
-                            ? "btn-primary"
-                            : "btn-base"
-                            }`}
-                        >
-                          <div className="text-left w-full flex justify-between items-center gap-2">
-                            <div className="min-w-fit font-bold text-[14px]">
-                              {course.code}
-                            </div>
-                            <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
-                              <div>({course.credits})</div>
-                              <div className="font-semibold">
-                                {getCourseGradeDetails(course, items) ? (
-                                  <span>
-                                    {getCourseGradeDetails(
-                                      course,
-                                      items,
-                                    ).currentGrade.toFixed(1)}
-                                    %
-                                  </span>
-                                ) : (
-                                  ""
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-base-300 p-2 pr-4 text-xs text-base-content/70 text-right w-full font-mono flex flex-col gap-1">
-                    <span>
-                      Total credits:{" "}
-                      <span className="font-bold">
-                        {folderCourses.reduce(
-                          (sum, c) => sum + (c.credits || 0),
-                          0,
-                        )}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-
-            {uncategorizedCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}/grades`}
-                onClick={closeDrawer}
-                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
-                  ? "btn-primary bg-primary"
-                  : ""
-                  }`}
-              >
-                <div className="text-left w-full text-primary-content">
-                  <div className="font-bold">{course.code}</div>
-                  <div className="text-xs opacity-70">{course.term}</div>
-                </div>
-              </Link>
-            ))}
-          </>
-        )}
-        {!loading && courses.length === 0 && (
-          <div className="text-center text-sm opacity-50 mt-4">
-            No courses yet. Click + to add one. Not sure how? See the{" "}
-            <Link target="_blank" href="/help" className="underline">
-              help page
-            </Link>
-            .
-          </div>
-        )}
       </div>
     </div>
   );

@@ -91,7 +91,9 @@ export default function Modal({
         <div className="modal-action">{actions}</div>
       </div>
       <form method="dialog" className="modal-backdrop" style={{ zIndex: 40 }}>
-        <button onClick={onClose}>close</button>
+        <button onClick={onClose} title="Close">
+          close
+        </button>
       </form>
     </dialog>
   );

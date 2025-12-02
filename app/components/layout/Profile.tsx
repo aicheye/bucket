@@ -179,13 +179,13 @@ export default function Profile() {
     try {
       const payload = newValue
         ? {
-          query: UPDATE_USER_TELEMETRY_AND_ANON,
-          variables: { id: session.user.id, consent: newValue, anon: false },
-        }
+            query: UPDATE_USER_TELEMETRY_AND_ANON,
+            variables: { id: session.user.id, consent: newValue, anon: false },
+          }
         : {
-          query: UPDATE_USER_TELEMETRY,
-          variables: { id: session.user.id, consent: newValue },
-        };
+            query: UPDATE_USER_TELEMETRY,
+            variables: { id: session.user.id, consent: newValue },
+          };
 
       const result = await sendQuery(payload);
 
@@ -432,10 +432,11 @@ export default function Profile() {
     }
   };
 
-
-
   return (
-    <div ref={rootRef} className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}>
+    <div
+      ref={rootRef}
+      className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}
+    >
       <Modal
         isOpen={showDeleteConfirm}
         onClose={closeConfirm}
@@ -443,10 +444,14 @@ export default function Profile() {
         onConfirm={deleteAccount}
         actions={
           <>
-            <button className="btn" onClick={closeConfirm}>
+            <button className="btn" onClick={closeConfirm} title="Cancel">
               Cancel
             </button>
-            <button className="btn btn-error" onClick={deleteAccount}>
+            <button
+              className="btn btn-error"
+              onClick={deleteAccount}
+              title="Delete Account"
+            >
               Delete
             </button>
           </>
@@ -463,7 +468,7 @@ export default function Profile() {
         title="Error"
         onConfirm={closeAlert}
         actions={
-          <button className="btn" onClick={closeAlert}>
+          <button className="btn" onClick={closeAlert} title="Close">
             Close
           </button>
         }
@@ -476,6 +481,7 @@ export default function Profile() {
         aria-expanded={open}
         aria-label="Open profile menu"
         className="btn btn-ghost btn-circle avatar"
+        title="Open profile menu"
         onMouseDown={(e) => {
           // Prevent focus wobble and toggle open state
           if (document.activeElement === e.currentTarget) {
@@ -529,6 +535,7 @@ export default function Profile() {
               role="menuitem"
               onClick={() => toggleAnonymous()}
               className="justify-between w-full text-left"
+              title="Incognito"
             >
               <div>
                 <FontAwesomeIcon
@@ -553,6 +560,7 @@ export default function Profile() {
               role="menuitem"
               onClick={() => toggleTelemetry()}
               className="justify-between w-full text-left"
+              title="Telemetry"
             >
               <div>
                 <FontAwesomeIcon
@@ -580,6 +588,7 @@ export default function Profile() {
                 signOut({ callbackUrl: "/" });
               }}
               className="w-full text-left"
+              title="Sign out"
             >
               Sign out
             </button>
@@ -593,6 +602,7 @@ export default function Profile() {
                 setShowDeleteConfirm(true);
               }}
               className="text-error hover:bg-error hover:text-error-content w-full text-left"
+              title="Delete Account"
             >
               Delete Account
             </button>

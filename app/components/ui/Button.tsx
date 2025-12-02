@@ -28,6 +28,12 @@ export default function Button({
   disabled = false,
   ...props
 }: ButtonProps) {
+  // Prefer an explicit title prop, otherwise derive a sensible default
+  // when `children` is a plain string (common for simple buttons).
+  const explicitTitle = (props as ButtonHTMLAttributes<HTMLButtonElement>)
+    .title as string | undefined;
+  const derivedTitle = typeof children === "string" ? children : undefined;
+  const titleAttr = explicitTitle ?? derivedTitle;
   const variantClass = variant ? `btn-${variant}` : "";
   const sizeClass = size !== "md" ? `btn-${size}` : "";
   const shapeClass = circle ? "btn-circle" : square ? "btn-square" : "";
@@ -37,6 +43,8 @@ export default function Button({
   return (
     <button
       className={`btn ${variantClass} ${sizeClass} ${shapeClass} ${widthClass} ${loadingClass} ${className}`}
+      // Apply a title attribute for improved accessibility / hover tooltip.
+      {...(titleAttr ? { title: titleAttr } : {})}
       disabled={disabled || loading}
       {...props}
     >

@@ -23,6 +23,7 @@ import TermStatsCard from "../components/features/dashboard/TermStatsCard";
 import ItemFormModal from "../components/features/ItemFormModal";
 import { Item, useCourses } from "../contexts/CourseContext";
 import { useGroupedCourses } from "../hooks/useGroupedCourses";
+import { APP_NAME } from "../../lib/constants";
 
 export default function CoursesPage() {
   const { data: session, status } = useSession();
@@ -236,9 +237,9 @@ export default function CoursesPage() {
 
   useEffect(() => {
     if (currentTerm) {
-      document.title = `Bucket | ${currentTerm} Dashboard`;
+      document.title = `${APP_NAME} | ${currentTerm} Dashboard`;
     } else {
-      document.title = `Bucket Dashboard`;
+      document.title = `${APP_NAME} Dashboard`;
     }
   }, [currentTerm]);
 

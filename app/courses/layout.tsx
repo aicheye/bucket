@@ -8,9 +8,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { APP_NAME } from "../../lib/constants";
 import { sendQuery } from "../../lib/graphql";
 import { UPDATE_ONBOARD } from "../../lib/graphql/mutations";
 import { GET_USER_FULL } from "../../lib/graphql/queries";
+import Line from "../components/ui/Line";
 import Modal from "../components/ui/Modal";
 import { useCourses } from "../contexts/CourseContext";
 
@@ -85,7 +87,11 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         title="Data & Privacy Preferences"
         onConfirm={confirmOnboarding}
         actions={
-          <button className="btn btn-primary" onClick={confirmOnboarding}>
+          <button
+            className="btn btn-primary"
+            onClick={confirmOnboarding}
+            title="Save"
+          >
             Save
           </button>
         }
@@ -104,7 +110,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
             </Link>
             .
           </p>
-          <hr className="border-base-content/20" />
+          <Line direction="hor" className="w-full" />
           <div className="label cursor-pointer justify-start text-base-content/80 flex w-full">
             <div className="flex flex-col flex-grow gap-1">
               <span className="label-text">
@@ -128,7 +134,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
               />
             </div>
           </div>
-          <hr className="border-base-content/20" />
+          <Line direction="hor" className="w-full" />
           <div className="label cursor-pointer justify-start gap-2 text-base-content/80 flex">
             <div className="flex flex-col flex-grow gap-1">
               <span className="label-text">
@@ -136,7 +142,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
                 Send Usage Data
               </span>
               <span className="label-text text-base-content/50 text-sm">
-                Helps us improve Bucket over time. No personal info is sent.
+                Helps us improve {APP_NAME} over time. No personal info is sent.
               </span>
             </div>
             <input
@@ -150,7 +156,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
               }}
             />
           </div>
-          <hr className="border-base-content/20" />
+          <Line direction="hor" className="w-full" />
         </div>
       </Modal>
       <main className="p-4 sm:p-8 w-full h-full">

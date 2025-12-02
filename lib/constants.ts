@@ -2,6 +2,10 @@
  * Application-wide constants
  */
 
+// App name and version
+export const APP_NAME: string = "Bucket";
+export const APP_VERSION: string = "alpha 1";
+
 // Season ordering for term sorting
 export const SEASON_ORDER: Record<string, number> = {
   Winter: 1,

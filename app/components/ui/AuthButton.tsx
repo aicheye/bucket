@@ -5,6 +5,7 @@ export default function AuthButton() {
     <button
       onClick={() => signIn("google", { callbackUrl: "/courses" })}
       className="btn bg-white text-black border-[#e5e5e5]"
+      title="Login with Google"
     >
       <svg
         aria-label="Google logo"
