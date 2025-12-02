@@ -17,7 +17,8 @@ export default function AuthScreen({ error }: { error?: string | string[] }) {
             className="h-6 w-6 shrink-0"
           />
           <span>
-            Error, please try again: {Array.isArray(error) ? error.join(" ") : error}
+            Error, please try again:{" "}
+            {Array.isArray(error) ? error.join(" ") : error}
           </span>
         </div>
       )}
@@ -26,7 +27,6 @@ export default function AuthScreen({ error }: { error?: string | string[] }) {
           <div className="loading loading-spinner loading-lg"></div>
         ) : (
           <>
-
             <AuthComponent />
 
             <p className="text-base-content text-md font-medium text-center">

@@ -1,13 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { DefaultSession, NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import GoogleProvider, { GoogleProfile } from "next-auth/providers/google";
 import { executeHasuraQuery } from "./hasura";
 
 declare module "next-auth" {
   interface Session {
     user: {
       /** The user's unique identifier. */
-      id: any;
+      id: string;
+      telemetry_consent?: boolean | null;
+      anonymous_mode?: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -28,7 +29,8 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, profile }) {
       try {
         // Prefer verified email when available
-        const emailVerified = (profile as any)?.email_verified ?? true;
+        const googleProfile = profile as GoogleProfile;
+        const emailVerified = googleProfile?.email_verified ?? true;
         if (!emailVerified) {
           return;
         }
@@ -38,14 +40,18 @@ export const authOptions: NextAuthOptions = {
         let imageVal = user.image ?? null;
         try {
           const checkQuery = `query GetUserById($id: String!) { users_by_pk(id: $id) { anonymous_mode } }`;
-          const checkRes = await executeHasuraQuery(checkQuery, { id: user.id }, user.id);
+          const checkRes = await executeHasuraQuery(
+            checkQuery,
+            { id: user.id },
+            user.id,
+          );
           const existing = checkRes?.data?.users_by_pk;
           if (existing && existing.anonymous_mode) {
             nameVal = null;
             imageVal = null;
           }
         } catch (err) {
-          // ignore and proceed
+          console.error("Failed to check anonymous_mode:", err);
         }
 
         const input = {
@@ -98,23 +104,30 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      session.user.id = token.id;
+      session.user.id = token.id as string;
 
       try {
         // Fetch additional user fields from Hasura to include in session
         const query = `query GetUser($id: String!) { users_by_pk(id: $id) { id name email image telemetry_consent anonymous_mode } }`;
-        const res = await executeHasuraQuery(query, { id: token.id }, String(token.id));
+        const res = await executeHasuraQuery(
+          query,
+          { id: token.id },
+          String(token.id),
+        );
         const userRec = res?.data?.users_by_pk;
         if (userRec) {
           // If anonymous_mode is enabled, scrub values from the session view
           const anon = !!userRec.anonymous_mode;
           session.user.name = anon ? "" : (userRec.name ?? session.user.name);
-          session.user.email = anon ? "" : (userRec.email ?? session.user.email);
-          session.user.image = anon ? "" : (userRec.image ?? session.user.image);
+          session.user.email = anon
+            ? ""
+            : (userRec.email ?? session.user.email);
+          session.user.image = anon
+            ? ""
+            : (userRec.image ?? session.user.image);
           // Attach flags so client can read them
-          (session.user as any).telemetry_consent =
-            userRec.telemetry_consent ?? null;
-          (session.user as any).anonymous_mode = anon;
+          session.user.telemetry_consent = userRec.telemetry_consent ?? null;
+          session.user.anonymous_mode = anon;
         }
       } catch (err) {
         console.error("Failed to fetch additional session fields:", err);

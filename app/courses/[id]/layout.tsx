@@ -14,8 +14,15 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   const { id } = useParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { courses, loading, deleteCourse, items, deleteItem, updateCourse, optimisticCourse } =
-    useCourses();
+  const {
+    courses,
+    loading,
+    deleteCourse,
+    items,
+    deleteItem,
+    updateCourse,
+    optimisticCourse,
+  } = useCourses();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [credits, setCredits] = useState(0.5);

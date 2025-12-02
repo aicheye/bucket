@@ -62,7 +62,9 @@ export default function CourseGradesPage() {
         due_date: item.data?.due_date ?? "",
         isPlaceholder: item.data?.isPlaceholder ?? false,
         weight:
-          item?.data && item.data.weight !== undefined && item.data.weight !== null
+          item?.data &&
+          item.data.weight !== undefined &&
+          item.data.weight !== null
             ? item.data.weight
             : "0",
       };
@@ -93,7 +95,6 @@ export default function CourseGradesPage() {
         last_modified: new Date().toISOString(),
       }) as Item,
   );
-
 
   const [showGradingSettings, setShowGradingSettings] = useState(false);
   const [dropLowest, setDropLowest] = useState<Record<string, number>>({});
@@ -157,7 +158,6 @@ export default function CourseGradesPage() {
   }
 
   async function handleImportParse() {
-
     try {
       showLoading();
       const res = await fetch("/api/parse_grades", {
@@ -349,7 +349,7 @@ export default function CourseGradesPage() {
       name: item.data.name || "",
       type: item.data.type || "Assignment",
       grade: item.data.grade || "",
-      max_grade: item.data.isPlaceholder ? "100" : (item.data.max_grade || ""),
+      max_grade: item.data.isPlaceholder ? "100" : item.data.max_grade || "",
       due_date: item.data.due_date || "",
       isPlaceholder: item.data.isPlaceholder || false,
     });
@@ -374,10 +374,10 @@ export default function CourseGradesPage() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-      )
-        .toISOString()
-        .split("T")[0]
+          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+        )
+          .toISOString()
+          .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -406,35 +406,39 @@ export default function CourseGradesPage() {
   );
 
   // Find best scheme index (used as default active) and its dropped items
-  let bestSchemeDroppedItems: string[] = [];
   let bestScheme: any[] | null = null;
   let bestOriginalIndex: number | null = null;
   if (selectedCourse?.data["marking-schemes"]?.length > 0) {
     let bestGrade = -1;
 
-    selectedCourse.data["marking-schemes"].forEach((scheme: any[], idx: number) => {
-      const details = calculateSchemeGradeDetails(
-        scheme,
-        baseCourseItems,
-        placeholderGrades,
-        dropLowest,
-      );
-      if (details.currentGrade !== null && details.currentGrade > bestGrade) {
-        bestGrade = details.currentGrade;
-        bestSchemeDroppedItems = details.droppedItemIds || [];
-        bestScheme = scheme;
-        bestOriginalIndex = idx;
-      }
-    });
+    selectedCourse.data["marking-schemes"].forEach(
+      (scheme: any[], idx: number) => {
+        const details = calculateSchemeGradeDetails(
+          scheme,
+          baseCourseItems,
+          placeholderGrades,
+          dropLowest,
+        );
+        if (details.currentGrade !== null && details.currentGrade > bestGrade) {
+          bestGrade = details.currentGrade;
+          bestScheme = scheme;
+          bestOriginalIndex = idx;
+        }
+      },
+    );
   }
+
+  const preferredScheme = selectedCourse?.data?.["preferred-marking-scheme"];
 
   // If no active scheme chosen by user, default to best scheme
   useEffect(() => {
     // Prefer persisted preferred-marking-scheme if present
     if (activeSchemeIndex === null) {
-      const rawPref = selectedCourse?.data?.["preferred-marking-scheme"];
-      if (rawPref !== undefined && rawPref !== null) {
-        const parsedPref = typeof rawPref === "number" ? rawPref : parseInt(rawPref, 10);
+      if (preferredScheme !== undefined && preferredScheme !== null) {
+        const parsedPref =
+          typeof preferredScheme === "number"
+            ? preferredScheme
+            : parseInt(preferredScheme, 10);
         if (
           Number.isInteger(parsedPref) &&
           selectedCourse?.data["marking-schemes"] &&
@@ -451,7 +455,7 @@ export default function CourseGradesPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bestOriginalIndex, selectedCourse?.id, selectedCourse?.data?.["preferred-marking-scheme"]]);
+  }, [bestOriginalIndex, selectedCourse?.id, preferredScheme]);
 
   const categoryKeptCountMap = new Map<string, number>();
   const componentMap = new Map<string, any>();
@@ -465,11 +469,11 @@ export default function CourseGradesPage() {
   const usedDetails =
     usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-        usedScheme,
-        baseCourseItems,
-        placeholderGrades,
-        dropLowest,
-      )
+          usedScheme,
+          baseCourseItems,
+          placeholderGrades,
+          dropLowest,
+        )
       : null;
 
   const usedDroppedItemIds = usedDetails?.droppedItemIds || [];
@@ -486,7 +490,7 @@ export default function CourseGradesPage() {
       // `usedDetails.droppedItemIds` contains the dropped item ids for display,
       // but drop counts configured per-category are used here.
       const compItemsAll = baseCourseItems.filter(
-        (i) => i.data.type === category
+        (i) => i.data.type === category,
       );
 
       const dropCount = dropLowest[category] || 0;
@@ -556,7 +560,8 @@ export default function CourseGradesPage() {
     if (remainingWeight <= 0) return null;
 
     const neededTotal =
-      (target * details.totalSchemeWeight - details.currentGrade! * details.totalWeightGraded) /
+      (target * details.totalSchemeWeight -
+        details.currentGrade! * details.totalWeightGraded) /
       remainingWeight;
 
     return neededTotal;
@@ -576,16 +581,22 @@ export default function CourseGradesPage() {
   // Compute per-type aggregates for the "Item Types Averages" table
   const showRemaining = allTypes.length > 1;
 
-  const typeStats = (usedScheme ? usedScheme.map((c: any) => c.Component) : allTypes).map((category: string) => {
+  const typeStats = (
+    usedScheme ? usedScheme.map((c: any) => c.Component) : allTypes
+  ).map((category: string) => {
     const comp = componentMap.get(category);
     const compWeight = comp ? parseFloat(comp.Weight) || 0 : 0;
     const keptCount = Math.max(categoryKeptCountMap.get(category) || 0, 0);
 
     // Items to consider include placeholders (from displayItems) and real items
-    const itemsInCategory = displayItems.filter((i) => i.data.type === category);
+    const itemsInCategory = displayItems.filter(
+      (i) => i.data.type === category,
+    );
 
     // Exclude dropped items from contribution/average calculations
-    const includedItems = itemsInCategory.filter((i) => !usedDroppedItemIds.includes(i.id));
+    const includedItems = itemsInCategory.filter(
+      (i) => !usedDroppedItemIds.includes(i.id),
+    );
 
     // Graded items are those with a non-empty grade
     const gradedItems = includedItems.filter((i) => i.data.grade !== "");
@@ -605,11 +616,18 @@ export default function CourseGradesPage() {
         ? gradePercents.reduce((a, b) => a + b, 0) / gradePercents.length
         : null;
 
-    const markedCount = itemsInCategory.filter((i) => i.data.grade !== "" && !i.data.isPlaceholder).length;
-    const remainingCount = itemsInCategory.filter((i) => i.data.grade === "" && !i.data.isPlaceholder).length;
+    const markedCount = itemsInCategory.filter(
+      (i) => i.data.grade !== "" && !i.data.isPlaceholder,
+    ).length;
+    const remainingCount = itemsInCategory.filter(
+      (i) => i.data.grade === "" && !i.data.isPlaceholder,
+    ).length;
 
     // Contribution: sum of per-item earned contributions using same logic as item rows
-    const perItemContribution = markedCount > 0 ? compWeight / (includedItems.length - remainingCount) : 0;
+    const perItemContribution =
+      markedCount > 0
+        ? compWeight / (includedItems.length - remainingCount)
+        : 0;
     let earnedContributionSum = 0;
     let hasAnyContribution = false;
 
@@ -955,11 +973,15 @@ export default function CourseGradesPage() {
                 const typeHasGrades = courseItems.some(
                   (i) => i.data.type === newType && i.data.grade,
                 );
-                const newIsPlaceholder = typeHasGrades ? false : itemData.isPlaceholder;
+                const newIsPlaceholder = typeHasGrades
+                  ? false
+                  : itemData.isPlaceholder;
                 setItemData({
                   ...itemData,
                   type: newType,
-                  name: newIsPlaceholder ? `${newType} Placeholder` : itemData.name,
+                  name: newIsPlaceholder
+                    ? `${newType} Placeholder`
+                    : itemData.name,
                   isPlaceholder: newIsPlaceholder,
                   max_grade: newIsPlaceholder ? "100" : itemData.max_grade,
                 });
@@ -1000,7 +1022,11 @@ export default function CourseGradesPage() {
                   setItemData({ ...itemData, max_grade: e.target.value })
                 }
                 disabled={itemData.isPlaceholder}
-                title={itemData.isPlaceholder ? "Placeholder max is fixed at 100" : ""}
+                title={
+                  itemData.isPlaceholder
+                    ? "Placeholder max is fixed at 100"
+                    : ""
+                }
               />
             </div>
           </div>
@@ -1090,9 +1116,8 @@ export default function CourseGradesPage() {
                       (a: any, b: any) =>
                         b.details.currentGrade - a.details.currentGrade,
                     )
-                    .map((item: any, idx: number) => {
+                    .map((item: any) => {
                       const { scheme, originalIndex, details } = item;
-                      const isHighest = idx === 0;
                       const isActive =
                         activeSchemeIndex !== null
                           ? originalIndex === activeSchemeIndex
@@ -1123,7 +1148,7 @@ export default function CourseGradesPage() {
                                     scheme_index: originalIndex,
                                   });
                                 }
-                              } catch (e) {
+                              } catch {
                                 // ignore persistence/telemetry errors
                               }
                             }}
@@ -1226,27 +1251,42 @@ export default function CourseGradesPage() {
                       {s.averagePercent === null ? (
                         <span className="text-base-content/50">-</span>
                       ) : (
-                        <span className="font-mono font-bold">{s.averagePercent.toFixed(2)}%</span>
+                        <span className="font-mono font-bold">
+                          {s.averagePercent.toFixed(2)}%
+                        </span>
                       )}
                     </td>
                     <td className="text-right">
                       {s.earnedContributionSum === null ? (
-                        <span className="text-base-content/50">/ {s.totalComponent.toFixed(2)}%</span>
+                        <span className="text-base-content/50">
+                          / {s.totalComponent.toFixed(2)}%
+                        </span>
                       ) : (
                         <div className="flex flex-col items-end">
-                          {s.earnedContributionSum - s.totalComponent < -0.005 ? (
-                            <span className="font-mono font-bold">{(s.earnedContributionSum - s.totalComponent).toFixed(2)}%</span>
+                          {s.earnedContributionSum - s.totalComponent <
+                          -0.005 ? (
+                            <span className="font-mono font-bold">
+                              {(
+                                s.earnedContributionSum - s.totalComponent
+                              ).toFixed(2)}
+                              %
+                            </span>
                           ) : (
-                            <span className="font-mono opacity-50">{s.earnedContributionSum.toFixed(2)}%</span>
-                          )
-                          }
-                          <span className="text-xs opacity-50">/ {s.totalComponent.toFixed(2)}%</span>
+                            <span className="font-mono opacity-50">
+                              {s.earnedContributionSum.toFixed(2)}%
+                            </span>
+                          )}
+                          <span className="text-xs opacity-50">
+                            / {s.totalComponent.toFixed(2)}%
+                          </span>
                         </div>
                       )}
                     </td>
                     <td>
                       <div className="flex items-center gap-2">
-                        <div className={`badge badge-xs ${getCategoryColor(s.category, getCourseTypes())}`}></div>
+                        <div
+                          className={`badge badge-xs ${getCategoryColor(s.category, getCourseTypes())}`}
+                        ></div>
                         <span className="font-medium">{s.category}</span>
                       </div>
                     </td>
@@ -1338,7 +1378,6 @@ export default function CourseGradesPage() {
                                 ) : (
                                   ""
                                 )}
-
                               </span>
                             </div>
                           ) : (
@@ -1359,9 +1398,13 @@ export default function CourseGradesPage() {
                           {/* Contribution: earnedContribution/totalContribution */}
                           {(() => {
                             const comp = componentMap.get(item.data.type);
-                            const keptCount = categoryKeptCountMap.get(item.data.type);
+                            const keptCount = categoryKeptCountMap.get(
+                              item.data.type,
+                            );
                             const gradeRaw = parseFloat(item.data.grade || "0");
-                            const maxRaw = parseFloat(item.data.max_grade || "0");
+                            const maxRaw = parseFloat(
+                              item.data.max_grade || "0",
+                            );
 
                             if (!comp) {
                               return (
@@ -1378,38 +1421,46 @@ export default function CourseGradesPage() {
 
                             // Earned contribution = (grade / itemMax) * totalContribution
                             const earnedContribution =
-                              item.data.grade === "" || isNaN(gradeRaw) || isNaN(maxRaw) || maxRaw === 0
+                              item.data.grade === "" ||
+                              isNaN(gradeRaw) ||
+                              isNaN(maxRaw) ||
+                              maxRaw === 0
                                 ? NaN
                                 : (gradeRaw / maxRaw) * totalContribution;
 
                             if (isNaN(earnedContribution)) {
                               return (
                                 <div className="flex w-full items-end justify-end">
-                                  <span className="text-base-content/50">/ {totalContribution.toFixed(2)}%</span>
+                                  <span className="text-base-content/50">
+                                    / {totalContribution.toFixed(2)}%
+                                  </span>
                                 </div>
                               );
                             }
 
-                            const percentLost = totalContribution - earnedContribution;
+                            const percentLost =
+                              totalContribution - earnedContribution;
 
                             return (
                               <div className="flex flex-col w-full items-end min-w-fit">
                                 {isDropped ? (
-                                  <span className="font-mono font-bold">
-                                    -
-                                  </span>
-                                ) : (percentLost > 0 ? (
+                                  <span className="font-mono font-bold">-</span>
+                                ) : percentLost > 0 ? (
                                   <span
                                     className={`font-mono font-bold ${isDropped ? " line-through" : ""}`}
                                   >
                                     -{percentLost.toFixed(2)}%
                                   </span>
                                 ) : (
-                                  <span className={`font-mono opacity-50 ${isDropped ? " line-through" : ""}`}>
+                                  <span
+                                    className={`font-mono opacity-50 ${isDropped ? " line-through" : ""}`}
+                                  >
                                     {earnedContribution.toFixed(2)}%
-                                  </span>)
+                                  </span>
                                 )}
-                                <span className={`font-mono text-xs opacity-50 ${isDropped ? "line-through decoration-base-content/50" : ""}`}>
+                                <span
+                                  className={`font-mono text-xs opacity-50 ${isDropped ? "line-through decoration-base-content/50" : ""}`}
+                                >
                                   / {totalContribution.toFixed(2)}%
                                 </span>
                               </div>
@@ -1447,17 +1498,15 @@ export default function CourseGradesPage() {
                             {item.data.type}
                           </div>
                         </td>
-                        {
-                          hasDueDates && (
-                            <td>
-                              {item.data.due_date
-                                ? new Date(
+                        {hasDueDates && (
+                          <td>
+                            {item.data.due_date
+                              ? new Date(
                                   item.data.due_date + "T00:00:00",
                                 ).toLocaleDateString()
-                                : "-"}
-                            </td>
-                          )
-                        }
+                              : "-"}
+                          </td>
+                        )}
                         <td>
                           <div className="flex gap-2">
                             <button
@@ -1466,7 +1515,10 @@ export default function CourseGradesPage() {
                               title="Edit"
                               aria-label="Edit item"
                             >
-                              <FontAwesomeIcon icon={faEdit} aria-hidden="true" />
+                              <FontAwesomeIcon
+                                icon={faEdit}
+                                aria-hidden="true"
+                              />
                             </button>
                             <button
                               className={`btn btn-ghost btn-xs ${item.data.isPlaceholder ? "invisible" : ""}`}
@@ -1476,7 +1528,10 @@ export default function CourseGradesPage() {
                               title="Duplicate"
                               aria-label="Duplicate item"
                             >
-                              <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                              <FontAwesomeIcon
+                                icon={faCopy}
+                                aria-hidden="true"
+                              />
                             </button>
                             <button
                               className="btn btn-ghost btn-xs text-error"
@@ -1488,7 +1543,10 @@ export default function CourseGradesPage() {
                               title="Delete"
                               aria-label="Delete item"
                             >
-                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                                aria-hidden="true"
+                              />
                             </button>
                           </div>
                         </td>
@@ -1500,7 +1558,7 @@ export default function CourseGradesPage() {
             </table>
           </div>
         </div>
-      </div >
+      </div>
     </>
   );
 }

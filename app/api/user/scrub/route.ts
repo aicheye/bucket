@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import { executeHasuraQuery } from "../../../../lib/hasura";
 import authOptions from "../../../../lib/nextauth";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // Set PII fields to null and mark anonymous mode + disable telemetry
     const mutation = `
@@ -31,7 +32,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ scrubbed: true }, { status: 200 });
   } catch (err) {
     console.error("Scrub route error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 

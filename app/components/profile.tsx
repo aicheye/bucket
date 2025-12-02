@@ -1,6 +1,10 @@
 "use client";
 
-import { faArrowTrendUp, faCircleUser, faEyeLowVision } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowTrendUp,
+  faCircleUser,
+  faEyeLowVision,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
@@ -15,13 +19,15 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [telemetryConsent, setTelemetryConsent] = useState<boolean>(false);
   const [anonymousMode, setAnonymousMode] = useState<boolean>(true);
-  const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
-  const [privacyChoiceTelemetry, setPrivacyChoiceTelemetry] = useState<boolean>(false);
-  const [privacyChoiceIncognito, setPrivacyChoiceIncognito] = useState<boolean>(false);
-  const [privacyLoaded, setPrivacyLoaded] = useState<boolean>(false);
-  const [userImage, setUserImage] = useState<string | null | undefined>(undefined);
-  const [userNameLocal, setUserNameLocal] = useState<string | null | undefined>(undefined);
-  const [userEmailLocal, setUserEmailLocal] = useState<string | null | undefined>(undefined);
+  const [userImage, setUserImage] = useState<string | null | undefined>(
+    undefined,
+  );
+  const [userNameLocal, setUserNameLocal] = useState<string | null | undefined>(
+    undefined,
+  );
+  const [userEmailLocal, setUserEmailLocal] = useState<
+    string | null | undefined
+  >(undefined);
   const [alertState, setAlertState] = useState<{
     isOpen: boolean;
     message: string;
@@ -47,7 +53,10 @@ export default function Profile() {
     `;
 
     try {
-      const result = await sendQuery({ query, variables: { id: session.user.id } });
+      const result = await sendQuery({
+        query,
+        variables: { id: session.user.id },
+      });
       if (result.data?.users_by_pk) {
         const u = result.data.users_by_pk;
         setTelemetryConsent(u.telemetry_consent ?? false);
@@ -55,7 +64,6 @@ export default function Profile() {
         setUserImage(u.image ?? null);
         setUserNameLocal(u.name ?? null);
         setUserEmailLocal(u.email ?? null);
-        setPrivacyLoaded(true);
         // If the DB has no PII but the session does, and the user is not anonymous,
         // write the session PII back to the DB so the profile isn't blank.
         try {
@@ -78,16 +86,15 @@ export default function Profile() {
                   }
                 `;
 
-
-
               const updateResult = await sendQuery({
-                query: mutation, variables: {
+                query: mutation,
+                variables: {
                   id: session.user.id,
                   name: nameToSet,
                   email: emailToSet,
                   image: imageToSet,
                   anon: false,
-                }
+                },
               });
 
               if (!updateResult.errors) {
@@ -101,7 +108,10 @@ export default function Profile() {
                   window.dispatchEvent(new CustomEvent("user-profile-updated"));
                 }
               } else {
-                console.error("Error updating missing PII:", updateResult.errors);
+                console.error(
+                  "Error updating missing PII:",
+                  updateResult.errors,
+                );
               }
             }
           }
@@ -112,11 +122,16 @@ export default function Profile() {
     } catch (err) {
       console.error("Error fetching user profile:", err);
     }
-  }, [session?.user?.id]);
+  }, [
+    session?.user?.id,
+    session?.user?.name,
+    session?.user?.email,
+    session?.user?.image,
+  ]);
 
   useEffect(() => {
     if (session?.user?.id) fetchUserProfile();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, fetchUserProfile]);
 
   // Listen for profile refresh requests from other parts of the app
   useEffect(() => {
@@ -130,29 +145,13 @@ export default function Profile() {
 
     return () => {
       if (typeof window !== "undefined") {
-        window.removeEventListener("user-profile-updated", handler as EventListener);
+        window.removeEventListener(
+          "user-profile-updated",
+          handler as EventListener,
+        );
       }
     };
   }, [session?.user?.id, fetchUserProfile]);
-
-  useEffect(() => {
-    // Show privacy modal on first login (once per browser) after we know current settings
-    try {
-      const shown = window.localStorage.getItem("privacyPromptShown_v1");
-      if (
-        session?.user?.id &&
-        privacyLoaded &&
-        !shown &&
-        !showPrivacyModal
-      ) {
-        setPrivacyChoiceTelemetry(telemetryConsent);
-        setPrivacyChoiceIncognito(anonymousMode);
-        setShowPrivacyModal(true);
-      }
-    } catch (e) {
-      // ignore localStorage errors
-    }
-  }, [session?.user?.id, privacyLoaded, telemetryConsent, anonymousMode, showPrivacyModal]);
 
   if (status === "loading")
     return <div className="loading loading-spinner loading-lg"></div>;
@@ -160,38 +159,6 @@ export default function Profile() {
 
   const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
   const closeConfirm = () => setShowDeleteConfirm(false);
-
-  const closePrivacyModal = () => {
-    try {
-      window.localStorage.setItem("privacyPromptShown_v1", "1");
-    } catch (e) {
-      // ignore
-    }
-    setShowPrivacyModal(false);
-  };
-
-  const savePrivacyChoices = async () => {
-    // Apply telemetry choice
-    if (privacyChoiceTelemetry !== telemetryConsent) {
-      // toggleTelemetry flips the current telemetryConsent value
-      await toggleTelemetry();
-    }
-
-    // Apply incognito choice
-    if (privacyChoiceIncognito !== anonymousMode) {
-      // toggleAnonymous handles enabling/disabling and will reload when enabling
-      await toggleAnonymous();
-      // toggleAnonymous may reload the page; if it does, the rest won't run
-    }
-
-    // mark shown and close modal if still open
-    try {
-      window.localStorage.setItem("privacyPromptShown_v1", "1");
-    } catch (e) {
-      // ignore
-    }
-    setShowPrivacyModal(false);
-  };
 
   const toggleTelemetry = async () => {
     const newValue = !telemetryConsent;
@@ -222,17 +189,26 @@ export default function Profile() {
 
     try {
       const payload = newValue
-        ? { query: mutationEnable, variables: { id: session.user.id, consent: newValue, anon: false } }
-        : { query: mutationDisable, variables: { id: session.user.id, consent: newValue } };
+        ? {
+            query: mutationEnable,
+            variables: { id: session.user.id, consent: newValue, anon: false },
+          }
+        : {
+            query: mutationDisable,
+            variables: { id: session.user.id, consent: newValue },
+          };
 
-      const result = await sendQuery(payload as any);
+      const result = await sendQuery(payload);
 
       if (result.errors) {
         console.error("Error updating telemetry consent:", result.errors);
         // revert local state
         setTelemetryConsent(!newValue);
         if (newValue) setAnonymousMode(true);
-        setAlertState({ isOpen: true, message: "Failed to update telemetry settings." });
+        setAlertState({
+          isOpen: true,
+          message: "Failed to update telemetry settings.",
+        });
         return;
       }
 
@@ -240,15 +216,18 @@ export default function Profile() {
       if (newValue) {
         try {
           await fetchUserProfile();
-        } catch (e) {
-          // ignore
+        } catch (err) {
+          console.error("Failed to fetch user profile:", err);
         }
       }
     } catch (error) {
       console.error("Error updating telemetry consent:", error);
       setTelemetryConsent(!newValue);
       if (newValue) setAnonymousMode(true);
-      setAlertState({ isOpen: true, message: "An error occurred. Please try again." });
+      setAlertState({
+        isOpen: true,
+        message: "An error occurred. Please try again.",
+      });
     }
   };
 
@@ -269,9 +248,12 @@ export default function Profile() {
             email: session?.user?.email ?? null,
             image: session?.user?.image ?? null,
           };
-          window.localStorage.setItem("user_pii_backup_v1", JSON.stringify(backup));
-        } catch (e) {
-          // ignore storage errors
+          window.localStorage.setItem(
+            "user_pii_backup_v1",
+            JSON.stringify(backup),
+          );
+        } catch (err) {
+          console.error("Failed to back up PII to localStorage:", err);
         }
 
         const res = await fetch("/api/user/scrub", { method: "POST" });
@@ -281,7 +263,10 @@ export default function Profile() {
         await fetchUserProfile();
       } catch (err) {
         console.error("Failed to enable anonymous mode:", err);
-        setAlertState({ isOpen: true, message: "Failed to enable anonymous mode." });
+        setAlertState({
+          isOpen: true,
+          message: "Failed to enable anonymous mode.",
+        });
         setAnonymousMode(false);
       }
       return;
@@ -303,12 +288,16 @@ export default function Profile() {
 
       // If the session no longer contains PII (e.g., after a refresh while
       // anonymous), fall back to any backed-up PII we saved before scrubbing.
-      let backup: { name?: string | null; email?: string | null; image?: string | null } | null = null;
+      let backup: {
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+      } | null = null;
       try {
         const raw = window.localStorage.getItem("user_pii_backup_v1");
         if (raw) backup = JSON.parse(raw);
-      } catch (e) {
-        // ignore
+      } catch (err) {
+        console.error("Failed to parse PII backup from localStorage:", err);
       }
 
       const vars = {
@@ -322,7 +311,10 @@ export default function Profile() {
       const result = await sendQuery({ query: mutation, variables: vars });
       if (result.errors) {
         console.error("Error restoring PII:", result.errors);
-        setAlertState({ isOpen: true, message: "Failed to disable anonymous mode." });
+        setAlertState({
+          isOpen: true,
+          message: "Failed to disable anonymous mode.",
+        });
         return;
       }
 
@@ -336,8 +328,8 @@ export default function Profile() {
         // Remove backup now that PII has been restored into the DB
         try {
           window.localStorage.removeItem("user_pii_backup_v1");
-        } catch (e) {
-          // ignore
+        } catch (err) {
+          console.error("Failed to remove PII backup from localStorage:", err);
         }
       } else {
         setAnonymousMode(false);
@@ -348,25 +340,32 @@ export default function Profile() {
         // Dynamic import to avoid SSR/type issues. Try a few approaches to
         // force next-auth's client to refresh its internal session cache.
         const nextAuth = await import("next-auth/react");
+
+        interface NextAuthInternal {
+          _getSession: (args: { event: string }) => Promise<void>;
+          getSession: (args?: { event: string }) => Promise<void>;
+        }
+
         // Preferred: call the internal _getSession with an event hint which
         // next-auth uses to force a refresh across listeners.
-        if ((nextAuth as any)?._getSession) {
+        const na = nextAuth as unknown as NextAuthInternal;
+        if (na._getSession) {
           try {
-            await (nextAuth as any)._getSession({ event: "storage" });
-          } catch (e) {
+            await na._getSession({ event: "storage" });
+          } catch {
             // ignore
           }
         }
 
         // Next fallback: call the public getSession with event hint (some
         // next-auth versions accept this).
-        if ((nextAuth as any)?.getSession) {
+        if (na.getSession) {
           try {
-            await (nextAuth.getSession as any)({ event: "storage" });
-          } catch (e) {
+            await na.getSession({ event: "storage" });
+          } catch {
             try {
               await nextAuth.getSession();
-            } catch (ee) {
+            } catch {
               // ignore
             }
           }
@@ -381,18 +380,34 @@ export default function Profile() {
       try {
         const fetchRawUser = async () => {
           const q = `query GetUserProfile($id: String!) { users_by_pk(id: $id) { telemetry_consent anonymous_mode name email image } }`;
-          const j = await sendQuery({ query: q, variables: { id: session!.user.id } });
+          const j = await sendQuery({
+            query: q,
+            variables: { id: session!.user.id },
+          });
           return j?.data?.users_by_pk ?? null;
         };
 
         let attempts = 0;
         const maxAttempts = 6;
         const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-        let fresh: any = null;
+
+        interface UserProfile {
+          telemetry_consent?: boolean;
+          anonymous_mode?: boolean;
+          name?: string | null;
+          email?: string | null;
+          image?: string | null;
+        }
+
+        let fresh: UserProfile | null = null;
 
         while (attempts < maxAttempts) {
           fresh = await fetchRawUser();
-          if (fresh && (!fresh.anonymous_mode) && (fresh.name || fresh.email || fresh.image)) {
+          if (
+            fresh &&
+            !fresh.anonymous_mode &&
+            (fresh.name || fresh.email || fresh.image)
+          ) {
             // update local state immediately and break
             setTelemetryConsent(fresh.telemetry_consent ?? false);
             setAnonymousMode(!!fresh.anonymous_mode);
@@ -411,15 +426,19 @@ export default function Profile() {
         // other state is synchronized.
         try {
           await fetchUserProfile();
-        } catch {
-          // ignore
+        } catch (err) {
+          console.error("Failed to fetch user profile:", err);
         }
-      } catch (e) {
-        // ignore
+      } catch (err) {
+        console.error("Failed to disable anonymous mode:", err);
       }
-    } catch (err) {
-      console.error("Failed to disable anonymous mode:", err);
-      setAlertState({ isOpen: true, message: "Failed to update anonymous mode." });
+    } catch (error) {
+      console.error("Error disabling anonymous mode:", error);
+      setAnonymousMode(true);
+      setAlertState({
+        isOpen: true,
+        message: "Failed to update anonymous mode.",
+      });
     }
   };
 
@@ -445,7 +464,10 @@ export default function Profile() {
         }
       `;
 
-      const result = await sendQuery({ query: mutation, variables: { id: session.user.id } });
+      const result = await sendQuery({
+        query: mutation,
+        variables: { id: session.user.id },
+      });
 
       if (result.errors) {
         console.error("Error deleting account:", result.errors);
@@ -522,10 +544,13 @@ export default function Profile() {
       >
         <div className="w-10 rounded-full overflow-hidden bg-base-200 flex items-center justify-center">
           {anonymousMode ? (
-            <FontAwesomeIcon icon={faCircleUser} className="text-[40px] text-base-content" />
+            <FontAwesomeIcon
+              icon={faCircleUser}
+              className="text-[40px] text-base-content"
+            />
           ) : (
             <Image
-              src={userImage || session.user.image || "/next.svg"}
+              src={userImage || session.user.image || null}
               alt={userNameLocal ?? session.user.name ?? "Profile"}
               width={40}
               height={40}
@@ -541,18 +566,31 @@ export default function Profile() {
       >
         <div className="flex px-4 py-2 mt-2 flex-col gap-1">
           <span className="font-bold text-base text-base-content">
-            {anonymousMode ? "Anonymous User" : (userNameLocal ?? session.user.name)}
+            {anonymousMode
+              ? "Anonymous User"
+              : (userNameLocal ?? session.user.name)}
           </span>
           <span className="font-normal text-sm text-base-content/50 truncate w-full">
-            {anonymousMode ? "no email" : (userEmailLocal ?? session.user.email)}
+            {anonymousMode
+              ? "no email"
+              : (userEmailLocal ?? session.user.email)}
           </span>
         </div>
         <div className="divider my-0 px-4"></div>
         <ul className="menu menu-sm w-full px-2 gap-1">
           <li>
-            <button type="button" role="menuitem" onClick={() => toggleAnonymous()} className="justify-between w-full text-left">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => toggleAnonymous()}
+              className="justify-between w-full text-left"
+            >
               <div>
-                <FontAwesomeIcon icon={faEyeLowVision} className="mr-1" aria-hidden="true" />
+                <FontAwesomeIcon
+                  icon={faEyeLowVision}
+                  className="mr-1"
+                  aria-hidden="true"
+                />
                 Incognito
               </div>
               <input
@@ -565,9 +603,18 @@ export default function Profile() {
             </button>
           </li>
           <li>
-            <button type="button" role="menuitem" onClick={() => toggleTelemetry()} className="justify-between w-full text-left">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => toggleTelemetry()}
+              className="justify-between w-full text-left"
+            >
               <div>
-                <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" aria-hidden="true" />
+                <FontAwesomeIcon
+                  icon={faArrowTrendUp}
+                  className="mr-1"
+                  aria-hidden="true"
+                />
                 Telemetry
               </div>
               <input
@@ -580,10 +627,24 @@ export default function Profile() {
             </button>
           </li>
           <li>
-            <button type="button" role="menuitem" onClick={() => signOut({ callbackUrl: "/" })} className="w-full text-left">Sign out</button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="w-full text-left"
+            >
+              Sign out
+            </button>
           </li>
           <li>
-            <button type="button" role="menuitem" onClick={() => setShowDeleteConfirm(true)} className="text-error hover:bg-error hover:text-error-content w-full text-left">Delete Account</button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-error hover:bg-error hover:text-error-content w-full text-left"
+            >
+              Delete Account
+            </button>
           </li>
         </ul>
       </div>

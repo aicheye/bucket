@@ -22,14 +22,14 @@ export default function HelpPage() {
       <section className="flex flex-col gap-4" id="grade-calculation">
         <h2 className="text-2xl font-semibold">Grade Calculation</h2>
         <p>
-          Bucket calculates your grades based on the marking schemes defined
-          for each course.
+          Bucket calculates your grades based on the marking schemes defined for
+          each course.
         </p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li>
-            <strong>Current Grade:</strong> This is your weighted average
-            based on the items you have received grades for so far. It ignores
-            any items that are not yet graded.
+            <strong>Current Grade:</strong> This is your weighted average based
+            on the items you have received grades for so far. It ignores any
+            items that are not yet graded.
           </li>
           <li>
             <strong>Term Average:</strong> The average of your current grades
@@ -37,7 +37,7 @@ export default function HelpPage() {
           </li>
           <li>
             <strong>Term GPA:</strong> The average GPA of all courses in the
-            current term, calculated by converting each course's percentage
+            current term, calculated by converting each course&apos;s percentage
             grade to a 4.0 scale according to{" "}
             <a
               href="https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table/#conversion-table"
@@ -50,8 +50,8 @@ export default function HelpPage() {
             .
           </li>
           <li>
-            <strong>Cumulative Average (CAV):</strong> The average of your
-            final (or current) grades across all courses in all terms.
+            <strong>Cumulative Average (CAV):</strong> The average of your final
+            (or current) grades across all courses in all terms.
           </li>
           <li>
             <strong>Cumulative GPA (CGPA):</strong> The average GPA across all
@@ -83,10 +83,10 @@ export default function HelpPage() {
           </li>
           <li>
             <strong>Contribution:</strong> This shows how much each individual
-            item deducts from your overall grade. For example, an item worth
-            10% of the course that you scored 80% on deducts -2% from your
-            overall grade. If you earned 100% on that item, the contribution
-            instead shows 10% (the full weight).
+            item deducts from your overall grade. For example, an item worth 10%
+            of the course that you scored 80% on deducts -2% from your overall
+            grade. If you earned 100% on that item, the contribution instead
+            shows 10% (the full weight).
           </li>
           <li>
             <strong>Category Weights:</strong> If your course uses categories
@@ -94,15 +94,15 @@ export default function HelpPage() {
             final grade is displayed in the marking scheme.
           </li>
           <li>
-            <strong>Time Progress:</strong> This indicates how far along you
-            are in the term based on the current date relative to the start
-            and end dates of the term.
+            <strong>Time Progress:</strong> This indicates how far along you are
+            in the term based on the current date relative to the start and end
+            dates of the term.
           </li>
         </ul>
         <p className="text-sm opacity-70 mt-2">
-          Note: If a category has no graded items yet, its weight is
-          distributed proportionally among the other categories for the
-          "Current Grade" calculation.
+          Note: If a category has no graded items yet, its weight is distributed
+          proportionally among the other categories for the &quot;Current
+          Grade&quot; calculation.
         </p>
       </section>
       <section className="flex flex-col gap-4">

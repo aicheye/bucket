@@ -14,7 +14,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatTime } from "../../lib/format-utils";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
@@ -30,15 +30,20 @@ import { Item, useCourses } from "../course-context";
 
 export default function CoursesPage() {
   const { data: session, status } = useSession();
-  const { courses, loading, items, addItem, updateItem, deleteItem, setOptimisticCourse } =
-    useCourses();
+  const {
+    courses,
+    loading,
+    items,
+    addItem,
+    updateItem,
+    deleteItem,
+    setOptimisticCourse,
+  } = useCourses();
   const [termGoal, setTermGoal] = useState<string>("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [userData, setUserData] = useState<any>({});
+  const [userData, setUserData] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userId = (session?.user as any)?.id;
+    const userId = session?.user?.id;
     if (status === "authenticated" && userId) {
       const query = `
                 query GetUserData($id: String!) {
@@ -79,7 +84,7 @@ export default function CoursesPage() {
     const schemes = course?.data["marking-schemes"] || [];
 
     let types = Array.from(
-      new Set(schemes.flat().map((s: any) => s.Component)),
+      new Set(schemes.flat().map((s: Record<string, any>) => s.Component)),
     );
     if (types.length === 0)
       types = ["Assignment", "Exam", "Quiz", "Project", "Other"];
@@ -109,12 +114,12 @@ export default function CoursesPage() {
     setAddingItemCourseId(item.course_id);
     setItemData({
       course_id: item.course_id,
-      name: (item.data as any)?.name ?? "",
-      type: (item.data as any)?.type ?? "Assignment",
-      grade: (item.data as any)?.grade ?? "",
-      max_grade: (item.data as any)?.max_grade ?? "",
-      due_date: (item.data as any)?.due_date ?? "",
-      isPlaceholder: (item.data as any)?.isPlaceholder ?? false,
+      name: item.data.name ?? "",
+      type: item.data.type ?? "Assignment",
+      grade: item.data.grade ?? "",
+      max_grade: item.data.max_grade ?? "",
+      due_date: item.data.due_date ?? "",
+      isPlaceholder: item.data.isPlaceholder ?? false,
     });
     setIsItemModalOpen(true);
   }
@@ -127,7 +132,6 @@ export default function CoursesPage() {
 
   async function handleSaveItem() {
     if (!session?.user?.id) return;
-
 
     const { course_id, ...dataToSave } = itemData;
 
@@ -208,7 +212,6 @@ export default function CoursesPage() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
 
   // helpers to parse/format date param as local date (YYYY-MM-DD)
   const parseDateParam = (s: string | null) => {
@@ -233,10 +236,13 @@ export default function CoursesPage() {
   // initialize selectedDate from `?date=YYYY-MM-DD` if present, otherwise today
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     try {
-      const param = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("date") : null;
+      const param =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("date")
+          : null;
       const parsed = parseDateParam(param);
       if (parsed) return parsed;
-    } catch (e) {
+    } catch {
       // ignore
     }
     return new Date();
@@ -276,7 +282,11 @@ export default function CoursesPage() {
         url.searchParams.delete("date");
         // Update the URL without triggering a Next.js navigation so the
         // client-side document.title and state are preserved.
-        const newUrl = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
+        const newUrl =
+          url.pathname +
+          (url.searchParams.toString()
+            ? "?" + url.searchParams.toString()
+            : "");
         window.history.replaceState(null, "", newUrl);
       }
     } else if (param !== isoLocal) {
@@ -304,7 +314,11 @@ export default function CoursesPage() {
   // keyboard shortcuts: ArrowLeft / ArrowRight to navigate, 't' to reset to today
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.isContentEditable) return;
+      if (
+        (e.target as HTMLElement)?.tagName === "INPUT" ||
+        (e.target as HTMLElement)?.isContentEditable
+      )
+        return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         prevDay();
@@ -318,7 +332,6 @@ export default function CoursesPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const currentTerm = sortedFolders.length > 0 ? sortedFolders[0] : null;
@@ -385,8 +398,7 @@ export default function CoursesPage() {
       };
       setUserData(newUserData);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const userId = (session?.user as any)?.id;
+      const userId = session?.user?.id;
       if (!userId) return;
 
       const query = `
@@ -399,7 +411,10 @@ export default function CoursesPage() {
             `;
 
       try {
-        await sendQuery({ query, variables: { id: userId, data: newUserData } });
+        await sendQuery({
+          query,
+          variables: { id: userId, data: newUserData },
+        });
       } catch (err) {
         console.error("Failed to save user data", err);
       }
@@ -558,14 +573,12 @@ export default function CoursesPage() {
     const viewDate = selectedDate;
     const viewDay = viewDate.toLocaleDateString("en-US", { weekday: "short" });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const todaysClasses: any[] = [];
+    const todaysClasses: Record<string, any>[] = [];
 
     currentCourses.forEach((course) => {
       if (!course.sections) return;
 
       const schedule = course.data["schedule-info"] || [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       schedule.forEach((item: any) => {
         const selectedSection = course.sections?.[item.Component];
         if (selectedSection && selectedSection !== item.Section) return;
@@ -624,8 +637,7 @@ export default function CoursesPage() {
     const today = new Date();
 
     // 3. Upcoming Deliverables
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upcomingDeliverables: any[] = [];
+    const upcomingDeliverables: (Item & { courseCode?: string })[] = [];
     const todayStart = new Date(today);
     todayStart.setHours(0, 0, 0, 0);
     const nextWeek = new Date(todayStart);
@@ -841,21 +853,19 @@ export default function CoursesPage() {
                   </span>
                 </div>
               )}
-              {
-                creditsEarned > 0 && (
-                  <div className="flex flex-col items-center sm:items-end">
-                    <span className="sm:block hidden text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
-                      Credits Earned
-                    </span>
-                    <span className="sm:hidden block text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
-                      Credits
-                    </span>
-                    <span className="text-2xl font-black tracking-tight leading-none">
-                      {creditsEarned}
-                    </span>
-                  </div>
-                )
-              }
+              {creditsEarned > 0 && (
+                <div className="flex flex-col items-center sm:items-end">
+                  <span className="sm:block hidden text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                    Credits Earned
+                  </span>
+                  <span className="sm:hidden block text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">
+                    Credits
+                  </span>
+                  <span className="text-2xl font-black tracking-tight leading-none">
+                    {creditsEarned}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -910,17 +920,33 @@ export default function CoursesPage() {
                     <div className="flex flex-col gap-4">
                       <div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold uppercase text-base-content/70">Term Progress</span>
-                          <span className="text-sm font-bold">{timeProgress.toFixed(0)}%</span>
+                          <span className="text-sm font-bold uppercase text-base-content/70">
+                            Term Progress
+                          </span>
+                          <span className="text-sm font-bold">
+                            {timeProgress.toFixed(0)}%
+                          </span>
                         </div>
-                        <progress className="progress progress-primary w-full h-3" value={timeProgress} max="100"></progress>
+                        <progress
+                          className="progress progress-primary w-full h-3"
+                          value={timeProgress}
+                          max="100"
+                        ></progress>
                       </div>
                       <div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold uppercase text-base-content/70">Weight Completed</span>
-                          <span className="text-sm font-bold">{weightCompletedPercent.toFixed(0)}%</span>
+                          <span className="text-sm font-bold uppercase text-base-content/70">
+                            Weight Completed
+                          </span>
+                          <span className="text-sm font-bold">
+                            {weightCompletedPercent.toFixed(0)}%
+                          </span>
                         </div>
-                        <progress className="progress progress-secondary w-full h-3" value={weightCompletedPercent} max="100"></progress>
+                        <progress
+                          className="progress progress-secondary w-full h-3"
+                          value={weightCompletedPercent}
+                          max="100"
+                        ></progress>
                       </div>
                     </div>
                   </div>
@@ -931,9 +957,20 @@ export default function CoursesPage() {
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="card-title text-sm uppercase opacity-70 m-0 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faClock} className="mr-2" aria-hidden="true" />
+                      <FontAwesomeIcon
+                        icon={faClock}
+                        className="mr-2"
+                        aria-hidden="true"
+                      />
                       <span>
-                        CLASSES ({viewDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()})
+                        CLASSES (
+                        {viewDate
+                          .toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })
+                          .toUpperCase()}
+                        )
                       </span>
                     </h3>
                     <div className="flex items-center gap-0.5">
@@ -946,7 +983,10 @@ export default function CoursesPage() {
                         title="Previous day"
                         aria-label="Previous day"
                       >
-                        <FontAwesomeIcon icon={faChevronLeft} aria-hidden="true" />
+                        <FontAwesomeIcon
+                          icon={faChevronLeft}
+                          aria-hidden="true"
+                        />
                       </button>
                       <button
                         className="btn btn-xs btn-ghost text-sm"
@@ -967,7 +1007,10 @@ export default function CoursesPage() {
                         title="Next day"
                         aria-label="Next day"
                       >
-                        <FontAwesomeIcon icon={faChevronRight} aria-hidden="true" />
+                        <FontAwesomeIcon
+                          icon={faChevronRight}
+                          aria-hidden="true"
+                        />
                       </button>
                     </div>
                   </div>
@@ -983,13 +1026,16 @@ export default function CoursesPage() {
                             // can render immediately while the real data finishes loading.
                             try {
                               e.preventDefault();
-                              const c = courses.find((x) => x.id === cls.courseId) || null;
-                              setOptimisticCourse && setOptimisticCourse(c);
+                              const c =
+                                courses.find((x) => x.id === cls.courseId) ||
+                                null;
+                              if (setOptimisticCourse) setOptimisticCourse(c);
                               router.push(`/courses/${cls.courseId}`);
                             } catch (err) {
-                              // fallback to normal navigation
-                              // eslint-disable-next-line no-console
-                              console.error(err);
+                              console.error(
+                                "Failed to navigate to course:",
+                                err,
+                              );
                             }
                           }}
                         >
@@ -1050,8 +1096,10 @@ export default function CoursesPage() {
                             className="flex-1 justify-between flex items-center gap-3"
                             onClick={(e) => {
                               e.preventDefault();
-                              const c = courses.find((x) => x.id === item.course_id) || null;
-                              setOptimisticCourse && setOptimisticCourse(c);
+                              const c =
+                                courses.find((x) => x.id === item.course_id) ||
+                                null;
+                              if (setOptimisticCourse) setOptimisticCourse(c);
                               router.push(`/courses/${item.course_id}/grades`);
                             }}
                           >
@@ -1083,7 +1131,10 @@ export default function CoursesPage() {
                               }}
                               aria-label="Edit deliverable"
                             >
-                              <FontAwesomeIcon icon={faPencil} aria-hidden="true" />
+                              <FontAwesomeIcon
+                                icon={faPencil}
+                                aria-hidden="true"
+                              />
                             </button>
                             <button
                               className="btn btn-xs btn-circle btn-ghost text-error"
@@ -1093,7 +1144,10 @@ export default function CoursesPage() {
                               }}
                               aria-label="Delete deliverable"
                             >
-                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                                aria-hidden="true"
+                              />
                             </button>
                           </div>
                         </div>
@@ -1113,9 +1167,17 @@ export default function CoursesPage() {
             >
               <div className="card-body p-4">
                 <h3 className="card-title text-sm uppercase opacity-70 mb-2 flex items-center gap-2">
-                  <span><FontAwesomeIcon icon={faBook} className="mr-2" />
-                    Courses</span>
-                  <span className="badge badge-sm badge-accent px-2 py-2 items-center"><span className="opacity-80">Total credits:</span> {currentCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span>
+                  <span>
+                    <FontAwesomeIcon icon={faBook} className="mr-2" />
+                    Courses
+                  </span>
+                  <span className="badge badge-sm badge-accent px-2 py-2 items-center">
+                    <span className="opacity-80">Total credits:</span>{" "}
+                    {currentCourses.reduce(
+                      (sum, c) => sum + (c.credits || 0),
+                      0,
+                    )}
+                  </span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {/* Current Courses */}
@@ -1125,7 +1187,7 @@ export default function CoursesPage() {
                     const min = details ? details.currentScore : 0;
                     const max = details
                       ? details.currentScore +
-                      (details.totalSchemeWeight - details.totalWeightGraded)
+                        (details.totalSchemeWeight - details.totalWeightGraded)
                       : 0;
 
                     return (
@@ -1135,11 +1197,11 @@ export default function CoursesPage() {
                         className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
                         onClick={(e) => {
                           e.preventDefault();
-                          setOptimisticCourse && setOptimisticCourse(course);
+                          if (setOptimisticCourse) setOptimisticCourse(course);
                           router.push(`/courses/${course.id}/info`);
                         }}
                       >
-                        <div className="card-body p-4">
+                        <div className="card-body p-4 flex flex-col gap-2">
                           <h2 className="card-title justify-between text-base">
                             <div className="flex gap-2 items-center">
                               {course.code}
@@ -1165,7 +1227,7 @@ export default function CoursesPage() {
                             </div>
                           </h2>
                           {details ? (
-                            <div className="mt-2">
+                            <div>
                               <div className="flex justify-between text-xs opacity-60 mb-1">
                                 <span>Min: {min.toFixed(1)}%</span>
                                 <span>Max: {max.toFixed(1)}%</span>
@@ -1189,7 +1251,7 @@ export default function CoursesPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="mt-2 text-sm italic opacity-50">
+                            <div className="text-sm italic opacity-50">
                               No grades available yet.
                             </div>
                           )}

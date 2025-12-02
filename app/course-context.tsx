@@ -105,7 +105,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const json = await sendQuery({ query: query, variables: { owner_id: session.user.id } });
+      const json = await sendQuery({
+        query: query,
+        variables: { owner_id: session.user.id },
+      });
       if (json.data?.items) {
         setItems(json.data.items);
       } else {
@@ -137,7 +140,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         }
       }`;
 
-      const json = await sendQuery({ query: query, variables: { owner_id: session.user.id } });
+      const json = await sendQuery({
+        query: query,
+        variables: { owner_id: session.user.id },
+      });
       if (json.data?.courses) {
         const seasonOrder: Record<string, number> = {
           Winter: 1,
@@ -213,10 +219,13 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         }
       }`;
 
-      const json = await sendQuery({ query: mutation, variables: { code: code, term: term, data: data, owner_id: owner_id } });
+      const json = await sendQuery({
+        query: mutation,
+        variables: { code: code, term: term, data: data, owner_id: owner_id },
+      });
       await fetchCourses();
       return json.data?.insert_courses?.returning?.[0]?.id;
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -256,9 +265,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }>,
   ) {
     // Optimistic update
-    setCourses(
-      courses.map((c) => (c.id === id ? { ...c, ...data } : c)),
-    );
+    setCourses(courses.map((c) => (c.id === id ? { ...c, ...data } : c)));
 
     const mutation = `mutation UpdateCourse($id: uuid!, $_set: courses_set_input!) {
       update_courses_by_pk(pk_columns: {id: $id}, _set: $_set) {
@@ -267,7 +274,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }`;
 
     try {
-      const json = await sendQuery({ query: mutation, variables: { id: id, _set: data } });
+      const json = await sendQuery({
+        query: mutation,
+        variables: { id: id, _set: data },
+      });
       if (!json.data?.update_courses_by_pk) {
         console.error("Failed to update course", json);
         fetchCourses();
@@ -302,7 +312,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     }`;
 
-    const json = await sendQuery({ query: mutation, variables: { id: courseId, sections: newSections } });
+    const json = await sendQuery({
+      query: mutation,
+      variables: { id: courseId, sections: newSections },
+    });
     if (!json.data?.update_courses_by_pk) {
       console.error("Failed to update sections", json);
       fetchCourses();
@@ -336,7 +349,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           mapping[oldName] = newName;
         }
       }
-    } catch (e) {
+    } catch {
       // ignore mapping errors
     }
 
@@ -352,7 +365,11 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         prev.map((it) => {
           if (it.course_id === courseId && mapping[it.data.type]) {
             const newType = mapping[it.data.type];
-            itemsToUpdate.push({ id: it.id, newType, data: { ...it.data, type: newType } });
+            itemsToUpdate.push({
+              id: it.id,
+              newType,
+              data: { ...it.data, type: newType },
+            });
             return { ...it, data: { ...it.data, type: newType } };
           }
           return it;
@@ -367,7 +384,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     }`;
 
-    const json = await sendQuery({ query: mutation, variables: { id: courseId, data: newData } });
+    const json = await sendQuery({
+      query: mutation,
+      variables: { id: courseId, data: newData },
+    });
     if (!json.data?.update_courses_by_pk) {
       console.error("Failed to update marking schemes", json);
       fetchCourses();
@@ -378,7 +398,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         course_id: courseId,
         schemes_count: (newSchemes || []).length,
       });
-    } catch (e) {
+    } catch {
       // swallow telemetry error
     }
 
@@ -390,10 +410,13 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           try {
             await updateItem(u.id, u.data);
           } catch (e) {
-            console.error("Failed to update item type during marking-schemes rename", e);
+            console.error(
+              "Failed to update item type during marking-schemes rename",
+              e,
+            );
           }
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
@@ -417,7 +440,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       }
     }`;
 
-    const json = await sendQuery({ query: mutation, variables: { id: courseId, data: mergedData } });
+    const json = await sendQuery({
+      query: mutation,
+      variables: { id: courseId, data: mergedData },
+    });
     if (!json.data?.update_courses_by_pk) {
       console.error("Failed to update course data", json);
       fetchCourses();
@@ -439,7 +465,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const json = await sendQuery({ query: mutation, variables: { data: data, owner_id: owner_id, course_id: courseId } });
+      const json = await sendQuery({
+        query: mutation,
+        variables: { data: data, owner_id: owner_id, course_id: courseId },
+      });
       if (json.data?.insert_items?.returning) {
         await fetchItems();
         // telemetry - item created
@@ -450,7 +479,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
             type: d?.type,
             isPlaceholder: !!d?.isPlaceholder,
           });
-        } catch (e) {
+        } catch {
           // ignore telemetry failure
         }
       } else {
@@ -479,7 +508,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
             type: item?.data?.type,
             isPlaceholder: !!item?.data?.isPlaceholder,
           });
-        } catch (e) {
+        } catch {
           // ignore telemetry failure
         }
         await fetchItems();
@@ -500,7 +529,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
                 }
             }`;
 
-      const json = await sendQuery({ query: mutation, variables: { id: id, data: data } });
+      const json = await sendQuery({
+        query: mutation,
+        variables: { id: id, data: data },
+      });
       if (json.data?.update_items_by_pk) {
         await fetchItems();
         // telemetry - item edited
@@ -512,7 +544,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
             course_id: item?.course_id,
             type: d?.type ?? item?.data?.type,
           });
-        } catch (e) {
+        } catch {
           // ignore
         }
       } else {

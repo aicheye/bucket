@@ -7,7 +7,10 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-base-200 border-t border-base-content/10" role="contentinfo">
+    <footer
+      className="bg-base-200 border-t border-base-content/10"
+      role="contentinfo"
+    >
       <div className="mx-auto p-4 flex flex-col md:flex-row items-center justify-between gap-2">
         {/* Left: action links */}
         <div className="flex flex-wrap items-center gap-2">
@@ -18,7 +21,13 @@ export default function Footer() {
             className="btn btn-ghost btn-sm gap-2"
             aria-label="GitHub repository"
           >
-            <span className="text-lg"><FontAwesomeIcon icon={faGithub} className="w-4 h-4" aria-hidden="true" /></span>
+            <span className="text-lg">
+              <FontAwesomeIcon
+                icon={faGithub}
+                className="w-4 h-4"
+                aria-hidden="true"
+              />
+            </span>
             <span className="hidden lg:inline text-sm">GitHub</span>
           </a>
 
@@ -27,7 +36,13 @@ export default function Footer() {
             className="btn btn-ghost btn-sm gap-2"
             aria-label="Email"
           >
-            <span className="text-lg"><FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" aria-hidden="true" /></span>
+            <span className="text-lg">
+              <FontAwesomeIcon
+                icon={faEnvelope}
+                className="w-4 h-4"
+                aria-hidden="true"
+              />
+            </span>
             <span className="hidden lg:inline text-sm">Email</span>
           </a>
 
@@ -38,7 +53,13 @@ export default function Footer() {
             className="btn btn-ghost btn-sm gap-2"
             aria-label="Website"
           >
-            <span className="text-lg"><FontAwesomeIcon icon={faGlobe} className="w-4 h-4" aria-hidden="true" /></span>
+            <span className="text-lg">
+              <FontAwesomeIcon
+                icon={faGlobe}
+                className="w-4 h-4"
+                aria-hidden="true"
+              />
+            </span>
             <span className="hidden lg:inline text-sm">Website</span>
           </a>
         </div>

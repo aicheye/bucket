@@ -31,7 +31,9 @@ export default function RootLayout({
         className={`${playfair.variable} ${lora.variable} bg-base-200 h-full font-serif`}
       >
         {/* Skip link for keyboard users */}
-        <a href="#content" className="skip-link">Skip to main content</a>
+        <a href="#content" className="skip-link">
+          Skip to main content
+        </a>
         <Providers>
           <div id="content" tabIndex={-1} className="flex-1">
             {children}

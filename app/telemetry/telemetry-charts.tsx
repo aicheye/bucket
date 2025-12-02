@@ -69,7 +69,7 @@ export function FeatureDailyMultiLine({
   );
 
   const seriesData = sortedDays.map((day) => {
-    const row: any = { day };
+    const row: Record<string, string | number> = { day };
     for (const evt of events) {
       const found = grouped[evt].find((d) => d.day === day);
       row[evt] = found ? found.event_count : 0;

@@ -6,19 +6,38 @@ import { executeHasuraAdminQuery } from "../../lib/hasura";
 import authOptions from "../../lib/nextauth";
 import { DauChart, FeatureDailyMultiLine } from "./telemetry-charts";
 
+interface TelemetryDau {
+  dau: number;
+  day: string;
+}
+
+interface TelemetryFeatureUsage30d {
+  event_count_30d: number;
+  unique_users_30d: number;
+  event: string;
+}
+
+interface TelemetryFeatureUsageDaily {
+  event_count: number;
+  unique_users: number;
+  day: string;
+  event: string;
+}
+
 export default async function TelemetryPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) return (
-    <div className="flex h-full flex-col items-center justify-center text-center">
-      <h2 className="text-2xl font-bold text-base-content/70">
-        Not authenticated
-      </h2>
-      <p className="text-base-content/60">
-        Please log in to view telemetry data.
-      </p>
-    </div>
-  );
+  if (!session)
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-center">
+        <h2 className="text-2xl font-bold text-base-content/70">
+          Not authenticated
+        </h2>
+        <p className="text-base-content/60">
+          Please log in to view telemetry data.
+        </p>
+      </div>
+    );
 
   const adminId = process.env.TELEMETRY_ADMIN_ID;
   if (!adminId || String(session.user?.id) !== String(adminId)) {
@@ -47,17 +66,20 @@ export default async function TelemetryPage() {
     executeHasuraAdminQuery(GET_MAU, {}, session.user.id),
   ]);
 
-  const daus = (dauRes?.data?.telemetry_dau || [])
+  const daus: TelemetryDau[] = (dauRes?.data?.telemetry_dau || [])
     .slice()
     .sort(
-      (a: any, b: any) => new Date(a.day).getTime() - new Date(b.day).getTime(),
+      (a: TelemetryDau, b: TelemetryDau) =>
+        new Date(a.day).getTime() - new Date(b.day).getTime(),
     );
-  const feature30 = feat30Res?.data?.telemetry_feature_usage_30d || [];
-  const featureDaily = featDailyRes?.data?.telemetry_feature_usage_daily || [];
+  const feature30: TelemetryFeatureUsage30d[] =
+    feat30Res?.data?.telemetry_feature_usage_30d || [];
+  const featureDaily: TelemetryFeatureUsageDaily[] =
+    featDailyRes?.data?.telemetry_feature_usage_daily || [];
   const mau = mauRes?.data?.telemetry_mau_30d?.[0]?.mau_30d || 0;
 
   // Group featureDaily by event
-  const grouped: Record<string, Array<any>> = {};
+  const grouped: Record<string, Array<TelemetryFeatureUsageDaily>> = {};
   for (const r of featureDaily) {
     grouped[r.event] = grouped[r.event] || [];
     grouped[r.event].push(r);
@@ -65,16 +87,20 @@ export default async function TelemetryPage() {
   // Sort each event by day so the line graphs show time-ordered points
   for (const k of Object.keys(grouped)) {
     grouped[k].sort(
-      (a: any, b: any) => new Date(a.day).getTime() - new Date(b.day).getTime(),
+      (a: TelemetryFeatureUsageDaily, b: TelemetryFeatureUsageDaily) =>
+        new Date(a.day).getTime() - new Date(b.day).getTime(),
     );
   }
 
   // For display, pick top 4 features
-  feature30.sort((a: any, b: any) => b.event_count_30d - a.event_count_30d);
+  feature30.sort(
+    (a: TelemetryFeatureUsage30d, b: TelemetryFeatureUsage30d) =>
+      b.event_count_30d - a.event_count_30d,
+  );
   const topFeatures = feature30;
-  const topEvents = topFeatures.map((f: any) => f.event);
+  const topEvents = topFeatures.map((f: TelemetryFeatureUsage30d) => f.event);
   // Only keep grouped data for top events to avoid an overly noisy chart.
-  const groupedTop: Record<string, any> = {};
+  const groupedTop: Record<string, TelemetryFeatureUsageDaily[]> = {};
   for (const k of topEvents) {
     groupedTop[k] = grouped[k] || [];
   }
@@ -111,7 +137,7 @@ export default async function TelemetryPage() {
           <div className="card-body">
             <h2 className="card-title">User Growth (DAU)</h2>
             <DauChart
-              data={daus.map((d: any) => ({ day: d.day, dau: d.dau }))}
+              data={daus.map((d: TelemetryDau) => ({ day: d.day, dau: d.dau }))}
             />
           </div>
         </div>
@@ -139,7 +165,7 @@ export default async function TelemetryPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {topFeatures.map((it: any) => (
+                    {topFeatures.map((it: TelemetryFeatureUsage30d) => (
                       <tr key={it.event}>
                         <td className="font-medium">{it.event}</td>
                         <td className="text-right">

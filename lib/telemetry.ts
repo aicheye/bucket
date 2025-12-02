@@ -10,11 +10,13 @@ let visibilityListenerInstalled = false;
 async function _actuallySend(e: TelemetryEvent) {
   try {
     // Import getSession dynamically so this module remains safe server-side.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { getSession } = await import("next-auth/react");
     const sess = await getSession();
-    const telemetryConsent = (sess as any)?.user?.telemetry_consent;
-    const anonymousMode = (sess as any)?.user?.anonymous_mode;
+    const user = sess?.user as
+      | { telemetry_consent?: boolean; anonymous_mode?: boolean }
+      | undefined;
+    const telemetryConsent = user?.telemetry_consent;
+    const anonymousMode = user?.anonymous_mode;
 
     if (anonymousMode === true) return;
     if (telemetryConsent === false) return;
@@ -58,7 +60,7 @@ export async function sendTelemetry(
           void flushQueuedTelemetry();
         }
       });
-    } catch (e) {
+    } catch {
       // ignore — defensive if document isn't available
     }
   }

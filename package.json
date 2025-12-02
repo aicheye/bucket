@@ -10,15 +10,11 @@
     "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
   "dependencies": {
-    "@apollo/client": "^4.0.9",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
     "@fortawesome/free-regular-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.0",
-    "@xmldom/xmldom": "^0.8.11",
-    "child-process": "^1.0.2",
-    "child-process-promise": "^2.1.3",
     "graphql": "^16.12.0",
     "jsdom": "20.0.3",
     "jsonwebtoken": "^9.0.2",
@@ -26,8 +22,7 @@
     "next-auth": "^4.24.13",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "recharts": "^2.15.4",
-    "rxjs": "^7.8.2"
+    "recharts": "^2.15.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -36,10 +31,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/xmldom": "^0.1.34",
     "daisyui": "^5.5.5",
     "eslint": "^9",
-    "eslint-config-next": "16.0.1",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"

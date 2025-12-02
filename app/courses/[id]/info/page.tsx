@@ -263,24 +263,40 @@ export default function CourseDetailInfoPage() {
                 onClick={handleSectionEditToggle}
               >
                 {selectedCourse.sections &&
-                  Object.keys(selectedCourse.sections).length > 0 ? (
+                Object.keys(selectedCourse.sections).length > 0 ? (
                   isEditingSections ? (
                     <>
                       Done{" "}
-                      <FontAwesomeIcon icon={faCheck} className="w-4 h-4" aria-hidden="true" />
+                      <FontAwesomeIcon
+                        icon={faCheck}
+                        className="w-4 h-4"
+                        aria-hidden="true"
+                      />
                     </>
                   ) : (
                     <>
-                      <FontAwesomeIcon icon={faEdit} className="w-4 h-4" aria-hidden="true" /> Edit
-                      Sections
+                      <FontAwesomeIcon
+                        icon={faEdit}
+                        className="w-4 h-4"
+                        aria-hidden="true"
+                      />{" "}
+                      Edit Sections
                     </>
                   )
                 ) : isEditingSections ? (
-                  <FontAwesomeIcon icon={faCheck} className="w-4 h-4" aria-hidden="true" />
+                  <FontAwesomeIcon
+                    icon={faCheck}
+                    className="w-4 h-4"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <>
-                    <FontAwesomeIcon icon={faEdit} className="w-4 h-4" aria-hidden="true" /> Choose
-                    Sections
+                    <FontAwesomeIcon
+                      icon={faEdit}
+                      className="w-4 h-4"
+                      aria-hidden="true"
+                    />{" "}
+                    Choose Sections
                   </>
                 )}
               </button>
@@ -376,12 +392,21 @@ export default function CourseDetailInfoPage() {
               >
                 {isEditingMarkingSchemes ? (
                   <>
-                    Done <FontAwesomeIcon icon={faCheck} className="w-4 h-4" aria-hidden="true" />
+                    Done{" "}
+                    <FontAwesomeIcon
+                      icon={faCheck}
+                      className="w-4 h-4"
+                      aria-hidden="true"
+                    />
                   </>
                 ) : (
                   <>
-                    <FontAwesomeIcon icon={faEdit} className="w-4 h-4" aria-hidden="true" /> Edit
-                    Schemes
+                    <FontAwesomeIcon
+                      icon={faEdit}
+                      className="w-4 h-4"
+                      aria-hidden="true"
+                    />{" "}
+                    Edit Schemes
                   </>
                 )}
               </button>
@@ -449,9 +474,11 @@ export default function CourseDetailInfoPage() {
                                   <div
                                     className={`badge badge-xs 
                                       ${getCategoryColor(
-                                      item.Component,
-                                      selectedCourse?.data["marking-schemes"]?.flat().map((s: any) => s.Component) || []
-                                    )}`}
+                                        item.Component,
+                                        selectedCourse?.data["marking-schemes"]
+                                          ?.flat()
+                                          .map((s: any) => s.Component) || [],
+                                      )}`}
                                   ></div>
                                   {item.Component}
                                 </div>
@@ -469,7 +496,7 @@ export default function CourseDetailInfoPage() {
                                   />
                                   <span className="w-4">
                                     {!isNaN(Number(item.Weight)) &&
-                                      item.Weight !== ""
+                                    item.Weight !== ""
                                       ? "%"
                                       : ""}
                                   </span>
@@ -492,7 +519,11 @@ export default function CourseDetailInfoPage() {
                               colSpan={2}
                               className="text-center text-base-content/50 py-2"
                             >
-                              <FontAwesomeIcon icon={faPlus} className="mr-2" aria-hidden="true" />{" "}
+                              <FontAwesomeIcon
+                                icon={faPlus}
+                                className="mr-2"
+                                aria-hidden="true"
+                              />{" "}
                               Add Component
                             </td>
                           </tr>
@@ -519,8 +550,12 @@ export default function CourseDetailInfoPage() {
               {isEditingMarkingSchemes && (
                 <div className="flex flex-col gap-2 items-center justify-center border border-dashed border-base-content/20 card min-h-[200px]">
                   <button className="btn btn-ghost" onClick={addScheme}>
-                    <FontAwesomeIcon icon={faPlus} className="mr-2" aria-hidden="true" /> Add
-                    Scheme
+                    <FontAwesomeIcon
+                      icon={faPlus}
+                      className="mr-2"
+                      aria-hidden="true"
+                    />{" "}
+                    Add Scheme
                   </button>
                 </div>
               )}

@@ -2,12 +2,16 @@
 // tab is not focused/visible. When the tab becomes visible again, queued
 // requests are flushed to `/api/graphql`.
 
-type GraphQLPayload = { query: string; variables?: any; operationName?: string };
+type GraphQLPayload = {
+  query: string;
+  variables?: Record<string, unknown>;
+  operationName?: string;
+};
 
 type QueueItem = {
   payload: GraphQLPayload;
-  resolve: (v: any) => void;
-  reject: (e: any) => void;
+  resolve: (v: unknown) => void;
+  reject: (e: unknown) => void;
 };
 
 const queue: QueueItem[] = [];
@@ -32,12 +36,17 @@ function flushQueue() {
 }
 
 function ensureVisibilityHandler() {
-  if (visibilityListenerAttached || typeof window === "undefined" || typeof document === "undefined") return;
+  if (
+    visibilityListenerAttached ||
+    typeof window === "undefined" ||
+    typeof document === "undefined"
+  )
+    return;
 
   const onVisible = () => {
     try {
       if (!document.hidden) flushQueue();
-    } catch (e) {
+    } catch {
       // ignore
     }
   };
@@ -57,10 +66,14 @@ function ensureVisibilityHandler() {
 export function sendQuery(input: string | GraphQLPayload) {
   ensureVisibilityHandler();
 
-  const payload: GraphQLPayload = typeof input === "string" ? { query: input } : input;
+  const payload: GraphQLPayload =
+    typeof input === "string" ? { query: input } : input;
 
   // If the page is not visible, queue the request
-  if (typeof document !== "undefined" && (document.hidden || !document.hasFocus())) {
+  if (
+    typeof document !== "undefined" &&
+    (document.hidden || !document.hasFocus())
+  ) {
     return new Promise((resolve, reject) => {
       queue.push({ payload, resolve, reject });
     });

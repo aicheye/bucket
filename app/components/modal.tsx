@@ -36,23 +36,25 @@ export default function Modal({
       try {
         // Close this dialog if it's still open
         if (dialog.open) dialog.close();
-      } catch (e) {
+      } catch {
         // swallow
       }
 
       // Defensive: ensure no other lingering native dialog backdrops remain
       try {
         if (typeof document !== "undefined") {
-          const openDialogs = Array.from(document.querySelectorAll("dialog")).filter((d) => (d as HTMLDialogElement).open) as HTMLDialogElement[];
+          const openDialogs = Array.from(
+            document.querySelectorAll("dialog"),
+          ).filter((d) => (d as HTMLDialogElement).open) as HTMLDialogElement[];
           openDialogs.forEach((d) => {
             try {
               d.close();
-            } catch (err) {
+            } catch {
               // swallow
             }
           });
         }
-      } catch (err) {
+      } catch {
         // swallow
       }
     };
@@ -77,7 +79,12 @@ export default function Modal({
   };
 
   return (
-    <dialog ref={dialogRef} className="modal" onClose={onClose} onKeyDown={handleKeyDown}>
+    <dialog
+      ref={dialogRef}
+      className="modal"
+      onClose={onClose}
+      onKeyDown={handleKeyDown}
+    >
       <div className="modal-box" style={{ position: "relative", zIndex: 50 }}>
         {title && <h3 className="font-bold text-lg">{title}</h3>}
         <div className="py-4">{children}</div>

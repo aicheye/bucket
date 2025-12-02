@@ -136,7 +136,8 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
   let preferredIndex: number | null = null;
   const rawPref = course.data["preferred-marking-scheme"];
   if (rawPref !== undefined && rawPref !== null) {
-    const parsed = typeof rawPref === "number" ? rawPref : parseInt(rawPref, 10);
+    const parsed =
+      typeof rawPref === "number" ? rawPref : parseInt(rawPref, 10);
     preferredIndex = Number.isInteger(parsed) ? parsed : null;
   }
 

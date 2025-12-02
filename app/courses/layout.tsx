@@ -1,6 +1,9 @@
 "use client";
 
-import { faArrowTrendUp, faEyeLowVision } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowTrendUp,
+  faEyeLowVision,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -28,16 +31,19 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           onboarded
         }
       }
-    `, variables: { id: session.user.id }
-    }).then((json) => {
-      if (json?.data?.users_by_pk?.onboarded) return;
-      setShowOnboarding(true);
-    }).catch((err) => {
-      console.error("Failed to fetch user onboarding status:", err);
-      // On error, show the onboarding modal to ensure preferences are set
-      setShowOnboarding(true);
-    });
-  }, [session?.user?.id]);
+    `,
+      variables: { id: session.user.id },
+    })
+      .then((json) => {
+        if (json?.data?.users_by_pk?.onboarded) return;
+        setShowOnboarding(true);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch user onboarding status:", err);
+        // On error, show the onboarding modal to ensure preferences are set
+        setShowOnboarding(true);
+      });
+  }, [session?.user?.id, showOnboarding]);
 
   const confirmOnboarding = async () => {
     if (!session?.user?.id) return setShowOnboarding(false);
@@ -51,9 +57,20 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
     `;
 
     try {
-      const json = await sendQuery({ query: mutation, variables: { id: session.user.id, consent: onboardTelemetry, anon: onboardAnon, onboarded: true } });
+      const json = await sendQuery({
+        query: mutation,
+        variables: {
+          id: session.user.id,
+          consent: onboardTelemetry,
+          anon: onboardAnon,
+          onboarded: true,
+        },
+      });
       if (json?.errors) {
-        console.error("Failed to save onboarding (GraphQL errors):", json.errors);
+        console.error(
+          "Failed to save onboarding (GraphQL errors):",
+          json.errors,
+        );
         return; // keep the modal open so user can retry
       }
 
@@ -96,12 +113,29 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         }
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-base-content/50">Choose privacy preferences below. For more information on your privacy rights, visit our <Link href="legal/privacy" target="_blank" className="underline" rel="noopener noreferrer">privacy policy</Link>.</p>
+          <p className="text-sm text-base-content/50">
+            Choose privacy preferences below. For more information on your
+            privacy rights, visit our{" "}
+            <Link
+              href="legal/privacy"
+              target="_blank"
+              className="underline"
+              rel="noopener noreferrer"
+            >
+              privacy policy
+            </Link>
+            .
+          </p>
           <hr className="border-base-content/20" />
           <div className="label cursor-pointer justify-start text-base-content/80 flex w-full">
             <div className="flex flex-col flex-grow gap-1">
-              <span className="label-text"><FontAwesomeIcon icon={faEyeLowVision} aria-hidden="true" /> Incognito Mode</span>
-              <span className="flex-wrap label-text text-base-content/50 text-sm">Scrubs name, email, picture from the user database.</span>
+              <span className="label-text">
+                <FontAwesomeIcon icon={faEyeLowVision} aria-hidden="true" />{" "}
+                Incognito Mode
+              </span>
+              <span className="flex-wrap label-text text-base-content/50 text-sm">
+                Scrubs name, email, picture from the user database.
+              </span>
             </div>
             <div>
               <input
@@ -119,8 +153,13 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           <hr className="border-base-content/20" />
           <div className="label cursor-pointer justify-start gap-2 text-base-content/80 flex">
             <div className="flex flex-col flex-grow gap-1">
-              <span className="label-text"><FontAwesomeIcon icon={faArrowTrendUp} aria-hidden="true" /> Send Usage Data</span>
-              <span className="label-text text-base-content/50 text-sm">Helps us improve Bucket over time. No personal info is sent.</span>
+              <span className="label-text">
+                <FontAwesomeIcon icon={faArrowTrendUp} aria-hidden="true" />{" "}
+                Send Usage Data
+              </span>
+              <span className="label-text text-base-content/50 text-sm">
+                Helps us improve Bucket over time. No personal info is sent.
+              </span>
             </div>
             <input
               type="checkbox"
@@ -135,7 +174,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           </div>
           <hr className="border-base-content/20" />
         </div>
-      </Modal >
+      </Modal>
       <main className="p-4 sm:p-8 w-full h-full">
         <div className="max-w-5xl mx-auto w-full h-full">
           {(status === "loading" && !session) || coursesLoading ? (
@@ -149,7 +188,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </main>
-    </div >
+    </div>
   );
 }
 

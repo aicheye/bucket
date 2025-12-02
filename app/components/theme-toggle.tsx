@@ -1,6 +1,11 @@
 "use client";
 
-import { faBrush, faDesktop, faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBrush,
+  faDesktop,
+  faMoon,
+  faSun,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { sendTelemetry } from "../../lib/telemetry";
@@ -82,13 +87,21 @@ export default function ThemeToggle() {
 
   return (
     <div className="dropdown dropdown-end">
-      <button type="button" className="btn btn-ghost" aria-haspopup="menu" aria-label="Theme options">
+      <button
+        type="button"
+        className="btn btn-ghost"
+        aria-haspopup="menu"
+        aria-label="Theme options"
+      >
         <FontAwesomeIcon
           icon={
-            theme === "system" ? faDesktop :
-              theme === "light" ? faSun :
-                theme === "dark" ? faMoon :
-                  faBrush
+            theme === "system"
+              ? faDesktop
+              : theme === "light"
+                ? faSun
+                : theme === "dark"
+                  ? faMoon
+                  : faBrush
           }
           className="w-5 h-5"
           aria-hidden="true"
@@ -118,15 +131,34 @@ export default function ThemeToggle() {
         {themes.map((t) => (
           <li key={t}>
             <button
-              className={`btn btn-sm btn-block justify-start ${theme === t ? "btn-primary" : "btn-ghost"
-                }`}
+              className={`btn btn-sm btn-block justify-start ${
+                theme === t ? "btn-primary" : "btn-ghost"
+              }`}
               role="menuitem"
               type="button"
               onClick={() => handleThemeChange(t)}
             >
-              {t === "system" ? <FontAwesomeIcon icon={faDesktop} className="w-4 h-4" aria-hidden="true" /> : null}
-              {t === "light" ? <FontAwesomeIcon icon={faSun} className="w-4 h-4" aria-hidden="true" /> : null}
-              {t === "dark" ? <FontAwesomeIcon icon={faMoon} className="w-4 h-4" aria-hidden="true" /> : null}
+              {t === "system" ? (
+                <FontAwesomeIcon
+                  icon={faDesktop}
+                  className="w-4 h-4"
+                  aria-hidden="true"
+                />
+              ) : null}
+              {t === "light" ? (
+                <FontAwesomeIcon
+                  icon={faSun}
+                  className="w-4 h-4"
+                  aria-hidden="true"
+                />
+              ) : null}
+              {t === "dark" ? (
+                <FontAwesomeIcon
+                  icon={faMoon}
+                  className="w-4 h-4"
+                  aria-hidden="true"
+                />
+              ) : null}
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           </li>

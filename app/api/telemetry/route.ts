@@ -13,7 +13,7 @@ function hmacHex(secret: string, value: string) {
     .digest("hex");
 }
 
-function sanitizeProperties(props: any) {
+function sanitizeProperties(props: Record<string, unknown>) {
   if (!props || typeof props !== "object") return {};
 
   const disallowed = [
@@ -25,7 +25,7 @@ function sanitizeProperties(props: any) {
     "profile",
     "picture",
   ]; // drop PII
-  const sanitized: Record<string, any> = {};
+  const sanitized: Record<string, unknown> = {};
 
   for (const key of Object.keys(props)) {
     const lower = key.toLowerCase();

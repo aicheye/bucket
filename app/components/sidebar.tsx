@@ -169,38 +169,6 @@ export default function Sidebar() {
     return b.localeCompare(a); // Fallback to string compare descending
   });
 
-  // Calculate term progress for current term
-  const currentTerm = sortedFolders.length > 0 ? sortedFolders[0] : null;
-
-  let timeProgress = 0;
-  if (currentTerm) {
-    const [season, yearStr] = currentTerm.split(" ");
-    const year = parseInt(yearStr);
-    let startDate: Date, endDate: Date;
-
-    if (season === "Winter") {
-      startDate = new Date(year, 0, 1); // Jan 1
-      endDate = new Date(year, 3, 30); // Apr 30
-    } else if (season === "Spring") {
-      startDate = new Date(year, 4, 1); // May 1
-      endDate = new Date(year, 7, 31); // Aug 31
-    } else {
-      // Fall
-      startDate = new Date(year, 8, 1); // Sep 1
-      endDate = new Date(year, 11, 31); // Dec 31
-    }
-
-    const today = new Date();
-    const totalDays =
-      (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
-    const elapsedDays =
-      (today.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
-    let progress = (elapsedDays / totalDays) * 100;
-    if (progress < 0) progress = 0;
-    if (progress > 100) progress = 100;
-    timeProgress = progress;
-  }
-
   return (
     <div className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
       <Modal
@@ -220,9 +188,12 @@ export default function Sidebar() {
         href="/dashboard"
         onClick={closeDrawer}
         className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
-
       >
-        <FontAwesomeIcon icon={faGauge} className="w-5 h-5 mr-2" aria-hidden="true" />
+        <FontAwesomeIcon
+          icon={faGauge}
+          className="w-5 h-5 mr-2"
+          aria-hidden="true"
+        />
         Dashboard
       </Link>
 
@@ -244,7 +215,11 @@ export default function Sidebar() {
             title="Add Course"
             aria-label="Add course"
           >
-            <FontAwesomeIcon icon={faPlus} className="w-4 h-4" aria-hidden="true" />
+            <FontAwesomeIcon
+              icon={faPlus}
+              className="w-4 h-4"
+              aria-hidden="true"
+            />
           </button>
         </div>
         {loading ? (
@@ -259,9 +234,6 @@ export default function Sidebar() {
               const folderCourses = groupedCourses[folder];
               let totalCurrent = 0;
               let totalCurrentCredits = 0;
-              let totalMin = 0;
-              let totalMax = 0;
-              let countMinMax = 0;
 
               folderCourses.forEach((c) => {
                 const details = getCourseGradeDetails(c, items);
@@ -269,14 +241,6 @@ export default function Sidebar() {
                   const credits = c.credits ?? 0.5;
                   totalCurrent += details.currentGrade * credits;
                   totalCurrentCredits += credits;
-
-                  const min = details.currentScore;
-                  const max =
-                    details.currentScore +
-                    (details.totalSchemeWeight - details.totalWeightGraded);
-                  totalMin += min;
-                  totalMax += max;
-                  countMinMax++;
                 }
               });
 
@@ -284,8 +248,6 @@ export default function Sidebar() {
                 totalCurrentCredits > 0
                   ? totalCurrent / totalCurrentCredits
                   : null;
-              const avgMin = countMinMax > 0 ? totalMin / countMinMax : null;
-              const avgMax = countMinMax > 0 ? totalMax / countMinMax : null;
 
               return (
                 <div
@@ -313,21 +275,24 @@ export default function Sidebar() {
                           key={course.id}
                           href={`/courses/${course.id}/grades`}
                           onClick={closeDrawer}
-                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
-                            ? "btn-primary"
-                            : "btn-base"
-                            }`}
+                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
+                            pathname?.startsWith(`/courses/${course.id}/`)
+                              ? "btn-primary"
+                              : "btn-base"
+                          }`}
                         >
                           <div className="text-left w-full flex justify-between items-center gap-2">
                             <div className="min-w-fit font-bold text-[14px]">
                               {course.code}
                             </div>
                             <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
-                              <div>
-                                ({course.credits})
-                              </div>
+                              <div>({course.credits})</div>
                               <div className="font-semibold">
-                                {getCourseGradeDetails(course, items).currentGrade.toFixed(1)}%
+                                {getCourseGradeDetails(
+                                  course,
+                                  items,
+                                ).currentGrade.toFixed(1)}
+                                %
                               </div>
                             </div>
                           </div>
@@ -336,7 +301,15 @@ export default function Sidebar() {
                     </div>
                   </div>
                   <div className="bg-base-300 p-2 pr-4 text-xs text-base-content/70 text-right w-full font-mono flex flex-col gap-1">
-                    <span>Total credits: <span className="font-bold">{folderCourses.reduce((sum, c) => sum + (c.credits || 0), 0)}</span></span>
+                    <span>
+                      Total credits:{" "}
+                      <span className="font-bold">
+                        {folderCourses.reduce(
+                          (sum, c) => sum + (c.credits || 0),
+                          0,
+                        )}
+                      </span>
+                    </span>
                   </div>
                 </div>
               );
@@ -347,10 +320,11 @@ export default function Sidebar() {
                 key={course.id}
                 href={`/courses/${course.id}/grades`}
                 onClick={closeDrawer}
-                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
-                  ? "btn-primary bg-primary"
-                  : ""
-                  }`}
+                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
+                  pathname?.startsWith(`/courses/${course.id}/`)
+                    ? "btn-primary bg-primary"
+                    : ""
+                }`}
               >
                 <div className="text-left w-full text-primary-content">
                   <div className="font-bold">{course.code}</div>

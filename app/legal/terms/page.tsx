@@ -6,20 +6,20 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="flex flex-col flex-1 gap-8 max-w-3xl mx-auto py-12 px-4 w-full text-base-content text-left">
+    <div className="card flex flex-col flex-1 gap-8 max-w-3xl mx-auto p-12 w-full text-base-content text-left bg-base-100 my-8 shadow-lg">
       <h1 className="text-3xl font-bold" id="terms-of-service">
         Terms of Service
       </h1>
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-bold">Acceptance of Terms</h2>
         <p>
-          By using our services, you agree to comply with and be bound by
-          these Terms of Service.
+          By using our services, you agree to comply with and be bound by these
+          Terms of Service.
         </p>
         <h2 className="text-2xl font-bold">Account Deletion</h2>
         <p>
-          Users may delete their accounts at any time, which will result in
-          the permanent removal of all associated data.
+          Users may delete their accounts at any time, which will result in the
+          permanent removal of all associated data.
         </p>
         <h2 className="text-2xl font-bold">Acceptable Use</h2>
         <p>
@@ -52,8 +52,8 @@ export default function TermsPage() {
         <h2 className="text-2xl font-bold">Modifications to Terms</h2>
         <p>
           All users will be notified of any changes to these Terms of Service
-          via email. Continued use of the service constitutes acceptance of
-          the updated terms.
+          via email. Continued use of the service constitutes acceptance of the
+          updated terms.
         </p>
       </div>
     </div>
