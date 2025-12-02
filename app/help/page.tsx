@@ -1,4 +1,4 @@
-import AddCourseHelp from "../components/add-course-help";
+import AddCourseHelp from "../components/features/AddCourseHelp";
 
 export default function HelpPage() {
   return (

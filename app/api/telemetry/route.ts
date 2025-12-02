@@ -1,7 +1,13 @@
 import crypto from "crypto";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
-import { executeHasuraQuery } from "../../../lib/hasura";
+import { INSERT_TELEMETRY } from "../../../lib/graphql/mutations";
+import { GET_USER, LAST_TELEMETRY } from "../../../lib/graphql/queries";
+import {
+  executeHasuraAdminQuery,
+  executeHasuraQuery,
+} from "../../../lib/hasura";
+import { logger } from "../../../lib/logger";
 import authOptions from "../../../lib/nextauth";
 
 const DEFAULT_RATE_LIMIT_MINUTES = 15;
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     if (!process.env.TELEMETRY_SECRET) {
-      console.error("TELEMETRY_SECRET not configured");
+      logger.error("TELEMETRY_SECRET not configured");
       return NextResponse.json(
         { error: "Telemetry disabled" },
         { status: 503 },
@@ -112,9 +118,8 @@ export async function POST(request: Request) {
     }
 
     // Check user telemetry consent
-    const consentQuery = `query GetUserConsent($id: String!) { users_by_pk(id: $id) { telemetry_consent } }`;
     const consentRes = await executeHasuraQuery(
-      consentQuery,
+      GET_USER,
       { id: session.user.id },
       session.user.id,
     );
@@ -135,9 +140,8 @@ export async function POST(request: Request) {
     const since = new Date(
       Date.now() - eventRateLimitMinutes * 60 * 1000,
     ).toISOString();
-    const query = `query LastTelemetry($anon: String!, $event: String!, $since: timestamptz!) { telemetry(where: { anon_user_hash: { _eq: $anon }, event: { _eq: $event }, created_at: { _gte: $since } }, limit: 1, order_by: { created_at: desc }) { id } }`;
-    const checkRes = await executeHasuraQuery(
-      query,
+    const checkRes = await executeHasuraAdminQuery(
+      LAST_TELEMETRY,
       { anon, event: normalizedEvent, since },
       session.user.id,
     );
@@ -151,8 +155,6 @@ export async function POST(request: Request) {
     // Insert telemetry row
     // Some Hasura setups don't expose 'returning' in insert responses for this table.
     // Use affected_rows instead for compatibility.
-    const mutation = `mutation InsertTelemetry($objects: [telemetry_insert_input!]!) { insert_telemetry(objects: $objects) { affected_rows } }`;
-
     const variables = {
       objects: [
         {
@@ -165,7 +167,7 @@ export async function POST(request: Request) {
     };
 
     const insertRes = await executeHasuraQuery(
-      mutation,
+      INSERT_TELEMETRY,
       variables,
       session.user.id,
     );
@@ -173,13 +175,20 @@ export async function POST(request: Request) {
       insertRes?.errors ||
       !insertRes?.data?.insert_telemetry?.affected_rows
     ) {
-      console.error("GraphQL insert telemetry error:", insertRes.errors);
+      logger.error("GraphQL insert telemetry error:", {
+        errors: insertRes.errors,
+        userId: session.user.id,
+      });
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
 
+    logger.debug("Telemetry event recorded", {
+      event: normalizedEvent,
+      userId: session.user.id,
+    });
     return NextResponse.json({ inserted: true }, { status: 201 });
   } catch (error) {
-    console.error("Telemetry route error:", error);
+    logger.error("Telemetry route error:", { error });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

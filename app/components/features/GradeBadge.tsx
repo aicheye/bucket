@@ -1,7 +1,9 @@
 "use client";
 
-const successCutoff = 80;
-const warningCutoff = 60;
+import { GRADE_CUTOFFS } from "../../../lib/constants";
+
+const successCutoff = GRADE_CUTOFFS.A_MINUS; // 80
+const warningCutoff = GRADE_CUTOFFS.C_MINUS; // 60
 
 const bgMap: Record<string, string> = {
   success: "bg-success/70",

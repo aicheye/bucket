@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
+import { DELETE_OLD_TELEMETRY } from "../../../../lib/graphql/mutations";
 import { executeHasuraAdminQuery } from "../../../../lib/hasura";
+import { logger } from "../../../../lib/logger";
 
 async function pruneTelemetry(request: Request) {
+  logger.info("Starting telemetry prune cron job");
   // Check for CRON_SECRET if configured
   if (process.env.CRON_SECRET) {
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      logger.warn("Unauthorized attempt to prune telemetry");
       return new NextResponse("Unauthorized", { status: 401 });
     }
   }
@@ -13,14 +17,6 @@ async function pruneTelemetry(request: Request) {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   const cutoff = ninetyDaysAgo.toISOString();
-
-  const DELETE_OLD_TELEMETRY = `
-        mutation DeleteOldTelemetry($cutoff: timestamptz!) {
-            delete_telemetry(where: { created_at: { _lt: $cutoff } }) {
-                affected_rows
-            }
-        }
-    `;
 
   try {
     const result = await executeHasuraAdminQuery(
@@ -30,6 +26,7 @@ async function pruneTelemetry(request: Request) {
     );
 
     const deletedCount = result?.data?.delete_telemetry?.affected_rows || 0;
+    logger.info("Telemetry prune completed", { deletedCount, cutoff });
 
     return NextResponse.json({
       success: true,
@@ -37,7 +34,7 @@ async function pruneTelemetry(request: Request) {
       cutoff,
     });
   } catch (error) {
-    console.error("Prune telemetry error:", error);
+    logger.error("Prune telemetry error:", { error });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

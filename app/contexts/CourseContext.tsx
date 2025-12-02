@@ -10,8 +10,19 @@ import {
   useEffect,
   useState,
 } from "react";
-import { sendQuery } from "../lib/graphql";
-import { sendTelemetry } from "../lib/telemetry";
+import { sendQuery } from "../../lib/graphql";
+import {
+  DELETE_COURSE_AND_ITEMS,
+  DELETE_ITEM,
+  INSERT_COURSES,
+  INSERT_ITEMS,
+  UPDATE_COURSE,
+  UPDATE_COURSE_DATA,
+  UPDATE_COURSE_SECTIONS,
+  UPDATE_ITEM,
+} from "../../lib/graphql/mutations";
+import { GET_COURSES, GET_ITEMS } from "../../lib/graphql/queries";
+import { sendTelemetry } from "../../lib/telemetry";
 
 export interface Course {
   id: string;
@@ -95,27 +106,15 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     if (!session?.user?.id) return;
 
     try {
-      const query = `query GetItems($owner_id: String!) {
-                items(where: {owner_id: {_eq: $owner_id}}) {
-                    id
-                    course_id
-                    owner_id
-                    data
-                    last_modified
-                }
-            }`;
-
       const json = await sendQuery({
-        query: query,
+        query: GET_ITEMS,
         variables: { owner_id: session.user.id },
       });
       if (json.data?.items) {
         setItems(json.data.items);
-      } else {
-        console.error("Failed to fetch items", json);
       }
-    } catch (error) {
-      console.error("Error fetching items:", error);
+    } catch {
+      // ignore
     }
   }
 
@@ -129,19 +128,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     try {
       await fetchItems(); // Fetch items as well
 
-      const query = `query GetCourses($owner_id: String!) {
-        courses(where: {owner_id: {_eq: $owner_id}}) {
-          id
-          code
-          term
-          data
-          sections
-          credits
-        }
-      }`;
-
       const json = await sendQuery({
-        query: query,
+        query: GET_COURSES,
         variables: { owner_id: session.user.id },
       });
       if (json.data?.courses) {
@@ -176,11 +164,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         });
 
         setCourses(sortedCourses);
-      } else {
-        console.error("Failed to fetch courses", json);
       }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -206,21 +192,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   ) {
     setLoading(true);
     try {
-      const mutation = `mutation InsertCourses($data: jsonb, $code: String, $owner_id: String, $term: String) {
-        insert_courses(objects: {data: $data, code: $code, owner_id: $owner_id, term: $term}) {
-          affected_rows
-          returning {
-            data
-            code
-            owner_id
-            term
-            id
-          }
-        }
-      }`;
-
       const json = await sendQuery({
-        query: mutation,
+        query: INSERT_COURSES,
         variables: { code: code, term: term, data: data, owner_id: owner_id },
       });
       await fetchCourses();
@@ -234,25 +207,15 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   async function deleteCourse(id: string) {
     try {
       // First delete any items attached to this course to avoid FK issues
-      const mutation = `
-        mutation DeleteCourseAndItems($id: uuid!) {
-          delete_items(where: {course_id: {_eq: $id}}) {
-            affected_rows
-          }
-          delete_courses_by_pk(id: $id) {
-            id
-          }
-        }
-      `;
-
-      const json = await sendQuery({ query: mutation, variables: { id: id } });
+      const json = await sendQuery({
+        query: DELETE_COURSE_AND_ITEMS,
+        variables: { id: id },
+      });
       if (json.data?.delete_courses_by_pk) {
         await fetchCourses();
-      } else {
-        console.error("Failed to delete course", json);
       }
-    } catch (e) {
-      console.error("Error deleting course:", e);
+    } catch {
+      // ignore
     }
   }
 
@@ -267,23 +230,15 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     // Optimistic update
     setCourses(courses.map((c) => (c.id === id ? { ...c, ...data } : c)));
 
-    const mutation = `mutation UpdateCourse($id: uuid!, $_set: courses_set_input!) {
-      update_courses_by_pk(pk_columns: {id: $id}, _set: $_set) {
-        id
-      }
-    }`;
-
     try {
       const json = await sendQuery({
-        query: mutation,
+        query: UPDATE_COURSE,
         variables: { id: id, _set: data },
       });
       if (!json.data?.update_courses_by_pk) {
-        console.error("Failed to update course", json);
         fetchCourses();
       }
-    } catch (e) {
-      console.error("Error updating course:", e);
+    } catch {
       fetchCourses();
     }
   }
@@ -305,19 +260,11 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       ),
     );
 
-    const mutation = `mutation UpdateCourseSections($id: uuid!, $sections: jsonb) {
-      update_courses_by_pk(pk_columns: {id: $id}, _set: {sections: $sections}) {
-        id
-        sections
-      }
-    }`;
-
     const json = await sendQuery({
-      query: mutation,
+      query: UPDATE_COURSE_SECTIONS,
       variables: { id: courseId, sections: newSections },
     });
     if (!json.data?.update_courses_by_pk) {
-      console.error("Failed to update sections", json);
       fetchCourses();
     } else {
       // Telemetry - selecting an individual section component
@@ -377,19 +324,11 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       );
     }
 
-    const mutation = `mutation UpdateCourseData($id: uuid!, $data: jsonb) {
-      update_courses_by_pk(pk_columns: {id: $id}, _set: {data: $data}) {
-        id
-        data
-      }
-    }`;
-
     const json = await sendQuery({
-      query: mutation,
+      query: UPDATE_COURSE_DATA,
       variables: { id: courseId, data: newData },
     });
     if (!json.data?.update_courses_by_pk) {
-      console.error("Failed to update marking schemes", json);
       fetchCourses();
     }
     // telemetry: marking scheme saved
@@ -409,11 +348,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         for (const u of itemsToUpdate) {
           try {
             await updateItem(u.id, u.data);
-          } catch (e) {
-            console.error(
-              "Failed to update item type during marking-schemes rename",
-              e,
-            );
+          } catch {
+            // ignore individual item update errors
           }
         }
       } catch {
@@ -433,40 +369,19 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       courses.map((c) => (c.id === courseId ? { ...c, data: mergedData } : c)),
     );
 
-    const mutation = `mutation UpdateCourseData($id: uuid!, $data: jsonb) {
-      update_courses_by_pk(pk_columns: {id: $id}, _set: {data: $data}) {
-        id
-        data
-      }
-    }`;
-
     const json = await sendQuery({
-      query: mutation,
+      query: UPDATE_COURSE_DATA,
       variables: { id: courseId, data: mergedData },
     });
     if (!json.data?.update_courses_by_pk) {
-      console.error("Failed to update course data", json);
       fetchCourses();
     }
   }
 
   async function addItem(courseId: string, data: object, owner_id: string) {
     try {
-      const mutation = `mutation InsertItems($data: jsonb, $owner_id: String, $course_id: uuid) {
-                insert_items(objects: {data: $data, owner_id: $owner_id, course_id: $course_id}) {
-                    affected_rows
-                    returning {
-                        data
-                        owner_id
-                        last_modified
-                        course_id
-                        id
-                    }
-                }
-            }`;
-
       const json = await sendQuery({
-        query: mutation,
+        query: INSERT_ITEMS,
         variables: { data: data, owner_id: owner_id, course_id: courseId },
       });
       if (json.data?.insert_items?.returning) {
@@ -482,23 +397,18 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         } catch {
           // ignore telemetry failure
         }
-      } else {
-        console.error("Failed to add item", json);
       }
-    } catch (error) {
-      console.error("Error adding item:", error);
+    } catch {
+      // ignore
     }
   }
 
   async function deleteItem(id: string) {
     try {
-      const mutation = `mutation DeleteItem($id: uuid!) {
-                delete_items_by_pk(id: $id) {
-                    id
-                }
-            }`;
-
-      const json = await sendQuery({ query: mutation, variables: { id: id } });
+      const json = await sendQuery({
+        query: DELETE_ITEM,
+        variables: { id: id },
+      });
       if (json.data?.delete_items_by_pk) {
         // telemetry - item deleted
         try {
@@ -512,25 +422,16 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           // ignore telemetry failure
         }
         await fetchItems();
-      } else {
-        console.error("Failed to delete item", json);
       }
-    } catch (error) {
-      console.error("Error deleting item:", error);
+    } catch {
+      // ignore
     }
   }
 
   async function updateItem(id: string, data: object) {
     try {
-      const mutation = `mutation UpdateItem($id: uuid!, $data: jsonb) {
-                update_items_by_pk(pk_columns: {id: $id}, _set: {data: $data}) {
-                    id
-                    data
-                }
-            }`;
-
       const json = await sendQuery({
-        query: mutation,
+        query: UPDATE_ITEM,
         variables: { id: id, data: data },
       });
       if (json.data?.update_items_by_pk) {
@@ -547,11 +448,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         } catch {
           // ignore
         }
-      } else {
-        console.error("Failed to update item", json);
       }
-    } catch (error) {
-      console.error("Error updating item:", error);
+    } catch {
+      // ignore
     }
   }
 

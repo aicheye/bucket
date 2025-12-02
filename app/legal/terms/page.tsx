@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ProsePageContainer from "../../components/features/ProsePageContainer";
 
 export const metadata: Metadata = {
   title: "Bucket | Terms of Service",
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="card flex flex-col flex-1 gap-8 max-w-3xl mx-auto p-12 w-full text-base-content text-left bg-base-100 my-8 shadow-lg">
+    <ProsePageContainer>
       <h1 className="text-3xl font-bold" id="terms-of-service">
         Terms of Service
       </h1>
@@ -56,6 +57,6 @@ export default function TermsPage() {
           updated terms.
         </p>
       </div>
-    </div>
+    </ProsePageContainer>
   );
 }

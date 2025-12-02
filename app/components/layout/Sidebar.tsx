@@ -6,25 +6,25 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { getCourseGradeDetails } from "../../lib/grade-utils";
-import { sendTelemetry } from "../../lib/telemetry";
-import { useCourses } from "../course-context";
-import GradeBadge from "./grade-badge";
-import { useLoading } from "./loading-context";
-import Modal from "./modal";
+import { getCourseGradeDetails } from "../../../lib/grade-utils";
+import { sendTelemetry } from "../../../lib/telemetry";
+import { useCourses } from "../../contexts/CourseContext";
+import { useLoading } from "../../contexts/LoadingContext";
+import { useAlertState } from "../../hooks/useAlertState";
+import GradeBadge from "../features/GradeBadge";
+import Modal from "../ui/Modal";
 
-export default function Sidebar() {
+interface SidebarProps {
+  gradesScreen: boolean;
+  infoScreen: boolean;
+}
+
+export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   const { courses, addCourse, loading, items } = useCourses();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const [alertState, setAlertState] = useState<{
-    isOpen: boolean;
-    message: string;
-  }>({
-    isOpen: false,
-    message: "",
-  });
+  const { alertState, showAlert, closeAlert } = useAlertState();
   const [expandedFolders, setExpandedFolders] = useState<
     Record<string, boolean>
   >({});
@@ -33,10 +33,6 @@ export default function Sidebar() {
 
   function toggleFolder(folder: string) {
     setExpandedFolders((prev) => ({ ...prev, [folder]: !prev[folder] }));
-  }
-
-  function closeAlert() {
-    setAlertState((prev) => ({ ...prev, isOpen: false }));
   }
 
   function buttonClick() {
@@ -78,10 +74,7 @@ export default function Sidebar() {
       );
 
       if (existingCourse) {
-        setAlertState({
-          isOpen: true,
-          message: `Course ${data.code} (${data.term}) already exists.`,
-        });
+        showAlert(`Course ${data.code} (${data.term}) already exists.`);
         input.value = "";
         return;
       }
@@ -99,13 +92,8 @@ export default function Sidebar() {
         // Record successful outline parse and add
         sendTelemetry("parse_outline", { code: data.code, term: data.term });
       }
-    } catch (error) {
-      console.error("Failed to upload course:", error);
-      setAlertState({
-        isOpen: true,
-        message:
-          error instanceof Error ? error.message : "Failed to upload course",
-      });
+    } catch {
+      showAlert("Failed to upload course");
     } finally {
       try {
         hideLoading();
@@ -197,7 +185,7 @@ export default function Sidebar() {
         Dashboard
       </Link>
 
-      <div className="border border-base-content/10 w-full"></div>
+      <div className="border-t border-base-content/10 w-full"></div>
 
       <div className="flex flex-col sm:gap-4 gap-2 flex-1">
         <div className="flex justify-between items-center">
@@ -273,7 +261,7 @@ export default function Sidebar() {
                       {groupedCourses[folder].map((course) => (
                         <Link
                           key={course.id}
-                          href={`/courses/${course.id}/grades`}
+                          href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : ""}`}
                           onClick={closeDrawer}
                           className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
                             pathname?.startsWith(`/courses/${course.id}/`)
@@ -288,11 +276,17 @@ export default function Sidebar() {
                             <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
                               <div>({course.credits})</div>
                               <div className="font-semibold">
-                                {getCourseGradeDetails(
-                                  course,
-                                  items,
-                                ).currentGrade.toFixed(1)}
-                                %
+                                {getCourseGradeDetails(course, items) ? (
+                                  <span>
+                                    {getCourseGradeDetails(
+                                      course,
+                                      items,
+                                    ).currentGrade.toFixed(1)}
+                                    %
+                                  </span>
+                                ) : (
+                                  ""
+                                )}
                               </div>
                             </div>
                           </div>

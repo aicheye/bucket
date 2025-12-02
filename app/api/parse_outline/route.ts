@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { logger } from "../../../lib/logger";
 import authOptions from "../../../lib/nextauth";
 
 async function parse_html(content: string) {
@@ -279,16 +280,22 @@ export async function POST(request: Request) {
   try {
     // Optional: block if not signed in
     const session = await getServerSession(authOptions);
-    if (!session)
+    if (!session) {
+      logger.warn("Unauthorized parse_outline request");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json();
 
     const data = await parse_html(body.html_text);
+    logger.info("Parsed outline successfully", {
+      userId: session.user?.id,
+      courseCode: data.code,
+    });
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error processing request:", error);
+    logger.error("Error processing parse_outline request:", { error });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

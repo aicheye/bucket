@@ -2,46 +2,54 @@
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import React, { useEffect } from "react";
+import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
-import Footer from "./components/footer";
-import GlobalLoading from "./components/global-loading";
-import { LoadingProvider } from "./components/loading-context";
-import Navbar from "./components/navbar";
-import Sidebar from "./components/sidebar";
-import { CourseProvider } from "./course-context";
+import Footer from "./components/layout/Footer";
+import GlobalLoading from "./components/layout/GlobalLoading";
+import Navbar from "./components/layout/Navbar";
+import Sidebar from "./components/layout/Sidebar";
+import { CourseProvider } from "./contexts/CourseContext";
+import { LoadingProvider } from "./contexts/LoadingContext";
+
+// session heartbeat: periodically record active session (client-side)
+const Heartbeat = ({ children }: { children: React.ReactNode }) => {
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    // Send heartbeats on 15 minute intervals
+    const interval = setInterval(
+      async () => {
+        await sendTelemetry("session_heartbeat", {
+          user_id: session.user.id,
+        });
+      },
+      15 * 60 * 1000,
+    );
+
+    // Initial heartbeat on load
+    sendTelemetry("session_heartbeat", {
+      user_id: session.user.id,
+    });
+
+    return () => clearInterval(interval);
+  }, [session]);
+
+  return <>{children}</>;
+};
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const showSidebar =
     pathname?.startsWith("/courses") || pathname === "/dashboard";
-  const authScreen = pathname === "/";
-  // session heartbeat: periodically record active session (client-side)
-  const Heartbeat = ({ children }: { children: React.ReactNode }) => {
-    const { data: session } = useSession();
+  const authScreen = pathname?.startsWith("/api/auth/signin");
+  const gradesScreen = pathname?.endsWith("/grades");
+  const infoScreen = pathname?.endsWith("/info");
 
-    useEffect(() => {
-      if (!session?.user?.id) return;
-
-      // Send heartbeats on 15 minute intervals
-      const interval = setInterval(
-        async () => {
-          await sendTelemetry("session_heartbeat", {
-            user_id: session.user.id,
-          });
-        },
-        15 * 60 * 1000,
-      );
-
-      // Initial heartbeat on load
-      sendTelemetry("session_heartbeat", {
-        user_id: session.user.id,
-      });
-
-      return () => clearInterval(interval);
-    }, [session]);
-
-    return <>{children}</>;
-  };
+  useEffect(() => {
+    logger.info("Providers initialized");
+  }, []);
 
   return (
     <LoadingProvider>
@@ -61,7 +69,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
                 {showSidebar ? (
                   <div className="h-full hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:h-[calc(100vh - var(--navbar-total-height))] lg:w-64 lg:overflow-y-auto">
-                    <Sidebar />
+                    <Sidebar
+                      gradesScreen={gradesScreen}
+                      infoScreen={infoScreen}
+                    />
                   </div>
                 ) : null}
 
@@ -107,7 +118,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                               minHeight: 0,
                             }}
                           >
-                            <Sidebar />
+                            <Sidebar
+                              gradesScreen={gradesScreen}
+                              infoScreen={infoScreen}
+                            />
                           </div>
                         </div>
                       </div>

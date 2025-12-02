@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import { sendTelemetry } from "../../../lib/telemetry";
-import { useLoading } from "../../components/loading-context";
-import Modal from "../../components/modal";
-import { useCourses } from "../../course-context";
+import Modal from "../../components/ui/Modal";
+import { useCourses } from "../../contexts/CourseContext";
+import { useLoading } from "../../contexts/LoadingContext";
 
 export default function CourseLayout({ children }: { children: ReactNode }) {
   const { id } = useParams();
@@ -89,8 +89,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
       await deleteCourse(selectedCourse.id);
       await sendTelemetry("delete_course", { course_id: selectedCourse.id });
       router.push("/courses");
-    } catch (error) {
-      console.error("Failed to delete course:", error);
+    } catch {
       setIsDeleting(false);
     } finally {
       try {

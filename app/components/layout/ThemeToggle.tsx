@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
-import { sendTelemetry } from "../../lib/telemetry";
+import { sendTelemetry } from "../../../lib/telemetry";
 
 const themes = [
   "system",

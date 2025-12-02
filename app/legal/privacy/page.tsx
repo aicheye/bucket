@@ -1,6 +1,7 @@
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
+import ProsePageContainer from "../../components/features/ProsePageContainer";
 
 export const metadata: Metadata = {
   title: "Bucket | Privacy Policy",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="card flex flex-col flex-1 gap-8 max-w-3xl mx-auto p-12 w-full text-base-content text-left bg-base-100 my-8 shadow-lg">
+    <ProsePageContainer>
       <h1 className="text-3xl font-bold" id="privacy-policy">
         Privacy Policy
       </h1>
@@ -89,11 +90,15 @@ export default function PrivacyPage() {
           policy.
         </p>
         <p className="alert alert-info font-bold mt-4">
-          <FontAwesomeIcon icon={faInfoCircle} aria-hidden="true" className="text-lg" />{" "}
+          <FontAwesomeIcon
+            icon={faInfoCircle}
+            aria-hidden="true"
+            className="text-lg"
+          />{" "}
           We will never change this Privacy Policy in a way that is less
           protective of your data without your explicit consent.
         </p>
       </div>
-    </div>
+    </ProsePageContainer>
   );
 }

@@ -1,6 +1,8 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { SCRUB_USER } from "../../../../lib/graphql/mutations";
 import { executeHasuraQuery } from "../../../../lib/hasura";
+import { logger } from "../../../../lib/logger";
 import authOptions from "../../../../lib/nextauth";
 
 export async function POST() {
@@ -9,29 +11,27 @@ export async function POST() {
     if (!session)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Set PII fields to null and mark anonymous mode + disable telemetry
-    const mutation = `
-      mutation ScrubUser($id: String!) {
-        update_users_by_pk(pk_columns: { id: $id }, _set: { name: null, image: null, email: null, anonymous_mode: true, telemetry_consent: false }) {
-          id
-        }
-      }
-    `;
+    logger.info("Scrubbing user data", { userId: session.user.id });
 
+    // Set PII fields to null and mark anonymous mode + disable telemetry
     const res = await executeHasuraQuery(
-      mutation,
+      SCRUB_USER,
       { id: session.user.id },
       session.user.id,
     );
 
     if (res?.errors) {
-      console.error("Error scrubbing user:", res.errors);
+      logger.error("Error scrubbing user:", {
+        errors: res.errors,
+        userId: session.user.id,
+      });
       return NextResponse.json({ error: "Scrub failed" }, { status: 500 });
     }
 
+    logger.info("User scrubbed successfully", { userId: session.user.id });
     return NextResponse.json({ scrubbed: true }, { status: 200 });
   } catch (err) {
-    console.error("Scrub route error:", err);
+    logger.error("Scrub route error:", { error: err });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

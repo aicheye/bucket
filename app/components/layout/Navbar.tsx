@@ -3,8 +3,8 @@
 import { faBars, faFillDrip } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
-import Profile from "./profile";
-import ThemeToggle from "./theme-toggle";
+import Profile from "./Profile";
+import ThemeToggle from "./ThemeToggle";
 
 function closeDrawer() {
   const drawerCheckbox = document.getElementById(

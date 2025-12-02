@@ -9,10 +9,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { sendQuery } from "../../lib/graphql";
-import AuthComponent from "./auth-button";
-import { useLoading } from "./loading-context";
-import Modal from "./modal";
+import { sendQuery } from "../../../lib/graphql";
+import {
+  DELETE_USER_EVERYTHING,
+  UPDATE_USER_PII,
+  UPDATE_USER_TELEMETRY,
+  UPDATE_USER_TELEMETRY_AND_ANON,
+} from "../../../lib/graphql/mutations";
+import { GET_USER_FULL } from "../../../lib/graphql/queries";
+import { useLoading } from "../../contexts/LoadingContext";
+import { useAlertState } from "../../hooks/useAlertState";
+import AuthComponent from "../ui/AuthButton";
+import Modal from "../ui/Modal";
 
 export default function Profile() {
   const { data: session, status } = useSession();
@@ -28,33 +36,16 @@ export default function Profile() {
   const [userEmailLocal, setUserEmailLocal] = useState<
     string | null | undefined
   >(undefined);
-  const [alertState, setAlertState] = useState<{
-    isOpen: boolean;
-    message: string;
-  }>({
-    isOpen: false,
-    message: "",
-  });
+  const { alertState, showAlert, closeAlert } = useAlertState();
 
   const { showLoading, hideLoading } = useLoading();
 
   const fetchUserProfile = useCallback(async () => {
     if (!session?.user?.id) return;
-    const query = `
-      query GetUserProfile($id: String!) {
-        users_by_pk(id: $id) {
-          telemetry_consent
-          anonymous_mode
-          name
-          email
-          image
-        }
-      }
-    `;
 
     try {
       const result = await sendQuery({
-        query,
+        query: GET_USER_FULL,
         variables: { id: session.user.id },
       });
       if (result.data?.users_by_pk) {
@@ -78,16 +69,8 @@ export default function Profile() {
 
             // Only attempt update if we have something to write
             if (nameToSet || emailToSet || imageToSet) {
-              const mutation = `
-                  mutation UpdateMissingPII($id: String!, $name: String, $email: String, $image: String, $anon: Boolean!) {
-                    update_users_by_pk(pk_columns: {id: $id}, _set: {name: $name, email: $email, image: $image, anonymous_mode: $anon}) {
-                      id
-                    }
-                  }
-                `;
-
               const updateResult = await sendQuery({
-                query: mutation,
+                query: UPDATE_USER_PII,
                 variables: {
                   id: session.user.id,
                   name: nameToSet,
@@ -108,19 +91,16 @@ export default function Profile() {
                   window.dispatchEvent(new CustomEvent("user-profile-updated"));
                 }
               } else {
-                console.error(
-                  "Error updating missing PII:",
-                  updateResult.errors,
-                );
+                // ignore
               }
             }
           }
-        } catch (err) {
-          console.error("Error attempting to update missing PII:", err);
+        } catch {
+          // ignore
         }
       }
-    } catch (err) {
-      console.error("Error fetching user profile:", err);
+    } catch {
+      // ignore
     }
   }, [
     session?.user?.id,
@@ -157,7 +137,6 @@ export default function Profile() {
     return <div className="loading loading-spinner loading-lg"></div>;
   if (!session?.user) return <AuthComponent />;
 
-  const closeAlert = () => setAlertState({ ...alertState, isOpen: false });
   const closeConfirm = () => setShowDeleteConfirm(false);
 
   const toggleTelemetry = async () => {
@@ -170,45 +149,24 @@ export default function Profile() {
 
     // If enabling telemetry, update both telemetry_consent and anonymous_mode server-side.
     // If disabling telemetry, only update telemetry_consent.
-    const mutationEnable = `
-            mutation UpdateUserTelemetryAndAnon($id: String!, $consent: Boolean!, $anon: Boolean!) {
-                update_users_by_pk(pk_columns: {id: $id}, _set: {telemetry_consent: $consent, anonymous_mode: $anon}) {
-                    telemetry_consent
-                    anonymous_mode
-                }
-            }
-        `;
-
-    const mutationDisable = `
-            mutation UpdateUserTelemetry($id: String!, $consent: Boolean!) {
-                update_users_by_pk(pk_columns: {id: $id}, _set: {telemetry_consent: $consent}) {
-                    telemetry_consent
-                }
-            }
-        `;
-
     try {
       const payload = newValue
         ? {
-            query: mutationEnable,
+            query: UPDATE_USER_TELEMETRY_AND_ANON,
             variables: { id: session.user.id, consent: newValue, anon: false },
           }
         : {
-            query: mutationDisable,
+            query: UPDATE_USER_TELEMETRY,
             variables: { id: session.user.id, consent: newValue },
           };
 
       const result = await sendQuery(payload);
 
       if (result.errors) {
-        console.error("Error updating telemetry consent:", result.errors);
         // revert local state
         setTelemetryConsent(!newValue);
         if (newValue) setAnonymousMode(true);
-        setAlertState({
-          isOpen: true,
-          message: "Failed to update telemetry settings.",
-        });
+        showAlert("Failed to update telemetry settings.");
         return;
       }
 
@@ -216,18 +174,15 @@ export default function Profile() {
       if (newValue) {
         try {
           await fetchUserProfile();
-        } catch (err) {
-          console.error("Failed to fetch user profile:", err);
+        } catch {
+          // ignore
         }
       }
-    } catch (error) {
-      console.error("Error updating telemetry consent:", error);
+    } catch {
+      // revert local state
       setTelemetryConsent(!newValue);
       if (newValue) setAnonymousMode(true);
-      setAlertState({
-        isOpen: true,
-        message: "An error occurred. Please try again.",
-      });
+      showAlert("An error occurred. Please try again.");
     }
   };
 
@@ -252,8 +207,8 @@ export default function Profile() {
             "user_pii_backup_v1",
             JSON.stringify(backup),
           );
-        } catch (err) {
-          console.error("Failed to back up PII to localStorage:", err);
+        } catch {
+          // ignore
         }
 
         const res = await fetch("/api/user/scrub", { method: "POST" });
@@ -261,12 +216,8 @@ export default function Profile() {
         if (!res.ok) throw new Error("Scrub failed");
         // Refresh profile section from GraphQL so UI updates without a full reload
         await fetchUserProfile();
-      } catch (err) {
-        console.error("Failed to enable anonymous mode:", err);
-        setAlertState({
-          isOpen: true,
-          message: "Failed to enable anonymous mode.",
-        });
+      } catch {
+        showAlert("Failed to enable anonymous mode.");
         setAnonymousMode(false);
       }
       return;
@@ -274,18 +225,6 @@ export default function Profile() {
 
     // Disabling anonymous mode: push current session PII to the DB
     try {
-      const mutation = `
-        mutation RestorePII($id: String!, $name: String, $email: String, $image: String, $anon: Boolean!) {
-          update_users_by_pk(pk_columns: {id: $id}, _set: {name: $name, email: $email, image: $image, anonymous_mode: $anon}) {
-            id
-            name
-            email
-            image
-            anonymous_mode
-          }
-        }
-      `;
-
       // If the session no longer contains PII (e.g., after a refresh while
       // anonymous), fall back to any backed-up PII we saved before scrubbing.
       let backup: {
@@ -296,8 +235,8 @@ export default function Profile() {
       try {
         const raw = window.localStorage.getItem("user_pii_backup_v1");
         if (raw) backup = JSON.parse(raw);
-      } catch (err) {
-        console.error("Failed to parse PII backup from localStorage:", err);
+      } catch {
+        // ignore
       }
 
       const vars = {
@@ -308,13 +247,12 @@ export default function Profile() {
         anon: false,
       };
 
-      const result = await sendQuery({ query: mutation, variables: vars });
+      const result = await sendQuery({
+        query: UPDATE_USER_PII,
+        variables: vars,
+      });
       if (result.errors) {
-        console.error("Error restoring PII:", result.errors);
-        setAlertState({
-          isOpen: true,
-          message: "Failed to disable anonymous mode.",
-        });
+        showAlert("Failed to disable anonymous mode.");
         return;
       }
 
@@ -328,8 +266,8 @@ export default function Profile() {
         // Remove backup now that PII has been restored into the DB
         try {
           window.localStorage.removeItem("user_pii_backup_v1");
-        } catch (err) {
-          console.error("Failed to remove PII backup from localStorage:", err);
+        } catch {
+          // ignore
         }
       } else {
         setAnonymousMode(false);
@@ -370,8 +308,8 @@ export default function Profile() {
             }
           }
         }
-      } catch (err) {
-        console.error("Failed to refresh next-auth session:", err);
+      } catch {
+        // ignore
       }
 
       // Re-fetch profile data so UI reflects restored PII. Use polling to
@@ -379,9 +317,8 @@ export default function Profile() {
       // update timing.
       try {
         const fetchRawUser = async () => {
-          const q = `query GetUserProfile($id: String!) { users_by_pk(id: $id) { telemetry_consent anonymous_mode name email image } }`;
           const j = await sendQuery({
-            query: q,
+            query: GET_USER_FULL,
             variables: { id: session!.user.id },
           });
           return j?.data?.users_by_pk ?? null;
@@ -426,23 +363,17 @@ export default function Profile() {
         // other state is synchronized.
         try {
           await fetchUserProfile();
-        } catch (err) {
-          console.error("Failed to fetch user profile:", err);
+        } catch {
+          // ignore
         }
-      } catch (err) {
-        console.error("Failed to disable anonymous mode:", err);
+      } catch {
+        // ignore
       }
-    } catch (error) {
-      console.error("Error disabling anonymous mode:", error);
+    } catch {
       setAnonymousMode(true);
-      setAlertState({
-        isOpen: true,
-        message: "Failed to update anonymous mode.",
-      });
+      showAlert("Failed to update anonymous mode.");
     }
   };
-
-  // scrubPersonalInfo removed — anonymous toggle now performs scrubbing
 
   const deleteAccount = async () => {
     setShowDeleteConfirm(false);
@@ -450,41 +381,19 @@ export default function Profile() {
     try {
       showLoading();
 
-      const mutation = `
-        mutation DeleteUserEverything($id: String!) {
-          delete_items(where: {owner_id: {_eq: $id}}) {
-            affected_rows
-          }
-          delete_courses(where: {owner_id: {_eq: $id}}) {
-            affected_rows
-          }
-          delete_users_by_pk(id: $id) {
-            id
-          }
-        }
-      `;
-
       const result = await sendQuery({
-        query: mutation,
+        query: DELETE_USER_EVERYTHING,
         variables: { id: session.user.id },
       });
 
       if (result.errors) {
-        console.error("Error deleting account:", result.errors);
-        setAlertState({
-          isOpen: true,
-          message: "Failed to delete account. Please try again.",
-        });
+        showAlert("Failed to delete account. Please try again.");
         return;
       }
 
       await signOut({ callbackUrl: "/" });
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      setAlertState({
-        isOpen: true,
-        message: "An error occurred. Please try again.",
-      });
+    } catch {
+      showAlert("An error occurred. Please try again.");
     } finally {
       try {
         hideLoading();
@@ -550,7 +459,7 @@ export default function Profile() {
             />
           ) : (
             <Image
-              src={userImage || session.user.image || null}
+              src={userImage || session.user.image || "/default-avatar.png"}
               alt={userNameLocal ?? session.user.name ?? "Profile"}
               width={40}
               height={40}
@@ -648,7 +557,6 @@ export default function Profile() {
           </li>
         </ul>
       </div>
-      {/* scrub modal removed — scrubbing occurs when enabling Anonymous Mode */}
     </div>
   );
 }

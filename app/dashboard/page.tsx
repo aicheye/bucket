@@ -1,32 +1,28 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-  faBook,
-  faCalendarDay,
-  faChevronLeft,
-  faChevronRight,
-  faClock,
-  faInfoCircle,
-  faPencil,
-  faPlus,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { formatTime } from "../../lib/format-utils";
-import { getCourseGradeDetails } from "../../lib/grade-utils";
+import { useEffect, useState } from "react";
+import { getCourseTypes } from "../../lib/course-utils";
+import { formatDateParam, parseDateParam } from "../../lib/date-utils";
+import { getCourseGradeDetails, gradeToGPA } from "../../lib/grade-utils";
 import { sendQuery } from "../../lib/graphql";
+import { UPDATE_USER_DATA } from "../../lib/graphql/mutations";
+import { GET_USER_FULL } from "../../lib/graphql/queries";
 import { sendTelemetry } from "../../lib/telemetry";
-import AddCourseHelp from "../components/add-course-help";
-import GoalInput from "../components/goal-input";
-import GradeBadge from "../components/grade-badge";
-import Modal from "../components/modal";
-import RangeBadge from "../components/range-badge";
-import ReqAvgBadge from "../components/req-avg-badge";
-import { Item, useCourses } from "../course-context";
+import type { ItemFormData } from "../../lib/types";
+import AddCourseHelp from "../components/features/AddCourseHelp";
+import ClassScheduleCard from "../components/features/dashboard/ClassScheduleCard";
+import CoursesCard from "../components/features/dashboard/CoursesCard";
+import DeliverablesCard from "../components/features/dashboard/DeliverablesCard";
+import TermStatsCard from "../components/features/dashboard/TermStatsCard";
+import ItemFormModal from "../components/features/ItemFormModal";
+import { Item, useCourses } from "../contexts/CourseContext";
+import { useGroupedCourses } from "../hooks/useGroupedCourses";
 
 export default function CoursesPage() {
   const { data: session, status } = useSession();
@@ -45,20 +41,13 @@ export default function CoursesPage() {
   useEffect(() => {
     const userId = session?.user?.id;
     if (status === "authenticated" && userId) {
-      const query = `
-                query GetUserData($id: String!) {
-                    users_by_pk(id: $id) {
-                        data
-                    }
-                }
-            `;
-      sendQuery({ query, variables: { id: userId } })
-        .then((res) => {
+      sendQuery({ query: GET_USER_FULL, variables: { id: userId } }).then(
+        (res) => {
           if (res.data?.users_by_pk?.data) {
             setUserData(res.data.users_by_pk.data);
           }
-        })
-        .catch((err) => console.error("Failed to fetch user data", err));
+        },
+      );
     }
   }, [status, session]);
 
@@ -67,7 +56,7 @@ export default function CoursesPage() {
   const [addingItemCourseId, setAddingItemCourseId] = useState<string | null>(
     null,
   );
-  const [itemData, setItemData] = useState({
+  const [itemData, setItemData] = useState<ItemFormData>({
     course_id: "",
     name: "",
     type: "Assignment",
@@ -77,25 +66,17 @@ export default function CoursesPage() {
     isPlaceholder: false,
   });
 
-  // progress bars: always stacked, no resize observer or radial visuals
-
-  function getCourseTypes(courseId: string) {
-    const course = courses.find((c) => c.id === courseId);
-    const schemes = course?.data["marking-schemes"] || [];
-
-    let types = Array.from(
-      new Set(schemes.flat().map((s: Record<string, any>) => s.Component)),
-    );
-    if (types.length === 0)
-      types = ["Assignment", "Exam", "Quiz", "Project", "Other"];
-    return types;
-  }
+  // Helper to get course types from course ID
+  const getTypesForCourse = (courseId: string): string[] => {
+    const course = courses.find((c) => c.id === courseId) || null;
+    return getCourseTypes(course);
+  };
 
   function openAddItem(courseId: string | null) {
     setEditingItem(null);
     setAddingItemCourseId(courseId);
     const types = courseId
-      ? getCourseTypes(courseId)
+      ? getTypesForCourse(courseId)
       : ["Assignment", "Exam", "Quiz", "Project", "Other"];
     setItemData({
       course_id: courseId || "",
@@ -149,89 +130,10 @@ export default function CoursesPage() {
     setEditingItem(null);
   }
 
-  const gradeToGPA = (grade: number) => {
-    if (grade >= 90) return 4.0;
-    if (grade >= 85) return 3.9;
-    if (grade >= 80) return 3.5;
-    if (grade >= 77) return 3.3;
-    if (grade >= 73) return 3.0;
-    if (grade >= 70) return 2.7;
-    if (grade >= 67) return 2.3;
-    if (grade >= 63) return 2.0;
-    if (grade >= 60) return 1.7;
-    if (grade >= 57) return 1.3;
-    if (grade >= 53) return 1.0;
-    if (grade >= 50) return 0.7;
-    return 0.0;
-  };
-
-  const { groupedCourses, sortedFolders } = useMemo(() => {
-    if (!courses || courses.length === 0)
-      return { groupedCourses: {}, sortedFolders: [] };
-
-    const grouped: Record<string, typeof courses> = {};
-    courses.forEach((course) => {
-      const folder = course.term || "Uncategorized";
-      if (!grouped[folder]) grouped[folder] = [];
-      grouped[folder].push(course);
-    });
-
-    const seasonOrder: Record<string, number> = {
-      Winter: 1,
-      Spring: 2,
-      Summer: 3,
-      Fall: 4,
-    };
-
-    const sorted = Object.keys(grouped).sort((a, b) => {
-      if (a === "Uncategorized") return 1;
-      if (b === "Uncategorized") return -1;
-
-      const partsA = a.split(" ");
-      const partsB = b.split(" ");
-
-      if (partsA.length === 2 && partsB.length === 2) {
-        const [seasonA, yearA] = partsA;
-        const [seasonB, yearB] = partsB;
-
-        const yA = parseInt(yearA);
-        const yB = parseInt(yearB);
-
-        if (yA !== yB) return yB - yA; // Descending year
-
-        const sA = seasonOrder[seasonA] || 99;
-        const sB = seasonOrder[seasonB] || 99;
-
-        return sB - sA; // Descending season
-      }
-      return b.localeCompare(a);
-    });
-
-    return { groupedCourses: grouped, sortedFolders: sorted };
-  }, [courses]);
+  const { groupedCourses, sortedFolders } = useGroupedCourses(courses);
 
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // helpers to parse/format date param as local date (YYYY-MM-DD)
-  const parseDateParam = (s: string | null) => {
-    if (!s) return null;
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return null;
-    const y = parseInt(m[1], 10);
-    const mo = parseInt(m[2], 10) - 1;
-    const d = parseInt(m[3], 10);
-    const dt = new Date(y, mo, d);
-    if (isNaN(dt.getTime())) return null;
-    return dt;
-  };
-
-  const formatDateParam = (date: Date) => {
-    const y = date.getFullYear();
-    const m = (date.getMonth() + 1).toString().padStart(2, "0");
-    const d = date.getDate().toString().padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  };
 
   // initialize selectedDate from `?date=YYYY-MM-DD` if present, otherwise today
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -277,11 +179,8 @@ export default function CoursesPage() {
 
     if (isoLocal === todayLocal) {
       if (param) {
-        // remove param but preserve other params if any
         const url = new URL(window.location.href);
         url.searchParams.delete("date");
-        // Update the URL without triggering a Next.js navigation so the
-        // client-side document.title and state are preserved.
         const newUrl =
           url.pathname +
           (url.searchParams.toString()
@@ -305,7 +204,6 @@ export default function CoursesPage() {
     if (parsed) {
       setSelectedDate(parsed);
     } else {
-      // if param removed, reset to today
       setSelectedDate(new Date());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -401,22 +299,13 @@ export default function CoursesPage() {
       const userId = session?.user?.id;
       if (!userId) return;
 
-      const query = `
-                mutation UpdateUserData($id: String!, $data: jsonb!) {
-                    update_users_by_pk(pk_columns: {id: $id}, _set: {data: $data}) {
-                        id
-                        data
-                    }
-                }
-            `;
-
       try {
         await sendQuery({
-          query,
+          query: UPDATE_USER_DATA,
           variables: { id: userId, data: newUserData },
         });
-      } catch (err) {
-        console.error("Failed to save user data", err);
+      } catch {
+        // ignore
       }
     };
 
@@ -436,6 +325,7 @@ export default function CoursesPage() {
 
     let sumTotalWeightGraded = 0;
     let sumTotalSchemeWeight = 0;
+    let sumTotalWeightCompleted = 0;
     let numCoursesWithDetails = 0;
 
     currentCourses.forEach((c) => {
@@ -465,6 +355,12 @@ export default function CoursesPage() {
           details.totalSchemeWeight - details.totalWeightGraded;
         sumTotalWeightGraded += details.totalWeightGraded * credits;
         sumTotalSchemeWeight += details.totalSchemeWeight * credits;
+
+        if (details.totalWeightCompleted !== undefined) {
+          sumTotalWeightCompleted += details.totalWeightCompleted * credits;
+        } else {
+          sumTotalWeightCompleted += details.totalWeightGraded * credits;
+        }
       }
     });
 
@@ -544,7 +440,7 @@ export default function CoursesPage() {
 
     const weightCompletedPercent =
       sumTotalSchemeWeight > 0
-        ? (sumTotalWeightGraded / sumTotalSchemeWeight) * 100
+        ? (sumTotalWeightCompleted / sumTotalSchemeWeight) * 100
         : 0;
 
     // Calculate required average
@@ -573,7 +469,15 @@ export default function CoursesPage() {
     const viewDate = selectedDate;
     const viewDay = viewDate.toLocaleDateString("en-US", { weekday: "short" });
 
-    const todaysClasses: Record<string, any>[] = [];
+    const todaysClasses: Array<{
+      courseCode: string;
+      courseId: string;
+      Component: string;
+      Section: string;
+      "Start Time": { hours: number; minutes: number } | string;
+      "End Time": { hours: number; minutes: number } | string;
+      Location: string;
+    }> = [];
 
     currentCourses.forEach((course) => {
       if (!course.sections) return;
@@ -672,136 +576,21 @@ export default function CoursesPage() {
 
     return (
       <div className="flex flex-col flex-grow">
-        <Modal
+        <ItemFormModal
           isOpen={isItemModalOpen}
           onClose={() => {
             setIsItemModalOpen(false);
             setEditingItem(null);
           }}
-          title={editingItem ? "Edit Item" : "Add Item"}
-          onConfirm={handleSaveItem}
-          actions={
-            <>
-              <button
-                className="btn"
-                onClick={() => {
-                  setIsItemModalOpen(false);
-                  setEditingItem(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSaveItem}>
-                Save
-              </button>
-            </>
-          }
-        >
-          <div className="flex flex-col gap-4">
-            {editingItem === null &&
-              addingItemCourseId === null &&
-              currentCourses.length > 0 && (
-                <div className="form-control w-full">
-                  <label className="label mb-2">
-                    <span className="label-text">Course</span>
-                  </label>
-                  <select
-                    className="select select-bordered w-full"
-                    value={itemData.course_id}
-                    onChange={(e) => {
-                      const newCourseId = e.target.value;
-                      const types = getCourseTypes(newCourseId);
-                      setItemData({
-                        ...itemData,
-                        course_id: newCourseId,
-                        type: types[0] || "Assignment",
-                      });
-                    }}
-                  >
-                    <option disabled value="">
-                      Select a course
-                    </option>
-                    {currentCourses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            <div className="form-control w-full">
-              <label className="label mb-2">
-                <span className="label-text">Name</span>
-              </label>
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                value={itemData.name}
-                onChange={(e) =>
-                  setItemData({ ...itemData, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="form-control w-full">
-              <label className="label mb-2 flex items-center gap-2">
-                <span className="label-text">Type</span>
-              </label>
-              <select
-                className="select select-bordered w-full"
-                value={itemData.type}
-                onChange={(e) =>
-                  setItemData({ ...itemData, type: e.target.value })
-                }
-              >
-                {(addingItemCourseId || itemData.course_id) &&
-                  getCourseTypes(addingItemCourseId || itemData.course_id).map(
-                    (t: any) => <option key={t}>{t}</option>,
-                  )}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="form-control w-full">
-                <label className="label mb-2">
-                  <span className="label-text">Grade</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={itemData.grade}
-                  onChange={(e) =>
-                    setItemData({ ...itemData, grade: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-control w-full">
-                <label className="label mb-2">
-                  <span className="label-text">Max Grade</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={itemData.max_grade}
-                  onChange={(e) =>
-                    setItemData({ ...itemData, max_grade: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <div className="form-control w-full">
-              <label className="label mb-2">
-                <span className="label-text">Due Date</span>
-              </label>
-              <input
-                type="date"
-                className="input input-bordered w-full"
-                value={itemData.due_date?.split("T")[0] ?? ""}
-                onChange={(e) =>
-                  setItemData({ ...itemData, due_date: e.target.value })
-                }
-              />
-            </div>
-          </div>
-        </Modal>
+          onSave={handleSaveItem}
+          editingItem={editingItem}
+          addingItemCourseId={addingItemCourseId}
+          itemData={itemData}
+          setItemData={setItemData}
+          courses={currentCourses}
+          getCourseTypes={getTypesForCourse}
+        />
+
         <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl justify-center sm:justify-start font-bold mb-4 flex items-center gap-2 ">
@@ -873,395 +662,54 @@ export default function CoursesPage() {
         {termAverage !== null ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              {/* Column 1 */}
-              <div className="flex flex-col gap-6">
-                <div className="card bg-base-100 shadow-sm p-6 h-full items-center flex flex-col justify-around gap-3 flex-grow">
-                  <div className="flex flex-row items-center justify-center gap-4 w-full">
-                    <div className="flex flex-col items-center">
-                      <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
-                        Term AVG
-                      </div>
-                      <GradeBadge grade={termAverage} />
-                    </div>
+              <TermStatsCard
+                termAverage={termAverage}
+                termGPA={termGPA}
+                termMin={termMin}
+                termMax={termMax}
+                termGoal={termGoal}
+                setTermGoal={setTermGoal}
+                onSaveGoal={handleSaveGoal}
+                requiredAverage={requiredAverage}
+                timeProgress={timeProgress}
+                weightCompletedPercent={weightCompletedPercent}
+              />
 
-                    <div className="h-12 border border-base-content/10"></div>
+              <ClassScheduleCard
+                classes={todaysClasses}
+                selectedDate={selectedDate}
+                onPrevDay={prevDay}
+                onNextDay={nextDay}
+                onResetToday={resetToToday}
+                onNavigateToCourse={(courseId, course) => {
+                  if (setOptimisticCourse) setOptimisticCourse(course);
+                  router.push(`/courses/${courseId}`);
+                }}
+                courses={courses}
+              />
 
-                    <div className="flex flex-col items-center">
-                      <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
-                        Term GPA
-                      </div>
-                      <GradeBadge gpa={termGPA} />
-                    </div>
-                  </div>
-
-                  {termMin !== null && termMax !== null && (
-                    <RangeBadge rangeMin={termMin!} rangeMax={termMax!} />
-                  )}
-
-                  <div className="border border-base-content/10 max-w-[10rem] w-full"></div>
-
-                  <div className="flex flex-row items-center justify-between gap-2 bg-base-200 p-2 card w-full shadow-sm">
-                    <GoalInput
-                      handleSaveTargetGrade={handleSaveGoal}
-                      targetGrade={termGoal}
-                      setTargetGrade={setTermGoal}
-                    />
-                  </div>
-
-                  {requiredAverage !== null && termAverage !== null && (
-                    <ReqAvgBadge
-                      requiredAverage={requiredAverage!}
-                      average={termAverage!}
-                    />
-                  )}
-                </div>
-                <div className="md:col-span-3 flex justify-center items-center">
-                  <div className="card bg-base-100 shadow-sm w-full max-w-4xl p-6">
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold uppercase text-base-content/70">
-                            Term Progress
-                          </span>
-                          <span className="text-sm font-bold">
-                            {timeProgress.toFixed(0)}%
-                          </span>
-                        </div>
-                        <progress
-                          className="progress progress-primary w-full h-3"
-                          value={timeProgress}
-                          max="100"
-                        ></progress>
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold uppercase text-base-content/70">
-                            Weight Completed
-                          </span>
-                          <span className="text-sm font-bold">
-                            {weightCompletedPercent.toFixed(0)}%
-                          </span>
-                        </div>
-                        <progress
-                          className="progress progress-secondary w-full h-3"
-                          value={weightCompletedPercent}
-                          max="100"
-                        ></progress>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Column 2 */}
-              <div className="card bg-base-100 shadow-sm h-full">
-                <div className="card-body p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="card-title text-sm uppercase opacity-70 m-0 flex items-center gap-2">
-                      <FontAwesomeIcon
-                        icon={faClock}
-                        className="mr-2"
-                        aria-hidden="true"
-                      />
-                      <span>
-                        CLASSES (
-                        {viewDate
-                          .toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                          .toUpperCase()}
-                        )
-                      </span>
-                    </h3>
-                    <div className="flex items-center gap-0.5">
-                      <button
-                        className="btn btn-xs btn-circle btn-ghost"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          prevDay();
-                        }}
-                        title="Previous day"
-                        aria-label="Previous day"
-                      >
-                        <FontAwesomeIcon
-                          icon={faChevronLeft}
-                          aria-hidden="true"
-                        />
-                      </button>
-                      <button
-                        className="btn btn-xs btn-ghost text-sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          resetToToday();
-                        }}
-                        title="Today (click to reset)"
-                      >
-                        Today
-                      </button>
-                      <button
-                        className="btn btn-xs btn-circle btn-ghost"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          nextDay();
-                        }}
-                        title="Next day"
-                        aria-label="Next day"
-                      >
-                        <FontAwesomeIcon
-                          icon={faChevronRight}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </div>
-                  </div>
-                  {todaysClasses.length > 0 ? (
-                    <div className="flex flex-col h-full gap-2">
-                      {todaysClasses.slice(0, 6).map((cls, i) => (
-                        <Link
-                          href={`/courses/${cls.courseId}`}
-                          key={i}
-                          className="flex-grow max-h-[6rem] items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
-                          onClick={(e) => {
-                            // Optimistically provide the course object so the course layout
-                            // can render immediately while the real data finishes loading.
-                            try {
-                              e.preventDefault();
-                              const c =
-                                courses.find((x) => x.id === cls.courseId) ||
-                                null;
-                              if (setOptimisticCourse) setOptimisticCourse(c);
-                              router.push(`/courses/${cls.courseId}`);
-                            } catch (err) {
-                              console.error(
-                                "Failed to navigate to course:",
-                                err,
-                              );
-                            }
-                          }}
-                        >
-                          <div className="flex-1">
-                            <div className="font-bold text-sm">
-                              {cls.courseCode}
-                            </div>
-                            <div className="text-xs opacity-70">
-                              {cls.Component} {cls.Section}
-                            </div>
-                          </div>
-                          <div className="text-right text-xs font-mono">
-                            <div className="flex gap-2">
-                              <span>{formatTime(cls["Start Time"])}</span>
-                              <span className="lg:block hidden">
-                                {" "}
-                                - {formatTime(cls["End Time"])}
-                              </span>
-                            </div>
-                            <div className="opacity-50">{cls.Location}</div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm opacity-50 italic">
-                      No classes today.
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* Column 3 */}
-              <div className="card bg-base-100 shadow-sm h-full">
-                <div className="card-body p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="card-title text-sm uppercase opacity-70">
-                      <FontAwesomeIcon icon={faCalendarDay} className="mr-2" />
-                      Upcoming Deliverables
-                    </h3>
-                    <button
-                      className="btn btn-xs btn-circle btn-primary"
-                      onClick={() => openAddItem(null)}
-                      title="Add Deliverable"
-                      aria-label="Add deliverable"
-                    >
-                      <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
-                    </button>
-                  </div>
-                  {upcomingDeliverables.length > 0 ? (
-                    <div className="flex flex-col h-full gap-2">
-                      {upcomingDeliverables.slice(0, 6).map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex-grow max-h-[6rem] items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
-                        >
-                          <Link
-                            href={`/courses/${item.course_id}/grades`}
-                            className="flex-1 justify-between flex items-center gap-3"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              const c =
-                                courses.find((x) => x.id === item.course_id) ||
-                                null;
-                              if (setOptimisticCourse) setOptimisticCourse(c);
-                              router.push(`/courses/${item.course_id}/grades`);
-                            }}
-                          >
-                            <div className="">
-                              <div className="font-bold text-sm">
-                                {item.data.name}
-                              </div>
-                              <div className="text-xs opacity-70">
-                                {item.courseCode}
-                              </div>
-                            </div>
-                            <div className="text-right text-xs min-w-fit">
-                              <div className="font-bold text-error min-w-fit">
-                                {new Date(
-                                  item.data.due_date,
-                                ).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </div>
-                            </div>
-                          </Link>
-                          <div className="flex gap-1">
-                            <button
-                              className="btn btn-xs btn-circle btn-ghost"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleOpenEditItem(item);
-                              }}
-                              aria-label="Edit deliverable"
-                            >
-                              <FontAwesomeIcon
-                                icon={faPencil}
-                                aria-hidden="true"
-                              />
-                            </button>
-                            <button
-                              className="btn btn-xs btn-circle btn-ghost text-error"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleDeleteItem(item.id);
-                              }}
-                              aria-label="Delete deliverable"
-                            >
-                              <FontAwesomeIcon
-                                icon={faTrash}
-                                aria-hidden="true"
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm opacity-50 italic">
-                      No upcoming deliverables.
-                    </div>
-                  )}
-                </div>
-              </div>
+              <DeliverablesCard
+                deliverables={upcomingDeliverables}
+                onAddDeliverable={() => openAddItem(null)}
+                onEditDeliverable={handleOpenEditItem}
+                onDeleteDeliverable={handleDeleteItem}
+                onNavigateToCourse={(courseId, course) => {
+                  if (setOptimisticCourse) setOptimisticCourse(course);
+                  router.push(`/courses/${courseId}/grades`);
+                }}
+                courses={courses}
+              />
             </div>
-            <div
-              className="card bg-base-100 shadow-sm col-span-1 md:col-span-3"
-              key="courses-card"
-            >
-              <div className="card-body p-4">
-                <h3 className="card-title text-sm uppercase opacity-70 mb-2 flex items-center gap-2">
-                  <span>
-                    <FontAwesomeIcon icon={faBook} className="mr-2" />
-                    Courses
-                  </span>
-                  <span className="badge badge-sm badge-accent px-2 py-2 items-center">
-                    <span className="opacity-80">Total credits:</span>{" "}
-                    {currentCourses.reduce(
-                      (sum, c) => sum + (c.credits || 0),
-                      0,
-                    )}
-                  </span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {/* Current Courses */}
-                  {currentCourses.map((course) => {
-                    const details = getCourseGradeDetails(course, items);
-                    const currentGrade = details?.currentGrade;
-                    const min = details ? details.currentScore : 0;
-                    const max = details
-                      ? details.currentScore +
-                        (details.totalSchemeWeight - details.totalWeightGraded)
-                      : 0;
 
-                    return (
-                      <Link
-                        key={course.id}
-                        href={`/courses/${course.id}`}
-                        className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (setOptimisticCourse) setOptimisticCourse(course);
-                          router.push(`/courses/${course.id}/info`);
-                        }}
-                      >
-                        <div className="card-body p-4 flex flex-col gap-2">
-                          <h2 className="card-title justify-between text-base">
-                            <div className="flex gap-2 items-center">
-                              {course.code}
-                              <div className="text-sm font-normal opacity-70">
-                                ({course.credits})
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                className="btn btn-xs btn-circle btn-secondary hover:opacity-100"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  openAddItem(course.id);
-                                }}
-                                title="Quick Add Item"
-                              >
-                                <FontAwesomeIcon icon={faPlus} />
-                              </button>
-                              {currentGrade !== null && (
-                                <GradeBadge grade={currentGrade} size="sm" />
-                              )}
-                            </div>
-                          </h2>
-                          {details ? (
-                            <div>
-                              <div className="flex justify-between text-xs opacity-60 mb-1">
-                                <span>Min: {min.toFixed(1)}%</span>
-                                <span>Max: {max.toFixed(1)}%</span>
-                              </div>
-                              <div className="flex flex-col gap-1 mt-2">
-                                <progress
-                                  className="progress progress-error opacity-60 w-full h-1"
-                                  value={min || 0}
-                                  max="100"
-                                ></progress>
-                                <progress
-                                  className="progress progress-success opacity-60 w-full h-1"
-                                  value={max || 0}
-                                  max="100"
-                                ></progress>
-                                <progress
-                                  className="progress progress-primary w-full h-3"
-                                  value={currentGrade || 0}
-                                  max="100"
-                                ></progress>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-sm italic opacity-50">
-                              No grades available yet.
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <CoursesCard
+              courses={currentCourses}
+              items={items}
+              onNavigateToCourse={(courseId, course) => {
+                if (setOptimisticCourse) setOptimisticCourse(course);
+                router.push(`/courses/${courseId}/info`);
+              }}
+              onAddItem={openAddItem}
+            />
           </>
         ) : (
           <div className="text-sm mt-1 opacity-50 italic">

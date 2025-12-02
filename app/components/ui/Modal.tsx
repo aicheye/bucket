@@ -27,8 +27,8 @@ export default function Modal({
       if (isOpen) {
         if (!dialog.open) dialog.showModal();
       }
-    } catch (err) {
-      console.error("Modal show/close failed:", err);
+    } catch {
+      // swallow
     }
 
     // Ensure dialog is closed on unmount or when isOpen changes to false

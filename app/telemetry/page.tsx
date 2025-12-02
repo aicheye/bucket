@@ -2,6 +2,12 @@ import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth/next";
+import {
+  GET_TELEMETRY_DAU,
+  GET_TELEMETRY_FEATURE_USAGE_30D,
+  GET_TELEMETRY_FEATURE_USAGE_DAILY,
+  GET_TELEMETRY_MAU_30D,
+} from "../../lib/graphql/queries";
 import { executeHasuraAdminQuery } from "../../lib/hasura";
 import authOptions from "../../lib/nextauth";
 import { DauChart, FeatureDailyMultiLine } from "./telemetry-charts";
@@ -53,17 +59,19 @@ export default async function TelemetryPage() {
     );
   }
 
-  // Queries from user request
-  const GET_DAU = `query GetTelemetryDau { telemetry_dau { dau day } }`;
-  const GET_FEATURE_30D = `query GetTelemetryFeatureUsage30d { telemetry_feature_usage_30d { event_count_30d unique_users_30d event } }`;
-  const GET_FEATURE_DAILY = `query GetTelemetryFeatureUsageDaily { telemetry_feature_usage_daily { event_count unique_users day event } }`;
-  const GET_MAU = `query GetTelemetryMau30d { telemetry_mau_30d { mau_30d } }`;
-
   const [dauRes, feat30Res, featDailyRes, mauRes] = await Promise.all([
-    executeHasuraAdminQuery(GET_DAU, {}, session.user.id),
-    executeHasuraAdminQuery(GET_FEATURE_30D, {}, session.user.id),
-    executeHasuraAdminQuery(GET_FEATURE_DAILY, {}, session.user.id),
-    executeHasuraAdminQuery(GET_MAU, {}, session.user.id),
+    executeHasuraAdminQuery(GET_TELEMETRY_DAU, {}, session.user.id),
+    executeHasuraAdminQuery(
+      GET_TELEMETRY_FEATURE_USAGE_30D,
+      {},
+      session.user.id,
+    ),
+    executeHasuraAdminQuery(
+      GET_TELEMETRY_FEATURE_USAGE_DAILY,
+      {},
+      session.user.id,
+    ),
+    executeHasuraAdminQuery(GET_TELEMETRY_MAU_30D, {}, session.user.id),
   ]);
 
   const daus: TelemetryDau[] = (dauRes?.data?.telemetry_dau || [])

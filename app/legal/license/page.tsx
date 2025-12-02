@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ProsePageContainer from "../../components/features/ProsePageContainer";
 
 export const metadata: Metadata = {
   title: "Bucket | License",
@@ -6,14 +7,14 @@ export const metadata: Metadata = {
 
 function MITLicense() {
   return (
-    <div className="card bg-base-200 shadow-md flex flex-col gap-4 card-body">
+    <div className="card w-full bg-base-300 shadow-xl flex flex-col gap-4 card-body">
       <h2 className="card-title text-2xl font-bold" id="license">
         The MIT License (MIT)
       </h2>
       <p>Copyright (c) 2025-{new Date().getFullYear()} Sean Yang</p>
       <p>
-        Permission is hereby granted, free of charge, to any person obtaining
-        a copy of this software and associated documentation files (the
+        Permission is hereby granted, free of charge, to any person obtaining a
+        copy of this software and associated documentation files (the
         “Software”), to deal in the Software without restriction, including
         without limitation the rights to use, copy, modify, merge, publish,
         distribute, sublicense, and/or sell copies of the Software, and to
@@ -21,12 +22,12 @@ function MITLicense() {
         the following conditions:
       </p>
       <p>
-        The above copyright notice and this permission notice shall be
-        included in all copies or substantial portions of the Software.
+        The above copyright notice and this permission notice shall be included
+        in all copies or substantial portions of the Software.
       </p>
       <p>
-        THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
-        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+        OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
         MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
         IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
         CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
@@ -39,15 +40,14 @@ function MITLicense() {
 
 export default function LicensesPage() {
   return (
-    <div className="card flex flex-col flex-1 gap-8 max-w-3xl mx-auto p-12 w-full text-base-content text-left bg-base-100 my-8 shadow-lg">
+    <ProsePageContainer>
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold">
-          Preamble
-        </h2>
+        <h2 className="text-2xl font-bold">Preamble</h2>
         <p>
-          This application makes use of the following third-party libraries and services:
+          This application makes use of the following third-party libraries and
+          services:
         </p>
-        <h3 className="text-xl font-bold mt-4">Runtime Dependencies</h3>
+        <h3 className="text-xl font-bold">Runtime Dependencies</h3>
         <ul className="ml-4 list-disc list-inside">
           <li>
             <strong>Next.js:</strong> App framework. License: MIT.{" "}
@@ -136,8 +136,8 @@ export default function LicensesPage() {
             .
           </li>
           <li>
-            <strong>Font Awesome Free Icons:</strong> UI Icons.
-            License: CC BY 4.0.{" "}
+            <strong>Font Awesome Free Icons:</strong> UI Icons. License: CC BY
+            4.0.{" "}
             <a
               href="https://github.com/FortAwesome/Font-Awesome/blob/master/LICENSE.txt"
               target="_blank"
@@ -177,8 +177,7 @@ export default function LicensesPage() {
             .
           </li>
           <li>
-            <strong>daisyUI:</strong> Tailwind component library. License: MIT.
-            {" "}
+            <strong>daisyUI:</strong> Tailwind component library. License: MIT.{" "}
             <a
               href="https://github.com/saadeghi/daisyui/blob/master/LICENSE"
               target="_blank"
@@ -282,9 +281,7 @@ export default function LicensesPage() {
             .
           </li>
         </ul>
-        <h3 className="text-xl font-bold mt-4">
-          Large Language Models (LLMs)
-        </h3>
+        <h3 className="text-xl font-bold mt-4">Large Language Models (LLMs)</h3>
         <p>
           This application was developed with the assistance of the following
           third-party large language models (LLMs) using GitHub Copilot. These
@@ -298,28 +295,16 @@ export default function LicensesPage() {
           order of usage):
         </p>
         <ul className="ml-4 list-disc list-inside">
-          <li>
-            OpenAI GPT-5 mini
-          </li>
-          <li>
-            Google Gemini 2.5 Pro
-          </li>
-          <li>
-            Anthropic Claude 4.5 Haiku
-          </li>
-          <li>
-            Google Gemini 3 Pro
-          </li>
-          <li>
-            GitHub Copilot Raptor Mini
-          </li>
+          <li>OpenAI GPT-5 mini</li>
+          <li>Google Gemini 2.5 Pro</li>
+          <li>Anthropic Claude 4.5 Haiku</li>
+          <li>Google Gemini 3 Pro</li>
+          <li>GitHub Copilot Raptor Mini</li>
         </ul>
       </div>
-      <div className="border-base-content/30 border-t"></div>
+      <div className="border-base-content/10 border-t"></div>
       <div className="flex flex-col gap-4">
-        <h1 className="text-4xl font-bold">
-          Application License
-        </h1>
+        <h1 className="text-4xl font-bold">Application License</h1>
         <p>
           As a thanks to the open-source community and the creators of the
           third-party libraries used in this application, this application is
@@ -328,11 +313,11 @@ export default function LicensesPage() {
             href="https://opensource.org/licenses/MIT"
             target="_blank"
             rel="noopener noreferrer"
-            className="link link-primary">
+            className="link link-primary"
+          >
             MIT License
           </a>
-          , also known as the Expat
-          License.
+          , also known as the Expat License.
         </p>
         <p>
           This permissive license allows anyone to freely use, copy, modify,
@@ -354,13 +339,15 @@ export default function LicensesPage() {
             href="https://github.com/aicheye/bucket/blob/main/LICENSE"
             target="_blank"
             rel="noopener noreferrer"
-            className="link link-primary">
+            className="link link-primary"
+          >
             here
           </a>
           .
         </p>
       </div>
+      <div className="border-base-content/10 border-t"></div>
       <MITLicense />
-    </div>
+    </ProsePageContainer>
   );
 }

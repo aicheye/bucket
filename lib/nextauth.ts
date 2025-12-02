@@ -1,6 +1,9 @@
 import type { DefaultSession, NextAuthOptions } from "next-auth";
 import GoogleProvider, { GoogleProfile } from "next-auth/providers/google";
+import { UPSERT_USER_BY_EMAIL } from "./graphql/mutations";
+import { GET_USER } from "./graphql/queries";
 import { executeHasuraQuery } from "./hasura";
+import { logger } from "./logger";
 
 declare module "next-auth" {
   interface Session {
@@ -27,11 +30,13 @@ export const authOptions: NextAuthOptions = {
   events: {
     // Called after a successful sign in
     async signIn({ user, profile }) {
+      logger.info("User signed in", { userId: user.id, email: user.email });
       try {
         // Prefer verified email when available
         const googleProfile = profile as GoogleProfile;
         const emailVerified = googleProfile?.email_verified ?? true;
         if (!emailVerified) {
+          logger.warn("User email not verified", { userId: user.id });
           return;
         }
 
@@ -39,9 +44,8 @@ export const authOptions: NextAuthOptions = {
         let nameVal = user.name ?? null;
         let imageVal = user.image ?? null;
         try {
-          const checkQuery = `query GetUserById($id: String!) { users_by_pk(id: $id) { anonymous_mode } }`;
           const checkRes = await executeHasuraQuery(
-            checkQuery,
+            GET_USER,
             { id: user.id },
             user.id,
           );
@@ -51,7 +55,10 @@ export const authOptions: NextAuthOptions = {
             imageVal = null;
           }
         } catch (err) {
-          console.error("Failed to check anonymous_mode:", err);
+          logger.error("Failed to check anonymous_mode:", {
+            error: err,
+            userId: user.id,
+          });
         }
 
         const input = {
@@ -61,36 +68,20 @@ export const authOptions: NextAuthOptions = {
           image: imageVal,
         };
 
-        const mutation = `
-          mutation UpsertUser($objects: [users_insert_input!]!) {
-            insert_users(
-              objects: $objects,
-              on_conflict: {
-                constraint: users_email_key,
-                update_columns: [name, image]
-              }
-            ) {
-              returning {
-                id
-                email
-                name
-                image
-              }
-            }
-          }
-        `;
-
         const result = await executeHasuraQuery(
-          mutation,
+          UPSERT_USER_BY_EMAIL,
           { objects: [input] },
           user.id,
         );
 
         if (result.errors) {
-          console.error("GraphQL upsert returned errors:", result.errors);
+          logger.error("GraphQL upsert returned errors:", {
+            errors: result.errors,
+            userId: user.id,
+          });
         }
       } catch (err) {
-        console.error("GraphQL upsert failed:", err);
+        logger.error("GraphQL upsert failed:", { error: err, userId: user.id });
       }
     },
   },
@@ -108,9 +99,8 @@ export const authOptions: NextAuthOptions = {
 
       try {
         // Fetch additional user fields from Hasura to include in session
-        const query = `query GetUser($id: String!) { users_by_pk(id: $id) { id name email image telemetry_consent anonymous_mode } }`;
         const res = await executeHasuraQuery(
-          query,
+          GET_USER,
           { id: token.id },
           String(token.id),
         );
@@ -130,7 +120,10 @@ export const authOptions: NextAuthOptions = {
           session.user.anonymous_mode = anon;
         }
       } catch (err) {
-        console.error("Failed to fetch additional session fields:", err);
+        logger.error("Failed to fetch additional session fields:", {
+          error: err,
+          userId: token.id,
+        });
       }
 
       return session;

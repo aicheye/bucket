@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { logger } from "../../../lib/logger";
 import authOptions from "../../../lib/nextauth";
 
 interface ParsedItem {
@@ -145,11 +146,16 @@ export function parse_grades(text: string): ParsedItem[] {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session)
+    if (!session) {
+      logger.warn("Unauthorized parse_grades request");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json();
     if (!body.text) {
+      logger.warn("Missing text field in parse_grades request", {
+        userId: session.user?.id,
+      });
       return NextResponse.json(
         { error: "Missing text field" },
         { status: 400 },
@@ -157,10 +163,14 @@ export async function POST(request: Request) {
     }
 
     const items = parse_grades(body.text);
+    logger.info("Parsed grades successfully", {
+      userId: session.user?.id,
+      itemCount: items.length,
+    });
 
     return NextResponse.json({ items });
   } catch (error) {
-    console.error("Error processing request:", error);
+    logger.error("Error processing parse_grades request:", { error });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
