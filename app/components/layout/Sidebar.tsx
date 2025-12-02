@@ -158,7 +158,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   });
 
   return (
-    <div className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
+    <div
+      className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
       <Modal
         isOpen={alertState.isOpen}
         onClose={closeAlert}
@@ -263,11 +266,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                           key={course.id}
                           href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : ""}`}
                           onClick={closeDrawer}
-                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
-                            pathname?.startsWith(`/courses/${course.id}/`)
+                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
                               ? "btn-primary"
                               : "btn-base"
-                          }`}
+                            }`}
                         >
                           <div className="text-left w-full flex justify-between items-center gap-2">
                             <div className="min-w-fit font-bold text-[14px]">
@@ -314,11 +316,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                 key={course.id}
                 href={`/courses/${course.id}/grades`}
                 onClick={closeDrawer}
-                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
-                  pathname?.startsWith(`/courses/${course.id}/`)
+                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
                     ? "btn-primary bg-primary"
                     : ""
-                }`}
+                  }`}
               >
                 <div className="text-left w-full text-primary-content">
                   <div className="font-bold">{course.code}</div>
