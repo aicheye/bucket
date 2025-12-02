@@ -7,7 +7,7 @@ import {
   faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sendTelemetry } from "../../../lib/telemetry";
 
 const themes = [
@@ -48,6 +48,8 @@ const themes = [
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState("system");
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const applyTheme = (selectedTheme: string) => {
     let themeToApply = selectedTheme;
@@ -83,15 +85,40 @@ export default function ThemeToggle() {
     localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
     sendTelemetry("toggle_theme", { theme: newTheme });
+    setOpen(false);
   };
 
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!rootRef.current) return;
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (!rootRef.current.contains(target)) setOpen(false);
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("touchstart", onDocClick);
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("touchstart", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
   return (
-    <div className="dropdown dropdown-end">
+    <div ref={rootRef} className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}>
       <button
         type="button"
         className="btn btn-ghost"
         aria-haspopup="menu"
         aria-label="Theme options"
+        onClick={() => setOpen((v) => !v)}
       >
         <FontAwesomeIcon
           icon={
@@ -126,14 +153,13 @@ export default function ThemeToggle() {
         tabIndex={0}
         role="menu"
         aria-label="Theme selection"
-        className="mt-1 dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 h-96 overflow-y-auto border border-base-content/10"
+        className="mt-1 dropdown-content z-50 p-2 shadow-2xl bg-base-300 rounded-box w-52 h-96 overflow-y-auto border border-base-content/10"
       >
         {themes.map((t) => (
           <li key={t}>
             <button
-              className={`btn btn-sm btn-block justify-start ${
-                theme === t ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm btn-block justify-start ${theme === t ? "btn-primary" : "btn-ghost"
+                }`}
               role="menuitem"
               type="button"
               onClick={() => handleThemeChange(t)}
@@ -167,3 +193,5 @@ export default function ThemeToggle() {
     </div>
   );
 }
+
+

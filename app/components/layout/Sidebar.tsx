@@ -158,7 +158,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   });
 
   return (
-    <div className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10">
+    <div
+      className="h-full w-64 bg-base-200 overflow-y-auto p-4 flex flex-col gap-4 border-r border-base-content/10"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
       <Modal
         isOpen={alertState.isOpen}
         onClose={closeAlert}
