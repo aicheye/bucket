@@ -1,6 +1,6 @@
 "use client";
 
-import { faGauge, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faCalendar, faGauge, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -172,18 +172,32 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
       >
         <p>{alertState.message}</p>
       </Modal>
-      <Link
-        href="/dashboard"
-        onClick={closeDrawer}
-        className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
-      >
-        <FontAwesomeIcon
-          icon={faGauge}
-          className="w-5 h-5 mr-2"
-          aria-hidden="true"
-        />
-        Dashboard
-      </Link>
+      <div className="flex flex-col gap-3">
+        <Link
+          href="/dashboard"
+          onClick={closeDrawer}
+          className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+        >
+          <FontAwesomeIcon
+            icon={faGauge}
+            className="w-5 h-5 mr-2"
+            aria-hidden="true"
+          />
+          Dashboard
+        </Link>
+        <Link
+          href="/calendar"
+          onClick={closeDrawer}
+          className={`btn ${pathname === "/calendar" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+        >
+          <FontAwesomeIcon
+            icon={faCalendar}
+            className="w-5 h-5 mr-2"
+            aria-hidden="true"
+          />
+          Calendar
+        </Link>
+      </div>
 
       <div className="border-t border-base-content/10 w-full"></div>
 
@@ -263,11 +277,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                           key={course.id}
                           href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : ""}`}
                           onClick={closeDrawer}
-                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
-                            pathname?.startsWith(`/courses/${course.id}/`)
-                              ? "btn-primary"
-                              : "btn-base"
-                          }`}
+                          className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
+                            ? "btn-primary"
+                            : "btn-base"
+                            }`}
                         >
                           <div className="text-left w-full flex justify-between items-center gap-2">
                             <div className="min-w-fit font-bold text-[14px]">
@@ -314,11 +327,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                 key={course.id}
                 href={`/courses/${course.id}/grades`}
                 onClick={closeDrawer}
-                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
-                  pathname?.startsWith(`/courses/${course.id}/`)
-                    ? "btn-primary bg-primary"
-                    : ""
-                }`}
+                className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
+                  ? "btn-primary bg-primary"
+                  : ""
+                  }`}
               >
                 <div className="text-left w-full text-primary-content">
                   <div className="font-bold">{course.code}</div>

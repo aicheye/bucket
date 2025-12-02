@@ -42,7 +42,7 @@ const Heartbeat = ({ children }: { children: React.ReactNode }) => {
 export default function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const showSidebar =
-    pathname?.startsWith("/courses") || pathname === "/dashboard";
+    pathname?.startsWith("/courses") || pathname === "/dashboard" || pathname === "/calendar";
   const authScreen = pathname?.startsWith("/api/auth/signin");
   const gradesScreen = pathname?.endsWith("/grades");
   const infoScreen = pathname?.endsWith("/info");
