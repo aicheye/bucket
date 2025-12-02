@@ -48,7 +48,7 @@ export default function TermStatsCard({
             <GradeBadge grade={termAverage} />
           </div>
 
-          <div className="h-12 border border-base-content/10"></div>
+          <div className="h-12 border-l border-base-content/10"></div>
 
           <div className="flex flex-col items-center">
             <div className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
@@ -62,7 +62,7 @@ export default function TermStatsCard({
           <RangeBadge rangeMin={termMin} rangeMax={termMax} />
         )}
 
-        <div className="border border-base-content/10 max-w-[10rem] w-full"></div>
+        <div className="border-t border-base-content/10 max-w-32 w-full"></div>
 
         <div className="flex flex-row items-center justify-between gap-2 bg-base-200 p-2 card w-full shadow-sm">
           <GoalInput
