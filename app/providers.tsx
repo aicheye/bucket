@@ -1,4 +1,5 @@
 "use client";
+import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import React, { useEffect } from "react";
@@ -39,7 +40,7 @@ const Heartbeat = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children, session }: { children: React.ReactNode; session?: Session | null; }) {
   const pathname = usePathname();
   const showSidebar =
     pathname?.startsWith("/courses") || pathname === "/dashboard" || pathname === "/calendar";
@@ -53,7 +54,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <LoadingProvider>
-      <SessionProvider refetchOnWindowFocus={false}>
+      <SessionProvider session={session} refetchOnWindowFocus={false}>
         <CourseProvider>
           <Heartbeat>
             <div className="min-h-screen flex flex-col overflow-x-hidden">

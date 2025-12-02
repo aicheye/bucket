@@ -81,10 +81,10 @@ export default function TermStatsCard({
       </Card>
 
       <div className="md:col-span-3 flex justify-center items-center">
-        <Card shadow="sm" padding="md" className="w-full max-w-4xl">
-          <div className="flex flex-col gap-4">
-            <div>
-              <div className="flex justify-between items-center">
+        <Card shadow="sm" padding="lg" className="w-full max-w-4xl">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col justify-between gap-1">
+              <div className="flex justify-between items-center gap-1">
                 <span className="text-sm font-bold uppercase text-base-content/70">
                   Term Progress
                 </span>
@@ -98,8 +98,8 @@ export default function TermStatsCard({
                 max="100"
               ></progress>
             </div>
-            <div>
-              <div className="flex justify-between items-center">
+            <div className="flex flex-col justify-between gap-1">
+              <div className="flex justify-between items-center gap-1">
                 <span className="text-sm font-bold uppercase text-base-content/70">
                   Weight Completed
                 </span>
