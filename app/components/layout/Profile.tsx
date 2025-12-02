@@ -432,7 +432,7 @@ export default function Profile() {
     }
   };
 
-  
+
 
   return (
     <div ref={rootRef} className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}>
