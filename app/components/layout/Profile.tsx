@@ -8,7 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { sendQuery } from "../../../lib/graphql";
 import {
   DELETE_USER_EVERYTHING,
@@ -37,6 +37,8 @@ export default function Profile() {
     string | null | undefined
   >(undefined);
   const { alertState, showAlert, closeAlert } = useAlertState();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const { showLoading, hideLoading } = useLoading();
 
@@ -133,6 +135,30 @@ export default function Profile() {
     };
   }, [session?.user?.id, fetchUserProfile]);
 
+  // Close dropdown on outside click / escape — keep before early returns so hooks order is stable
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!rootRef.current) return;
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (!rootRef.current.contains(target)) setOpen(false);
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("touchstart", onDocClick);
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("touchstart", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
   if (status === "loading")
     return <div className="loading loading-spinner loading-lg"></div>;
   if (!session?.user) return <AuthComponent />;
@@ -140,6 +166,7 @@ export default function Profile() {
   const closeConfirm = () => setShowDeleteConfirm(false);
 
   const toggleTelemetry = async () => {
+    setOpen(false);
     const newValue = !telemetryConsent;
 
     // If enabling telemetry, ensure anonymous mode is turned off (mutual exclusive)
@@ -187,6 +214,7 @@ export default function Profile() {
   };
 
   const toggleAnonymous = async () => {
+    setOpen(false);
     const newValue = !anonymousMode;
 
     if (newValue) {
@@ -377,6 +405,7 @@ export default function Profile() {
 
   const deleteAccount = async () => {
     setShowDeleteConfirm(false);
+    setOpen(false);
 
     try {
       showLoading();
@@ -403,8 +432,10 @@ export default function Profile() {
     }
   };
 
+  
+
   return (
-    <div className="dropdown dropdown-end">
+    <div ref={rootRef} className={`dropdown dropdown-end ${open ? "dropdown-open" : ""}`}>
       <Modal
         isOpen={showDeleteConfirm}
         onClose={closeConfirm}
@@ -442,14 +473,19 @@ export default function Profile() {
       <button
         type="button"
         aria-haspopup="menu"
+        aria-expanded={open}
         aria-label="Open profile menu"
         className="btn btn-ghost btn-circle avatar"
         onMouseDown={(e) => {
+          // Prevent focus wobble and toggle open state
           if (document.activeElement === e.currentTarget) {
             e.currentTarget.blur();
             e.preventDefault();
           }
+          e.preventDefault();
+          setOpen((v) => !v);
         }}
+        onClick={(e) => e.preventDefault()}
       >
         <div className="w-10 rounded-full overflow-hidden bg-base-200 flex items-center justify-center">
           {anonymousMode ? (
@@ -539,7 +575,10 @@ export default function Profile() {
             <button
               type="button"
               role="menuitem"
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={() => {
+                setOpen(false);
+                signOut({ callbackUrl: "/" });
+              }}
               className="w-full text-left"
             >
               Sign out
@@ -549,7 +588,10 @@ export default function Profile() {
             <button
               type="button"
               role="menuitem"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={() => {
+                setOpen(false);
+                setShowDeleteConfirm(true);
+              }}
               className="text-error hover:bg-error hover:text-error-content w-full text-left"
             >
               Delete Account

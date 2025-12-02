@@ -117,8 +117,13 @@ export default function ThemeToggle() {
         type="button"
         className="btn btn-ghost"
         aria-haspopup="menu"
+        aria-expanded={open}
         aria-label="Theme options"
-        onClick={() => setOpen((v) => !v)}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setOpen((v) => !v);
+        }}
+        onClick={(e) => e.preventDefault()}
       >
         <FontAwesomeIcon
           icon={
