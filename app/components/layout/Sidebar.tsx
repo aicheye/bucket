@@ -188,18 +188,6 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
           />
           Dashboard
         </Link>
-        <Link
-          href="/calendar"
-          onClick={closeDrawer}
-          className={`btn ${pathname === "/calendar" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
-        >
-          <FontAwesomeIcon
-            icon={faCalendar}
-            className="w-5 h-5 mr-2"
-            aria-hidden="true"
-          />
-          Calendar
-        </Link>
       </div>
 
       <div className="border-t border-base-content/10 w-full"></div>
