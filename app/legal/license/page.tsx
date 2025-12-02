@@ -90,7 +90,7 @@ export default function LicensesPage() {
             <strong>next-auth:</strong> Authentication for Next.js. License:
             MIT.{" "}
             <a
-              href="https://github.com/nextauthjs/next-auth/blob/main/LICENSE.md"
+              href="https://github.com/nextauthjs/next-auth/blob/main/LICENSE"
               target="_blank"
               rel="noopener noreferrer"
               className="link link-primary"
@@ -126,7 +126,7 @@ export default function LicensesPage() {
           <li>
             <strong>jsdom:</strong> HTML parsing. License: MIT.{" "}
             <a
-              href="https://github.com/jsdom/jsdom/blob/main/LICENSE"
+              href="https://github.com/jsdom/jsdom/blob/main/LICENSE.txt"
               target="_blank"
               rel="noopener noreferrer"
               className="link link-primary"
@@ -203,7 +203,7 @@ export default function LicensesPage() {
           <li>
             <strong>Prettier:</strong> Formatting utility. License: MIT.{" "}
             <a
-              href="https://github.com/prettier/prettier/blob/main/LICENSE.md"
+              href="https://github.com/prettier/prettier/blob/main/LICENSE"
               target="_blank"
               rel="noopener noreferrer"
               className="link link-primary"
