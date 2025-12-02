@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  faArrowRightFromBracket,
   faArrowTrendUp,
   faCircleUser,
   faEyeLowVision,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signOut, useSession } from "next-auth/react";
@@ -179,13 +181,13 @@ export default function Profile() {
     try {
       const payload = newValue
         ? {
-            query: UPDATE_USER_TELEMETRY_AND_ANON,
-            variables: { id: session.user.id, consent: newValue, anon: false },
-          }
+          query: UPDATE_USER_TELEMETRY_AND_ANON,
+          variables: { id: session.user.id, consent: newValue, anon: false },
+        }
         : {
-            query: UPDATE_USER_TELEMETRY,
-            variables: { id: session.user.id, consent: newValue },
-          };
+          query: UPDATE_USER_TELEMETRY,
+          variables: { id: session.user.id, consent: newValue },
+        };
 
       const result = await sendQuery(payload);
 
@@ -589,8 +591,16 @@ export default function Profile() {
               }}
               className="w-full text-left"
               title="Sign out"
+              aria-label="Sign out"
             >
-              Sign out
+              <div>
+                <FontAwesomeIcon
+                  icon={faArrowRightFromBracket}
+                  className="mr-1"
+                  aria-hidden="true"
+                />
+                Sign out
+              </div>
             </button>
           </li>
           <li>
@@ -603,8 +613,16 @@ export default function Profile() {
               }}
               className="text-error hover:bg-error hover:text-error-content w-full text-left"
               title="Delete Account"
+              aria-label="Delete Account"
             >
-              Delete Account
+              <div>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  className="mr-1"
+                  aria-hidden="true"
+                />
+                Delete Account
+              </div>
             </button>
           </li>
         </ul>

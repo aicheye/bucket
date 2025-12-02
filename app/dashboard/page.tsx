@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { APP_NAME } from "../../lib/constants";
 import { getCourseTypes } from "../../lib/course-utils";
 import { formatDateParam, parseDateParam } from "../../lib/date-utils";
 import { getCourseGradeDetails, gradeToGPA } from "../../lib/grade-utils";
@@ -21,9 +22,9 @@ import CoursesCard from "../components/features/dashboard/CoursesCard";
 import DeliverablesCard from "../components/features/dashboard/DeliverablesCard";
 import TermStatsCard from "../components/features/dashboard/TermStatsCard";
 import ItemFormModal from "../components/features/ItemFormModal";
+import ProsePageContainer from "../components/features/ProsePageContainer";
 import { Item, useCourses } from "../contexts/CourseContext";
 import { useGroupedCourses } from "../hooks/useGroupedCourses";
-import { APP_NAME } from "../../lib/constants";
 
 export default function CoursesPage() {
   const { data: session, status } = useSession();
@@ -248,9 +249,6 @@ export default function CoursesPage() {
       let goal = "";
       if (userData?.term_goals?.[currentTerm]) {
         goal = userData.term_goals[currentTerm];
-      } else {
-        const saved = localStorage.getItem(`term_goal_${currentTerm}`);
-        if (saved) goal = saved;
       }
       setTermGoal(goal);
 
@@ -285,7 +283,6 @@ export default function CoursesPage() {
     const currentCourses = groupedCourses[currentTerm];
 
     const handleSaveGoal = async () => {
-      localStorage.setItem(`term_goal_${currentTerm}`, termGoal);
       sendTelemetry("set_term_goal", { term: currentTerm, goal: termGoal });
 
       const newUserData = {
@@ -722,10 +719,8 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center">
-      <div className="text-left max-w-3xl justify-center">
-        <AddCourseHelp />
-      </div>
-    </div>
+    <ProsePageContainer>
+      <AddCourseHelp />
+    </ProsePageContainer>
   );
 }

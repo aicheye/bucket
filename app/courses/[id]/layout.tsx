@@ -215,7 +215,8 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               target="_blank"
               rel="noopener noreferrer"
               className="md:hidden btn btn-soft btn-info btn-sm flex-1"
-              title="View Original Outline"
+              title="View original outline"
+              aria-label="View original outline"
             >
               <FontAwesomeIcon icon={faExternalLinkAlt} /> Open Outline
             </a>
@@ -223,7 +224,8 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
           <button
             className="btn btn-error btn-soft btn-sm flex-1 md:flex-none"
             onClick={() => setShowDeleteConfirm(true)}
-            title="Delete Course"
+            title="Delete course"
+            aria-label="Delete course"
           >
             <FontAwesomeIcon icon={faTrash} /> Delete Course
           </button>

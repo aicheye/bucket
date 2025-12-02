@@ -20,24 +20,28 @@ export default function AddCourseHelp() {
         Unfortunately, we only support course imports from Outline.uwaterloo.ca
         at this time.
       </p>
-      <Image
-        src="/outlineuwaterlooca.png"
-        alt="Outline.uwaterloo.ca screenshot"
-        width={736}
-        height={367}
-        className="my-2 rounded-lg"
-      />
+      <div className="card bg-base-300 p-4">
+        <Image
+          src="/outlineuwaterlooca.png"
+          alt="Outline.uwaterloo.ca screenshot"
+          width={640}
+          height={319}
+          className="card"
+        />
+      </div>
       <p>
         Select the course you wish to add and click &quot;Save a Local
         Copy&quot; to download the outline file as an HTML document.
       </p>
-      <Image
-        src="/savealocalcopy.png"
-        alt="Save a Local Copy button"
-        width={736}
-        height={316}
-        className="my-2 rounded-lg"
-      />
+      <div className="card bg-base-300 p-4">
+        <Image
+          src="/savealocalcopy.png"
+          alt="Save a Local Copy button"
+          width={640}
+          height={275}
+          className="card"
+        />
+      </div>
       <p>
         Click the &quot;+&quot; button in the sidebar and upload the downloaded
         outline file. The course will then be automatically parsed and added to

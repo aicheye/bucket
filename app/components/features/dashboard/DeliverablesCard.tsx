@@ -44,7 +44,7 @@ export default function DeliverablesCard({
         <button
           className="btn btn-xs btn-circle btn-primary"
           onClick={onAddDeliverable}
-          title="Add Deliverable"
+          title="Add deliverable"
           aria-label="Add deliverable"
         >
           <FontAwesomeIcon icon={faPlus} aria-hidden="true" />

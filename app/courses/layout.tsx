@@ -26,6 +26,15 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!session?.user?.id) return;
     if (typeof window === "undefined") return;
+    // If we've just saved onboarding preferences, prefer the local flag
+    // to avoid re-opening the modal while the server-side change is
+    // still propagating.
+    try {
+      const seen = window.localStorage.getItem("onboarded_v1");
+      if (seen) return;
+    } catch {
+      // ignore localStorage errors
+    }
     if (showOnboarding) return;
 
     sendQuery({
@@ -33,28 +42,43 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
       variables: { id: session.user.id },
     })
       .then((json) => {
-        if (json?.data?.users_by_pk?.data?.onboarded) return;
+        // The `data` JSONB may not always expose an `onboarded` flag in a
+        // consistent shape across environments. Check defensively for the
+        // flag; if it's missing, fall back to showing the onboarding modal.
+        const userData = json?.data?.users_by_pk?.data;
+        if (userData && (userData.onboarded === true || userData.onboarded === 1))
+          return;
         setShowOnboarding(true);
       })
       .catch(() => {
         // On error, show the onboarding modal to ensure preferences are set
         setShowOnboarding(true);
       });
-  }, [session?.user?.id, showOnboarding]);
+  }, [session?.user?.id]);
 
   const confirmOnboarding = async () => {
     if (!session?.user?.id) return setShowOnboarding(false);
 
     try {
-      const json = await sendQuery({
-        query: UPDATE_ONBOARD,
-        variables: {
-          id: session.user.id,
-          consent: onboardTelemetry,
-          anon: onboardAnon,
-          onboarded: true,
-        },
+      // Use a direct fetch for onboarding so the request is sent immediately
+      // even if the tab is hidden. `sendQuery` may queue requests when the
+      // document is not visible which can lead to the onboarding state not
+      // being persisted before a refresh/navigation and the modal reappearing.
+      const res = await fetch("/api/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: UPDATE_ONBOARD,
+          variables: {
+            id: session.user.id,
+            consent: onboardTelemetry,
+            anon: onboardAnon,
+            onboarded: true,
+          },
+        }),
       });
+
+      const json = await res.json();
       if (json?.errors) {
         // ignore
         return; // keep the modal open so user can retry
@@ -72,6 +96,11 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
 
       // Successfully saved onboarding state, close modal and mark seen locally
       setShowOnboarding(false);
+      try {
+        window.localStorage.setItem("onboarded_v1", "1");
+      } catch {
+        // ignore
+      }
     } catch {
       // ignore
     }

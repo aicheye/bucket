@@ -50,9 +50,6 @@ export const UPDATE_USER_TELEMETRY = `
 
 export const DELETE_USER_EVERYTHING = `
   mutation DeleteUserEverything($id: String!) {
-    delete_telemetry(where: {user_id: {_eq: $id}}) {
-      affected_rows
-    }
     delete_items(where: {owner_id: {_eq: $id}}) {
       affected_rows
     }

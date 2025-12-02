@@ -38,7 +38,7 @@ export default function CoursesCard({
             const min = details ? details.currentScore : 0;
             const max = details
               ? details.currentScore +
-                (details.totalSchemeWeight - details.totalWeightGraded)
+              (details.totalSchemeWeight - details.totalWeightGraded)
               : 0;
 
             return (
@@ -67,7 +67,8 @@ export default function CoursesCard({
                           e.stopPropagation();
                           onAddItem(course.id);
                         }}
-                        title="Quick Add Item"
+                        title="Quick add item"
+                        aria-label="Quick add item"
                       >
                         <FontAwesomeIcon icon={faPlus} />
                       </button>
