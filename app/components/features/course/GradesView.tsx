@@ -72,8 +72,8 @@ export default function GradesView() {
           isPlaceholder: item.data?.isPlaceholder ?? false,
           weight:
             item?.data &&
-            item.data.weight !== undefined &&
-            item.data.weight !== null
+              item.data.weight !== undefined &&
+              item.data.weight !== null
               ? item.data.weight
               : "0",
         };
@@ -392,10 +392,10 @@ export default function GradesView() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-        )
-          .toISOString()
-          .split("T")[0]
+        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+      )
+        .toISOString()
+        .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -499,12 +499,12 @@ export default function GradesView() {
   const usedDetails = useMemo(() => {
     return usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-          usedScheme,
-          baseCourseItems,
-          placeholderGrades,
-          dropLowest,
-          bonusPercent,
-        )
+        usedScheme,
+        baseCourseItems,
+        placeholderGrades,
+        dropLowest,
+        bonusPercent,
+      )
       : null;
   }, [
     usedScheme,
@@ -640,7 +640,7 @@ export default function GradesView() {
                     className="tooltip tooltip-up"
                     data-tip={`A bonus of ${bonusPercent}% is applied to the final grade.`}
                   >
-                    <span className="badge bg-base-300 badge-lg cursor-help font-mono">
+                    <span className="badge bg-base-200/50 badge-lg cursor-help font-mono border border-base-content/10 shadow-sm">
                       +{bonusPercent}%
                     </span>
                   </div>
