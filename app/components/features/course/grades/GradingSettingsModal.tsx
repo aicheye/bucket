@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Item } from "../../../../lib/types";
-import { getCategoryColor } from "../../../contexts/CourseContext";
-import Modal from "../../ui/Modal";
+import type { Item } from "../../../../../lib/types";
+import { getCategoryColor } from "../../../../contexts/CourseContext";
+import Modal from "../../../ui/Modal";
 
 interface GradingSettingsModalProps {
   isOpen: boolean;

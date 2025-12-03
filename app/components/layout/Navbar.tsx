@@ -61,7 +61,7 @@ export default function Navbar({
               />
               <span className="flex items-baseline gap-2">
                 {APP_NAME}{" "}
-                <span className="text-sm text-gray-500 font-semibold italic">
+                <span className="text-sm text-base-content/50 font-semibold italic">
                   {APP_VERSION}
                 </span>
               </span>

@@ -5,10 +5,10 @@
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { sendTelemetry } from "../../../../lib/telemetry";
-import MarkingSchemesCard from "../../../components/features/info/MarkingSchemesCard";
-import ScheduleCard from "../../../components/features/info/ScheduleCard";
-import Modal from "../../../components/ui/Modal";
 import { useCourses } from "../../../contexts/CourseContext";
+import Modal from "../../ui/Modal";
+import MarkingSchemesCard from "./info/MarkingSchemesCard";
+import ScheduleCard from "./info/ScheduleCard";
 
 function processSchedule(schedule: any[]) {
   if (!schedule) return [];
@@ -46,7 +46,7 @@ function processSchedule(schedule: any[]) {
   return Object.values(groups);
 }
 
-export default function CourseDetailInfoPage() {
+export default function InfoView() {
   const { id } = useParams();
   const { courses, updateSections, updateMarkingSchemes } = useCourses();
 

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  faCalendar,
   faCircleQuestion,
   faGauge,
   faPlus,
@@ -17,6 +18,7 @@ import { useAlertState } from "../../hooks/useAlertState";
 import GradeBadge from "../features/GradeBadge";
 import Line from "../ui/Line";
 import Modal from "../ui/Modal";
+import { DEFAULT_CALENDAR_VIEW, DEFAULT_COURSE_VIEW } from "../../../lib/constants";
 
 interface SidebarProps {
   gradesScreen: boolean;
@@ -24,7 +26,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
-  const { courses, addCourse, loading, items, courseGrades } = useCourses();
+  const { courses, addCourse, loading, items, courseGrades, setOptimisticCourse } = useCourses();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -199,7 +201,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
             <Link
               href="/dashboard"
               onClick={closeDrawer}
-              className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+              className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-1 font-bold text-lg`}
               title="View term dashboard"
             >
               <FontAwesomeIcon
@@ -208,6 +210,20 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                 aria-hidden="true"
               />
               Dashboard
+            </Link>
+
+            <Link
+              href={`/calendar?view=${DEFAULT_CALENDAR_VIEW}`}
+              onClick={closeDrawer}
+              className={`btn ${pathname === "/calendar" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-1 font-bold text-lg`}
+              title="View calendar"
+            >
+              <FontAwesomeIcon
+                icon={faCalendar}
+                className="w-5 h-5 mr-2"
+                aria-hidden="true"
+              />
+              Calendar
             </Link>
           </div>
 
@@ -289,9 +305,16 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                             return (
                               <Link
                                 key={course.id}
-                                href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : "/grades"}`}
-                                onClick={closeDrawer}
-                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
+                                href={`/courses/${course.id}?view=${gradesScreen ? "grades" : infoScreen ? "info" : DEFAULT_COURSE_VIEW}`}
+                                onClick={() => {
+                                  try {
+                                    setOptimisticCourse?.(course);
+                                  } catch {
+                                    // ignore
+                                  }
+                                  closeDrawer();
+                                }}
+                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}`)
                                   ? "btn-primary"
                                   : "btn-base"
                                   }`}
@@ -337,9 +360,16 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                 {uncategorizedCourses.map((course) => (
                   <Link
                     key={course.id}
-                    href={`/courses/${course.id}/grades`}
-                    onClick={closeDrawer}
-                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
+                    href={`/courses/${course.id}?view=grades`}
+                    onClick={() => {
+                      try {
+                        setOptimisticCourse?.(course);
+                      } catch {
+                        // ignore
+                      }
+                      closeDrawer();
+                    }}
+                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
                       ? "btn-primary bg-primary"
                       : ""
                       }`}

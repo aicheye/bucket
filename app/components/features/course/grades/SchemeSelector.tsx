@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getCategoryColor } from "../../../contexts/CourseContext";
-import GradeBadge from "../GradeBadge";
-import RangeBadge from "../RangeBadge";
-import ReqAvgBadge from "../ReqAvgBadge";
+import { getCategoryColor } from "../../../../contexts/CourseContext";
+import GradeBadge from "../../GradeBadge";
+import RangeBadge from "../../RangeBadge";
+import ReqAvgBadge from "../../ReqAvgBadge";
 
 interface SchemeSelectorProps {
   schemes: any[][];

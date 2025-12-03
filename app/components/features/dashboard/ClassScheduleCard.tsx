@@ -45,7 +45,7 @@ export default function ClassScheduleCard({
   return (
     <Card shadow="sm" className="h-full">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="card-title text-sm uppercase opacity-70 m-0 flex items-center gap-2">
+        <h3 className="card-title text-sm uppercase opacity-70 m-0 flex items-center">
           <FontAwesomeIcon icon={faClock} className="mr-2" aria-hidden="true" />
           <span>
             CLASSES (
@@ -58,9 +58,9 @@ export default function ClassScheduleCard({
             )
           </span>
         </h3>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center join gap-0.5">
           <button
-            className="btn btn-xs btn-circle btn-ghost"
+            className="join-item btn btn-soft btn-xs"
             onClick={(e) => {
               e.preventDefault();
               onPrevDay();
@@ -71,7 +71,7 @@ export default function ClassScheduleCard({
             <FontAwesomeIcon icon={faChevronLeft} aria-hidden="true" />
           </button>
           <button
-            className="btn btn-xs btn-ghost text-sm"
+            className="join-item btn btn-soft btn-xs text-sm"
             onClick={(e) => {
               e.preventDefault();
               onResetToday();
@@ -81,7 +81,7 @@ export default function ClassScheduleCard({
             Today
           </button>
           <button
-            className="btn btn-xs btn-circle btn-ghost"
+            className="join-item btn btn-soft btn-xs"
             onClick={(e) => {
               e.preventDefault();
               onNextDay();

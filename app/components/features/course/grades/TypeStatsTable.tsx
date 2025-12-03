@@ -1,4 +1,4 @@
-import { getCategoryColor } from "../../../contexts/CourseContext";
+import { getCategoryColor } from "../../../../contexts/CourseContext";
 
 interface TypeStat {
   category: string;

@@ -738,7 +738,7 @@ export default function CoursesPage() {
                 onResetToday={resetToToday}
                 onNavigateToCourse={(courseId, course) => {
                   if (setOptimisticCourse) setOptimisticCourse(course);
-                  router.push(`/courses/${courseId}`);
+                  router.push(`/courses/${courseId}?view=grades`);
                 }}
                 courses={courses}
               />
@@ -750,7 +750,7 @@ export default function CoursesPage() {
                 onDeleteDeliverable={handleDeleteItem}
                 onNavigateToCourse={(courseId, course) => {
                   if (setOptimisticCourse) setOptimisticCourse(course);
-                  router.push(`/courses/${courseId}/grades`);
+                  router.push(`/courses/${courseId}?view=grades`);
                 }}
                 courses={courses}
               />
@@ -761,7 +761,7 @@ export default function CoursesPage() {
               courseGrades={courseGrades}
               onNavigateToCourse={(courseId, course) => {
                 if (setOptimisticCourse) setOptimisticCourse(course);
-                router.push(`/courses/${courseId}/info`);
+                router.push(`/courses/${courseId}?view=info`);
               }}
               onAddItem={openAddItem}
             />

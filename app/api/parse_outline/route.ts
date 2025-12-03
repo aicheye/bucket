@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { formatDateParam } from "../../../lib/date-utils";
 import { logger } from "../../../lib/logger";
 import authOptions from "../../../lib/nextauth";
 
@@ -163,7 +164,8 @@ async function parse_html(content: string) {
               );
 
               if (startEnd.length == 1) {
-                rowData["Meet Dates"].push(new Date(currentDate));
+                // Store date-only strings to avoid timezone shifts when serializing
+                rowData["Meet Dates"].push(formatDateParam(currentDate));
                 continue;
               }
 
@@ -176,7 +178,8 @@ async function parse_html(content: string) {
 
               while (currentDate <= endDate) {
                 if (daysActive.includes(currentDate.getDay())) {
-                  rowData["Meet Dates"].push(new Date(currentDate));
+                  // Store date-only strings to avoid timezone shifts when serializing
+                  rowData["Meet Dates"].push(formatDateParam(currentDate));
                 }
                 currentDate.setDate(currentDate.getDate() + 1);
               }
@@ -190,35 +193,45 @@ async function parse_html(content: string) {
               rowData["End Time"] = timeText;
             } else {
               const times = timeText.split(" - ");
+              const startStr = times[0].trim();
+              const endStr = times[1]?.trim() || startStr;
 
-              const startTime: string[] = times[0].trim().split(":");
-              const startAM: boolean =
-                times[0].trim().toLowerCase().includes("am") ||
-                (!times[0].trim().toLowerCase().includes("pm") &&
-                  parseInt(startTime[0], 10) < 12);
+              const sParts = startStr.split(":");
+              let sH = parseInt(sParts[0], 10);
+              const sM = parseInt(sParts[1]?.substring(0, 2) || "0", 10);
 
-              const endTime: string[] = (
-                times[1]?.trim() || times[0].trim()
-              ).split(":");
-              const endAM: boolean =
-                times[1]?.trim().toLowerCase().includes("am") ||
-                (!times[1]?.trim().toLowerCase().includes("pm") &&
-                  parseInt(endTime[0], 10) < 12);
+              const eParts = endStr.split(":");
+              let eH = parseInt(eParts[0], 10);
+              const eM = parseInt(eParts[1]?.substring(0, 2) || "0", 10);
 
-              rowData["Start Time"] = {
-                hours:
-                  (parseInt(startTime[0], 10) === 12
-                    ? 0
-                    : parseInt(startTime[0], 10)) + (startAM ? 0 : 12),
-                minutes: parseInt(startTime[1].substring(0, 2), 10) || 0,
-              };
-              rowData["End Time"] = {
-                hours:
-                  (parseInt(endTime[0], 10) === 12
-                    ? 0
-                    : parseInt(endTime[0], 10)) + (endAM ? 0 : 12),
-                minutes: parseInt(endTime[1].substring(0, 2), 10) || 0,
-              };
+              const sAm = startStr.toLowerCase().includes("am");
+              const sPm = startStr.toLowerCase().includes("pm");
+              const eAm = endStr.toLowerCase().includes("am");
+              const ePm = endStr.toLowerCase().includes("pm");
+
+              if (sH === 12) sH = 0;
+              if (eH === 12) eH = 0;
+
+              // Apply explicit AM/PM
+              if (sPm) sH += 12;
+              if (ePm) eH += 12;
+
+              // Infer missing AM/PM
+              if (!sAm && !sPm) {
+                // If end is PM, and start < 7, assume PM (e.g. 2:30 - 3:30 PM)
+                if (ePm && sH < 7) sH += 12;
+                // General heuristic: classes don't start before 7 AM usually
+                else if (sH < 7) sH += 12;
+              }
+
+              if (!eAm && !ePm) {
+                if (eH < 7) eH += 12;
+                // If end is earlier than start, assume it wraps to PM (e.g. 11 - 1)
+                if (eH < sH) eH += 12;
+              }
+
+              rowData["Start Time"] = { hours: sH, minutes: sM };
+              rowData["End Time"] = { hours: eH, minutes: eM };
             }
 
             continue;

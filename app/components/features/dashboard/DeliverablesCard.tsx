@@ -58,7 +58,7 @@ export default function DeliverablesCard({
               className="flex-grow max-h-[6rem] items-center gap-3 p-3 card flex-row bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
             >
               <Link
-                href={`/courses/${item.course_id}/grades`}
+                href={`/courses/${item.course_id}?view=grades`}
                 className="flex-1 justify-between flex items-center gap-3"
                 onClick={(e) => {
                   e.preventDefault();

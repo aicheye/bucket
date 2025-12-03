@@ -8,7 +8,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getCategoryColor } from "../../../contexts/CourseContext";
+import { getCategoryColor } from "../../../../contexts/CourseContext";
 
 interface MarkingSchemesCardProps {
   markingSchemes?: any[][];

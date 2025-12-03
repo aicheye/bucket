@@ -6,6 +6,10 @@
 export const APP_NAME: string = "Bucket";
 export const APP_VERSION: string = "alpha 1";
 
+// defaults
+export const DEFAULT_COURSE_VIEW = "grades";
+export const DEFAULT_CALENDAR_VIEW = "week";
+
 // Season ordering for term sorting
 export const SEASON_ORDER: Record<string, number> = {
   Winter: 1,

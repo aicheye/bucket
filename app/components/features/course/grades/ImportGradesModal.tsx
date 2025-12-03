@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Modal from "../../ui/Modal";
+import Modal from "../../../ui/Modal";
 
 interface ParsedItem {
   name: string;

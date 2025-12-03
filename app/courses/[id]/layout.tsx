@@ -3,7 +3,7 @@
 import { faExternalLinkAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../../lib/constants";
 import { sendTelemetry } from "../../../lib/telemetry";
@@ -16,7 +16,7 @@ import { useLoading } from "../../contexts/LoadingContext";
 export default function CourseLayout({ children }: { children: ReactNode }) {
   const { id } = useParams();
   const router = useRouter();
-  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const {
     courses,
     loading,
@@ -53,8 +53,9 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
     }
   }, [selectedCourse]);
 
-  const isGradesView = pathname?.endsWith("/grades");
-  const isInfoView = pathname?.endsWith("/info");
+  const view = searchParams?.get("view") || "grades";
+  const isGradesView = view === "grades";
+  const isInfoView = view === "info";
 
   useEffect(() => {
     if (selectedCourse) {
@@ -243,14 +244,14 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
         >
           <Link
             role="tab"
-            href={`/courses/${id}/info`}
+            href={`/courses/${id}?view=info`}
             className={`tab px-8 transition-all duration-200 ${isInfoView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}
           >
             Info
           </Link>
           <Link
             role="tab"
-            href={`/courses/${id}/grades`}
+            href={`/courses/${id}?view=grades`}
             className={`tab px-8 transition-all duration-200 ${isGradesView ? "tab-active bg-base-100 shadow-sm font-bold" : "hover:bg-base-200/50"}`}
           >
             Grades

@@ -24,15 +24,15 @@ import {
 } from "../../../../lib/grade-utils";
 import { sendTelemetry } from "../../../../lib/telemetry";
 import type { Course, ItemFormData } from "../../../../lib/types";
-import GoalInput from "../../../components/features/GoalInput";
-import GradeTable from "../../../components/features/grades/GradeTable";
-import GradingSettingsModal from "../../../components/features/grades/GradingSettingsModal";
-import ImportGradesModal from "../../../components/features/grades/ImportGradesModal";
-import SchemeSelector from "../../../components/features/grades/SchemeSelector";
-import TypeStatsTable from "../../../components/features/grades/TypeStatsTable";
-import ItemFormModal from "../../../components/features/ItemFormModal";
 import { Item, useCourses } from "../../../contexts/CourseContext";
 import { useLoading } from "../../../contexts/LoadingContext";
+import GoalInput from "../GoalInput";
+import GradeTable from "./grades/GradeTable";
+import GradingSettingsModal from "./grades/GradingSettingsModal";
+import ImportGradesModal from "./grades/ImportGradesModal";
+import SchemeSelector from "./grades/SchemeSelector";
+import TypeStatsTable from "./grades/TypeStatsTable";
+import ItemFormModal from "../ItemFormModal";
 
 interface ParsedItem {
   name: string;
@@ -42,7 +42,7 @@ interface ParsedItem {
   type: string;
 }
 
-export default function CourseGradesPage() {
+export default function GradesView() {
   const { id } = useParams();
   const { data: session } = useSession();
   const { courses, items, addItem, deleteItem, updateItem, updateCourseData } =

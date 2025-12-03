@@ -1,7 +1,7 @@
 "use client";
 import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import React, { useEffect } from "react";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
@@ -53,8 +53,11 @@ export default function Providers({
     pathname === "/dashboard" ||
     pathname === "/calendar";
   const authScreen = pathname?.startsWith("/api/auth/signin");
-  const gradesScreen = pathname?.endsWith("/grades");
-  const infoScreen = pathname?.endsWith("/info");
+
+  const searchParams = useSearchParams();
+
+  const gradesScreen = searchParams?.get("view")?.endsWith("grades");
+  const infoScreen = searchParams?.get("view")?.endsWith("info");
 
   useEffect(() => {
     logger.info("Providers initialized");

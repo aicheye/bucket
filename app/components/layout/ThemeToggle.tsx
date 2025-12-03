@@ -2,6 +2,7 @@
 
 import {
   faBrush,
+  faChevronDown,
   faDesktop,
   faMoon,
   faSun,
@@ -146,17 +147,12 @@ export default function ThemeToggle() {
         <span className="hidden md:block">
           {theme.charAt(0).toUpperCase() + theme.slice(1)}
         </span>
-        <svg
-          width="12px"
-          height="12px"
-          className="ml-1 h-2 w-2 fill-current opacity-60 inline-block"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 2048 2048"
+        <FontAwesomeIcon
+          icon={faChevronDown}
+          className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
           focusable={false}
-        >
-          <path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path>
-        </svg>
+        />
       </button>
       <ul
         tabIndex={0}
@@ -167,9 +163,8 @@ export default function ThemeToggle() {
         {themes.map((t) => (
           <li key={t}>
             <button
-              className={`btn btn-sm btn-block justify-start ${
-                theme === t ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm btn-block justify-start ${theme === t ? "btn-primary" : "btn-ghost"
+                }`}
               role="menuitem"
               type="button"
               onClick={() => handleThemeChange(t)}
