@@ -1,16 +1,16 @@
 "use client";
 
 import {
-  faCalendar,
   faCircleQuestion,
   faGauge,
-  faPlus,
+  faPlus
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { DEFAULT_COURSE_VIEW } from "../../../lib/constants";
 import { sendTelemetry } from "../../../lib/telemetry";
 import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
@@ -18,7 +18,6 @@ import { useAlertState } from "../../hooks/useAlertState";
 import GradeBadge from "../features/GradeBadge";
 import Line from "../ui/Line";
 import Modal from "../ui/Modal";
-import { DEFAULT_CALENDAR_VIEW, DEFAULT_COURSE_VIEW } from "../../../lib/constants";
 
 interface SidebarProps {
   gradesScreen: boolean;
@@ -211,7 +210,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
               />
               Dashboard
             </Link>
-
+            {/*
             <Link
               href={`/calendar?view=${DEFAULT_CALENDAR_VIEW}`}
               onClick={closeDrawer}
@@ -225,6 +224,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
               />
               Calendar
             </Link>
+            */}
           </div>
 
           <Line direction="hor" className="w-full" />
