@@ -10,7 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+// Use native anchor for fragment navigation so browser scrolls to target
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getCourseTypes as getCourseTypesUtil } from "../../../../lib/course-utils";
@@ -27,12 +27,12 @@ import type { Course, ItemFormData } from "../../../../lib/types";
 import { Item, useCourses } from "../../../contexts/CourseContext";
 import { useLoading } from "../../../contexts/LoadingContext";
 import GoalInput from "../GoalInput";
+import ItemFormModal from "../ItemFormModal";
 import GradeTable from "./grades/GradeTable";
 import GradingSettingsModal from "./grades/GradingSettingsModal";
 import ImportGradesModal from "./grades/ImportGradesModal";
 import SchemeSelector from "./grades/SchemeSelector";
 import TypeStatsTable from "./grades/TypeStatsTable";
-import ItemFormModal from "../ItemFormModal";
 
 interface ParsedItem {
   name: string;
@@ -72,8 +72,8 @@ export default function GradesView() {
           isPlaceholder: item.data?.isPlaceholder ?? false,
           weight:
             item?.data &&
-              item.data.weight !== undefined &&
-              item.data.weight !== null
+            item.data.weight !== undefined &&
+            item.data.weight !== null
               ? item.data.weight
               : "0",
         };
@@ -110,6 +110,9 @@ export default function GradesView() {
 
   const [showGradingSettings, setShowGradingSettings] = useState(false);
   const [dropLowest, setDropLowest] = useState<Record<string, number>>({});
+  const [bonusPercent, setBonusPercent] = useState<number | undefined>(
+    undefined,
+  );
 
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -146,6 +149,11 @@ export default function GradesView() {
       setPlaceholderGrades(selectedCourse.data.placeholder_grades);
     } else {
       setPlaceholderGrades({});
+    }
+    if (selectedCourse?.data?.bonus_percent !== undefined) {
+      setBonusPercent(selectedCourse.data.bonus_percent);
+    } else {
+      setBonusPercent(undefined);
     }
     if (selectedCourse?.data?.target_grade) {
       setTargetGrade(selectedCourse.data.target_grade.toString());
@@ -384,10 +392,10 @@ export default function GradesView() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-      )
-        .toISOString()
-        .split("T")[0]
+          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+        )
+          .toISOString()
+          .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -402,6 +410,7 @@ export default function GradesView() {
     await updateCourseData(selectedCourse.id, {
       drop_lowest: dropLowest,
       placeholder_grades: placeholderGrades,
+      bonus_percent: bonusPercent,
     });
     sendTelemetry("edit_grading_settings", {
       course_id: selectedCourse.id,
@@ -429,6 +438,7 @@ export default function GradesView() {
             baseCourseItems,
             placeholderGrades,
             dropLowest,
+            bonusPercent,
           );
           if (
             details.currentGrade !== null &&
@@ -447,6 +457,7 @@ export default function GradesView() {
     baseCourseItems,
     placeholderGrades,
     dropLowest,
+    bonusPercent,
   ]);
 
   const preferredScheme = selectedCourse?.data?.["preferred-marking-scheme"];
@@ -488,31 +499,46 @@ export default function GradesView() {
   const usedDetails = useMemo(() => {
     return usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-        usedScheme,
-        baseCourseItems,
-        placeholderGrades,
-        dropLowest,
-      )
+          usedScheme,
+          baseCourseItems,
+          placeholderGrades,
+          dropLowest,
+          bonusPercent,
+        )
       : null;
-  }, [usedScheme, selectedCourse, baseCourseItems, placeholderGrades, dropLowest]);
+  }, [
+    usedScheme,
+    selectedCourse,
+    baseCourseItems,
+    placeholderGrades,
+    dropLowest,
+    bonusPercent,
+  ]);
 
   const usedDroppedItemIds = usedDetails?.droppedItemIds || [];
 
-  const componentMap = useMemo(() => buildComponentMap(usedScheme), [usedScheme]);
-  const categoryKeptCountMap = useMemo(() => buildCategoryKeptCountMap(
-    usedScheme,
-    baseCourseItems,
-    dropLowest,
-  ), [usedScheme, baseCourseItems, dropLowest]);
+  const componentMap = useMemo(
+    () => buildComponentMap(usedScheme),
+    [usedScheme],
+  );
+  const categoryKeptCountMap = useMemo(
+    () => buildCategoryKeptCountMap(usedScheme, baseCourseItems, dropLowest),
+    [usedScheme, baseCourseItems, dropLowest],
+  );
 
-  const courseItems = useMemo(() => sortCourseItems(
-    baseCourseItems,
-    componentMap,
-    categoryKeptCountMap,
-  ), [baseCourseItems, componentMap, categoryKeptCountMap]);
+  const courseItems = useMemo(
+    () => sortCourseItems(baseCourseItems, componentMap, categoryKeptCountMap),
+    [baseCourseItems, componentMap, categoryKeptCountMap],
+  );
 
-  const displayItems = useMemo(() => [...placeholderItems, ...courseItems], [placeholderItems, courseItems]);
-  const hasDueDates = useMemo(() => displayItems.some((item) => item.data.due_date), [displayItems]);
+  const displayItems = useMemo(
+    () => [...placeholderItems, ...courseItems],
+    [placeholderItems, courseItems],
+  );
+  const hasDueDates = useMemo(
+    () => displayItems.some((item) => item.data.due_date),
+    [displayItems],
+  );
 
   async function handleSaveTargetGrade() {
     if (!selectedCourse) return;
@@ -529,6 +555,7 @@ export default function GradesView() {
       courseItems,
       placeholderGrades,
       dropLowest,
+      bonusPercent,
     );
   }
 
@@ -539,13 +566,24 @@ export default function GradesView() {
   // Compute per-type aggregates for the "Item Types Averages" table
   const showRemaining = allTypes.length > 1;
 
-  const typeStats = useMemo(() => computeTypeStats(
-    usedScheme ? usedScheme.map((c: any) => c.Component) : allTypes,
-    displayItems,
-    componentMap,
-    categoryKeptCountMap,
-    usedDroppedItemIds,
-  ), [usedScheme, allTypes, displayItems, componentMap, categoryKeptCountMap, usedDroppedItemIds]);
+  const typeStats = useMemo(
+    () =>
+      computeTypeStats(
+        usedScheme ? usedScheme.map((c: any) => c.Component) : allTypes,
+        displayItems,
+        componentMap,
+        categoryKeptCountMap,
+        usedDroppedItemIds,
+      ),
+    [
+      usedScheme,
+      allTypes,
+      displayItems,
+      componentMap,
+      categoryKeptCountMap,
+      usedDroppedItemIds,
+    ],
+  );
 
   return (
     <>
@@ -573,6 +611,8 @@ export default function GradesView() {
         setDropLowest={setDropLowest}
         placeholderGrades={placeholderGrades}
         setPlaceholderGrades={setPlaceholderGrades}
+        bonusPercent={bonusPercent}
+        setBonusPercent={setBonusPercent}
         getCourseTypes={getCourseTypes}
         courseItems={courseItems}
       />
@@ -595,16 +635,26 @@ export default function GradesView() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
               <div className="flex items-center gap-2">
                 <h2 className="card-title text-2xl">Grades</h2>
+                {bonusPercent !== undefined && (
+                  <div
+                    className="tooltip tooltip-up"
+                    data-tip={`A bonus of ${bonusPercent}% is applied to the final grade.`}
+                  >
+                    <span className="badge bg-base-300 badge-lg cursor-help font-mono">
+                      +{bonusPercent}%
+                    </span>
+                  </div>
+                )}
                 <div
                   className="tooltip tooltip-up"
                   data-tip={"How are grades calculated?"}
                 >
-                  <Link
+                  <a
                     href="/help#grade-calculation"
-                    className="text-base opacity-30 hover:opacity-100 transition-opacity"
+                    className="cursor-help text-base opacity-30 hover:opacity-100 transition-opacity"
                   >
                     <FontAwesomeIcon icon={faInfoCircle} />
-                  </Link>
+                  </a>
                 </div>
               </div>
               <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
@@ -653,6 +703,7 @@ export default function GradesView() {
                     courseItems,
                     placeholderGrades,
                     dropLowest,
+                    bonusPercent,
                   )
                 }
                 calculateRequired={(scheme) => calculateRequired(scheme)}

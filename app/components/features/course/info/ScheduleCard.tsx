@@ -135,7 +135,7 @@ export default function ScheduleCard({
                   </td>
                   <td className="min-w-fit">{info.Location}</td>
                   <td className="flex flex-col gap-2">
-                    {(info.Instructors && info.Instructors.length > 0) ? (
+                    {info.Instructors && info.Instructors.length > 0 ? (
                       info.Instructors?.map((inst: any) => (
                         <div key={inst.Email}>
                           <p>{inst.Name}</p>
@@ -160,6 +160,6 @@ export default function ScheduleCard({
           </table>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

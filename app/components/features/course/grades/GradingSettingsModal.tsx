@@ -11,6 +11,8 @@ interface GradingSettingsModalProps {
   setDropLowest: (drops: Record<string, number>) => void;
   placeholderGrades: Record<string, number>;
   setPlaceholderGrades: (grades: Record<string, number>) => void;
+  bonusPercent?: number;
+  setBonusPercent: (b?: number) => void;
   getCourseTypes: () => string[];
   courseItems: Item[];
 }
@@ -23,6 +25,8 @@ export default function GradingSettingsModal({
   setDropLowest,
   placeholderGrades,
   setPlaceholderGrades,
+  bonusPercent,
+  setBonusPercent,
   getCourseTypes,
   courseItems,
 }: GradingSettingsModalProps) {
@@ -44,9 +48,32 @@ export default function GradingSettingsModal({
       }
     >
       <div className="flex flex-col gap-4">
-        <p className="text-sm opacity-70">
-          Configure grading rules for each category.
-        </p>
+        <div className="flex items-center gap-4 bg-base-200 p-4 py-2 rounded-md border border-base-content/10">
+          <label className="text-sm opacity-80 uppercase font-bold ">
+            Bonus
+          </label>
+          <div className="input-group flex items-center">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              className="input input-sm input-bordered w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              value={bonusPercent ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "") {
+                  setBonusPercent(undefined);
+                } else {
+                  const parsed = parseFloat(v);
+                  if (!isNaN(parsed)) setBonusPercent(parsed);
+                }
+              }}
+              title="Add a flat bonus percentage to the displayed scheme grades"
+            />
+            <span className="px-2">%</span>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="table table-sm w-full">
             <thead>

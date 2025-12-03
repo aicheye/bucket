@@ -7,9 +7,7 @@ export default function AddCourseHelp() {
       <h2 className="text-2xl font-semibold">Adding a Course</h2>
       <p>
         Find your course outline from{" "}
-        <ExternalLink
-          href="https://outline.uwaterloo.ca/viewer"
-        >
+        <ExternalLink href="https://outline.uwaterloo.ca/viewer">
           Outline.uwaterloo.ca
         </ExternalLink>
         .

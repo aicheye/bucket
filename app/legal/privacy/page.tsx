@@ -65,7 +65,10 @@ export default function PrivacyPage() {
         <p>
           You have the right to access, modify, or delete your personal data at
           any time by contacting us at{" "}
-          <ExternalLink href="mailto:sean@seanyang.me" decorations="link link-primary no-underline hover:underline">
+          <ExternalLink
+            href="mailto:sean@seanyang.me"
+            decorations="link link-primary no-underline hover:underline"
+          >
             sean@seanyang.me
           </ExternalLink>
           .

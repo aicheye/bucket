@@ -32,12 +32,10 @@ export default function TermsPage() {
         </p>
         <p>
           Users must follow the University of Waterloo&apos;s{" "}
-          <ExternalLink
-            href="https://uwaterloo.ca/secretariat/policies-procedures-guidelines/policies"
-          >
+          <ExternalLink href="https://uwaterloo.ca/secretariat/policies-procedures-guidelines/policies">
             policies, procedures, and guidelines
-          </ExternalLink>
-          {" "}while using our services.
+          </ExternalLink>{" "}
+          while using our services.
         </p>
         <p>
           Prohibited activities include, but are not limited to, hacking,

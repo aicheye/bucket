@@ -54,18 +54,14 @@ export default function LicensesPage() {
         <ul className="ml-4 list-disc list-inside">
           <li>
             <strong>Next.js:</strong> App framework. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/vercel/next.js/blob/canary/license.md"
-            >
+            <ExternalLink href="https://github.com/vercel/next.js/blob/canary/license.md">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>React / React DOM:</strong> UI library. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/facebook/react/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/facebook/react/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
@@ -73,9 +69,7 @@ export default function LicensesPage() {
           <li>
             <strong>graphql:</strong> GraphQL reference implementation. License:
             MIT.{" "}
-            <ExternalLink
-              href="https://github.com/graphql/graphql-js/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/graphql/graphql-js/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
@@ -83,36 +77,28 @@ export default function LicensesPage() {
           <li>
             <strong>next-auth:</strong> Authentication for Next.js. License:
             MIT.{" "}
-            <ExternalLink
-              href="https://github.com/nextauthjs/next-auth/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/nextauthjs/next-auth/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>recharts:</strong> Charting library. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/recharts/recharts/blob/2.x/LICENSE"
-            >
+            <ExternalLink href="https://github.com/recharts/recharts/blob/2.x/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>jsonwebtoken:</strong> JWT utilities. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/auth0/node-jsonwebtoken/blob/master/LICENSE"
-            >
+            <ExternalLink href="https://github.com/auth0/node-jsonwebtoken/blob/master/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>jsdom:</strong> HTML parsing. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/jsdom/jsdom/blob/main/LICENSE.txt"
-            >
+            <ExternalLink href="https://github.com/jsdom/jsdom/blob/main/LICENSE.txt">
               Full license text
             </ExternalLink>
             .
@@ -120,9 +106,7 @@ export default function LicensesPage() {
           <li>
             <strong>Font Awesome Free Icons:</strong> UI Icons. License: CC BY
             4.0.{" "}
-            <ExternalLink
-              href="https://github.com/FortAwesome/Font-Awesome/blob/master/LICENSE.txt"
-            >
+            <ExternalLink href="https://github.com/FortAwesome/Font-Awesome/blob/master/LICENSE.txt">
               Full license text
             </ExternalLink>
             .
@@ -132,9 +116,7 @@ export default function LicensesPage() {
         <ul className="ml-4 list-disc list-inside">
           <li>
             <strong>TypeScript:</strong> Language tooling.{" "}
-            <ExternalLink
-              href="https://github.com/microsoft/TypeScript/blob/main/LICENSE.txt"
-            >
+            <ExternalLink href="https://github.com/microsoft/TypeScript/blob/main/LICENSE.txt">
               Full license text
             </ExternalLink>
             .
@@ -142,36 +124,28 @@ export default function LicensesPage() {
           <li>
             <strong>Tailwind CSS:</strong> Utility-first CSS framework. License:
             MIT.{" "}
-            <ExternalLink
-              href="https://github.com/tailwindlabs/tailwindcss/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/tailwindlabs/tailwindcss/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>daisyUI:</strong> Tailwind component library. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/saadeghi/daisyui/blob/master/LICENSE"
-            >
+            <ExternalLink href="https://github.com/saadeghi/daisyui/blob/master/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>ESLint:</strong> Linting utility. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/eslint/eslint/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/eslint/eslint/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>Prettier:</strong> Formatting utility. License: MIT.{" "}
-            <ExternalLink
-              href="https://github.com/prettier/prettier/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/prettier/prettier/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
@@ -184,9 +158,7 @@ export default function LicensesPage() {
           <li>
             <strong>Docker Compose:</strong> Licensed under the Apache License
             2.0.{" "}
-            <ExternalLink
-              href="https://github.com/docker/compose/blob/main/LICENSE"
-            >
+            <ExternalLink href="https://github.com/docker/compose/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
@@ -194,18 +166,14 @@ export default function LicensesPage() {
           <li>
             <strong>Hasura GraphQL Engine:</strong> Licensed under the Apache
             License 2.0.{" "}
-            <ExternalLink
-              href="https://github.com/hasura/graphql-engine/blob/stable/LICENSE"
-            >
+            <ExternalLink href="https://github.com/hasura/graphql-engine/blob/stable/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>PostgreSQL:</strong> Licensed under the PostgreSQL License.{" "}
-            <ExternalLink
-              href="https://www.postgresql.org/about/licence/"
-            >
+            <ExternalLink href="https://www.postgresql.org/about/licence/">
               Full license text
             </ExternalLink>
             .
@@ -213,18 +181,14 @@ export default function LicensesPage() {
           <li>
             <strong>nginx:</strong> Licensed under the 2-clause BSD-like
             license.{" "}
-            <ExternalLink
-              href="https://nginx.org/LICENSE"
-            >
+            <ExternalLink href="https://nginx.org/LICENSE">
               Full license text
             </ExternalLink>
             .
           </li>
           <li>
             <strong>Certbot:</strong> Licensed under the Apache License 2.0.{" "}
-            <ExternalLink
-              href="https://github.com/certbot/certbot/blob/master/LICENSE.txt"
-            >
+            <ExternalLink href="https://github.com/certbot/certbot/blob/master/LICENSE.txt">
               Full license text
             </ExternalLink>
             .
@@ -258,9 +222,7 @@ export default function LicensesPage() {
           As a thanks to the open-source community and the creators of the
           third-party libraries used in this application, this application is
           solely licensed under the{" "}
-          <ExternalLink
-            href="https://opensource.org/licenses/MIT"
-          >
+          <ExternalLink href="https://opensource.org/licenses/MIT">
             MIT License
           </ExternalLink>
           , also known as the Expat License.
@@ -281,9 +243,7 @@ export default function LicensesPage() {
           The following is the full text of the MIT License. You may also find
           it in the LICENSE file in the root directory of this source code
           repository{" "}
-          <ExternalLink
-            href="https://github.com/aicheye/bucket/blob/main/LICENSE"
-          >
+          <ExternalLink href="https://github.com/aicheye/bucket/blob/main/LICENSE">
             here
           </ExternalLink>
           .

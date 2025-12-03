@@ -141,9 +141,9 @@ export default function GradeTable({
                       const totalContribution = compWeight / keptCount!;
                       const earnedContribution =
                         item.data.grade === "" ||
-                          isNaN(gradeRaw) ||
-                          isNaN(maxRaw) ||
-                          maxRaw === 0
+                        isNaN(gradeRaw) ||
+                        isNaN(maxRaw) ||
+                        maxRaw === 0
                           ? NaN
                           : (gradeRaw / maxRaw) * totalContribution;
 
@@ -221,8 +221,8 @@ export default function GradeTable({
                     <td>
                       {item.data.due_date
                         ? new Date(
-                          item.data.due_date + "T00:00:00",
-                        ).toLocaleDateString()
+                            item.data.due_date + "T00:00:00",
+                          ).toLocaleDateString()
                         : "-"}
                     </td>
                   )}

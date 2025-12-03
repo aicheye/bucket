@@ -25,6 +25,7 @@ import {
 } from "../../lib/graphql/mutations";
 import { GET_COURSES, GET_ITEMS } from "../../lib/graphql/queries";
 import { sendTelemetry } from "../../lib/telemetry";
+import { CATEGORY_COLORS } from "../../lib/constants";
 
 export interface Course {
   id: string;
@@ -497,15 +498,6 @@ export function useCourses() {
   }
   return context;
 }
-
-export const CATEGORY_COLORS = [
-  "bg-red-600",
-  "bg-amber-600",
-  "bg-green-600",
-  "bg-teal-600",
-  "bg-blue-600",
-  "bg-purple-600",
-];
 
 export function getCategoryColor(name: string, types: any[]): string {
   if (!name || !types) {

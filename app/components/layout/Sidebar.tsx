@@ -3,7 +3,7 @@
 import {
   faCircleQuestion,
   faGauge,
-  faPlus
+  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
@@ -25,7 +25,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
-  const { courses, addCourse, loading, items, courseGrades, setOptimisticCourse } = useCourses();
+  const {
+    courses,
+    addCourse,
+    loading,
+    items,
+    courseGrades,
+    setOptimisticCourse,
+  } = useCourses();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -124,56 +131,55 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   }
 
   // Memoize course grouping and sorting
-  const { groupedCourses, uncategorizedCourses, sortedFolders } = useMemo(() => {
-    const grouped: Record<string, typeof courses> = {};
-    const uncategorized: typeof courses = [];
+  const { groupedCourses, uncategorizedCourses, sortedFolders } =
+    useMemo(() => {
+      const grouped: Record<string, typeof courses> = {};
+      const uncategorized: typeof courses = [];
 
-    courses.forEach((course) => {
-      const folder = course.term;
-      if (folder) {
-        if (!grouped[folder]) grouped[folder] = [];
-        grouped[folder].push(course);
-      } else {
-        uncategorized.push(course);
-      }
-    });
+      courses.forEach((course) => {
+        const folder = course.term;
+        if (folder) {
+          if (!grouped[folder]) grouped[folder] = [];
+          grouped[folder].push(course);
+        } else {
+          uncategorized.push(course);
+        }
+      });
 
-    const seasonOrder: Record<string, number> = {
-      Winter: 1,
-      Spring: 2,
-      Summer: 3,
-      Fall: 4,
-    };
+      const seasonOrder: Record<string, number> = {
+        Winter: 1,
+        Spring: 2,
+        Summer: 3,
+        Fall: 4,
+      };
 
-    const sorted = Object.keys(grouped).sort((a, b) => {
-      const partsA = a.split(" ");
-      const partsB = b.split(" ");
+      const sorted = Object.keys(grouped).sort((a, b) => {
+        const partsA = a.split(" ");
+        const partsB = b.split(" ");
 
-      if (partsA.length === 2 && partsB.length === 2) {
-        const [seasonA, yearA] = partsA;
-        const [seasonB, yearB] = partsB;
+        if (partsA.length === 2 && partsB.length === 2) {
+          const [seasonA, yearA] = partsA;
+          const [seasonB, yearB] = partsB;
 
-        const yA = parseInt(yearA);
-        const yB = parseInt(yearB);
+          const yA = parseInt(yearA);
+          const yB = parseInt(yearB);
 
-        if (yA !== yB) return yB - yA; // Descending year
+          if (yA !== yB) return yB - yA; // Descending year
 
-        const sA = seasonOrder[seasonA] || 99;
-        const sB = seasonOrder[seasonB] || 99;
+          const sA = seasonOrder[seasonA] || 99;
+          const sB = seasonOrder[seasonB] || 99;
 
-        return sB - sA; // Descending season
-      }
-      return b.localeCompare(a); // Fallback to string compare descending
-    });
+          return sB - sA; // Descending season
+        }
+        return b.localeCompare(a); // Fallback to string compare descending
+      });
 
-    return {
-      groupedCourses: grouped,
-      uncategorizedCourses: uncategorized,
-      sortedFolders: sorted,
-    };
-  }, [courses]);
-
-
+      return {
+        groupedCourses: grouped,
+        uncategorizedCourses: uncategorized,
+        sortedFolders: sorted,
+      };
+    }, [courses]);
 
   return (
     <div
@@ -314,10 +320,11 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                                   }
                                   closeDrawer();
                                 }}
-                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}`)
-                                  ? "btn-primary"
-                                  : "btn-base"
-                                  }`}
+                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
+                                  pathname?.startsWith(`/courses/${course.id}`)
+                                    ? "btn-primary"
+                                    : "btn-base"
+                                }`}
                                 title="View course"
                               >
                                 <div className="text-left w-full flex justify-between items-center gap-2">
@@ -369,10 +376,11 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                       }
                       closeDrawer();
                     }}
-                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
-                      ? "btn-primary bg-primary"
-                      : ""
-                      }`}
+                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
+                      pathname?.startsWith(`/courses/${course.id}`)
+                        ? "btn-primary bg-primary"
+                        : ""
+                    }`}
                   >
                     <div className="text-left w-full text-primary-content">
                       <div className="font-bold">{course.code}</div>

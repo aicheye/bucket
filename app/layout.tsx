@@ -36,7 +36,9 @@ export default async function RootLayout({
         <a href="#content" className="skip-link">
           Skip to main content
         </a>
-        <Suspense fallback={<div id="content" tabIndex={-1} className="flex-1" />}>
+        <Suspense
+          fallback={<div id="content" tabIndex={-1} className="flex-1" />}
+        >
           <Providers>
             <div id="content" tabIndex={-1} className="flex-1">
               {children}

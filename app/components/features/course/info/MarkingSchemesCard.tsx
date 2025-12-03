@@ -160,7 +160,7 @@ export default function MarkingSchemesCard({
                               />
                               <span className="w-4">
                                 {!isNaN(Number(item.Weight)) &&
-                                  item.Weight !== ""
+                                item.Weight !== ""
                                   ? "%"
                                   : ""}
                               </span>

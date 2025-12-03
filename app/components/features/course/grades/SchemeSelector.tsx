@@ -108,7 +108,7 @@ export default function SchemeSelector({
                 )}
               </button>
 
-              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[1] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/10">
+              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[1] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/5">
                 <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">
                   Scheme Breakdown
                 </div>

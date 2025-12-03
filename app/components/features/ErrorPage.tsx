@@ -22,12 +22,8 @@ export default function ErrorPage({ errorCode, message }: ErrorPageProps) {
   return (
     <div className="flex items-center justify-center h-full flex-col text-center p-4">
       <div className="prose text-center">
-        {errorCode &&
-          <h1 className="text-4xl font-bold">Error {errorCode}</h1>
-        }
-        <p className="text-lg text-base-content/80 mt-2">
-          {message}
-        </p>
+        {errorCode && <h1 className="text-4xl font-bold">Error {errorCode}</h1>}
+        <p className="text-lg text-base-content/80 mt-2">{message}</p>
         <div className="mt-6">
           <Link href="/" className="btn btn-primary">
             Return Home

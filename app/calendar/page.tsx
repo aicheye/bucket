@@ -6,7 +6,6 @@ import { DEFAULT_CALENDAR_VIEW } from "../../lib/constants";
 import { MonthlyCalendar } from "../components/features/calendar/MonthCalendar";
 import { WeeklyCalendar } from "../components/features/calendar/WeekCalendar";
 
-
 export default function CalendarPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

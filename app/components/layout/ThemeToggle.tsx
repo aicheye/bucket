@@ -163,8 +163,9 @@ export default function ThemeToggle() {
         {themes.map((t) => (
           <li key={t}>
             <button
-              className={`btn btn-sm btn-block justify-start ${theme === t ? "btn-primary" : "btn-ghost"
-                }`}
+              className={`btn btn-sm btn-block justify-start ${
+                theme === t ? "btn-primary" : "btn-ghost"
+              }`}
               role="menuitem"
               type="button"
               onClick={() => handleThemeChange(t)}

@@ -1,9 +1,18 @@
 "use client";
 
-import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
-import { formatTime, FULL_DAYS, getEventsForDateRange, getWeekDays, isSameDay } from "../../../../lib/calendar-utils";
+import {
+  formatTime,
+  FULL_DAYS,
+  getEventsForDateRange,
+  getWeekDays,
+  isSameDay,
+} from "../../../../lib/calendar-utils";
 import { useCourses } from "../../../contexts/CourseContext";
 
 export function WeeklyCalendar() {
@@ -40,9 +49,15 @@ export function WeeklyCalendar() {
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
-          {days[0].toLocaleDateString('default', { month: 'long', day: 'numeric' })}
-          {" "}&ndash;{" "}
-          {days[6].toLocaleDateString('default', { month: 'long', day: 'numeric' })}
+          {days[0].toLocaleDateString("default", {
+            month: "long",
+            day: "numeric",
+          })}{" "}
+          &ndash;{" "}
+          {days[6].toLocaleDateString("default", {
+            month: "long",
+            day: "numeric",
+          })}
         </h2>
         <div className="join flex items-center gap-1">
           <button
@@ -76,10 +91,17 @@ export function WeeklyCalendar() {
         {/* Header */}
         <div className="flex border-b border-base-300">
           <div className="w-16 flex-shrink-0 border-r border-base-300 bg-base-200"></div>
-          {days.map(day => (
-            <div key={day.toISOString()} className="flex-1 p-2 text-center border-r border-base-300 last:border-r-0 bg-base-200">
-              <div className="font-semibold text-sm">{FULL_DAYS[day.getDay()].slice(0, 3)}</div>
-              <div className={`text-sm w-6 h-6 mx-auto flex items-center justify-center ${isSameDay(day, new Date()) ? 'bg-primary text-primary-content rounded-full' : ''}`}>
+          {days.map((day) => (
+            <div
+              key={day.toISOString()}
+              className="flex-1 p-2 text-center border-r border-base-300 last:border-r-0 bg-base-200"
+            >
+              <div className="font-semibold text-sm">
+                {FULL_DAYS[day.getDay()].slice(0, 3)}
+              </div>
+              <div
+                className={`text-sm w-6 h-6 mx-auto flex items-center justify-center ${isSameDay(day, new Date()) ? "bg-primary text-primary-content rounded-full" : ""}`}
+              >
                 {day.getDate()}
               </div>
             </div>
@@ -91,17 +113,27 @@ export function WeeklyCalendar() {
           <div className="w-16 flex-shrink-0 border-r border-base-300 p-2 text-xs text-center flex items-center justify-center text-base-content/70">
             Due
           </div>
-          {days.map(day => {
-            const dayDeliverables = events.filter(e => isSameDay(e.date, day) && e.type === 'deliverable');
+          {days.map((day) => {
+            const dayDeliverables = events.filter(
+              (e) => isSameDay(e.date, day) && e.type === "deliverable",
+            );
             return (
-              <div key={day.toISOString()} className="flex-1 p-1 border-r border-base-300 last:border-r-0 flex flex-col gap-1">
-                {dayDeliverables.map(event => (
-                  <div key={event.id} className={`text-xs p-1 rounded truncate ${event.color} text-white`} title={event.title}>
-                    <span className="font-bold">{event.courseCode}</span> {event.title}
+              <div
+                key={day.toISOString()}
+                className="flex-1 p-1 border-r border-base-300 last:border-r-0 flex flex-col gap-1"
+              >
+                {dayDeliverables.map((event) => (
+                  <div
+                    key={event.id}
+                    className={`text-xs p-1 rounded truncate ${event.color} text-white`}
+                    title={event.title}
+                  >
+                    <span className="font-bold">{event.courseCode}</span>{" "}
+                    {event.title}
                   </div>
                 ))}
               </div>
-            )
+            );
           })}
         </div>
 
@@ -109,9 +141,13 @@ export function WeeklyCalendar() {
         <div className="flex overflow-y-auto h-[600px] relative">
           {/* Time Labels */}
           <div className="w-16 flex-shrink-0 border-r border-base-300 bg-base-100 sticky left-0 z-20">
-            {hours.map(h => (
-              <div key={h} className="text-xs text-right pr-2 text-base-content/70 border-b border-base-200 box-border bg-base-100" style={{ height: hourHeight }}>
-                {h > 12 ? h - 12 : h} {h >= 12 ? 'PM' : 'AM'}
+            {hours.map((h) => (
+              <div
+                key={h}
+                className="text-xs text-right pr-2 text-base-content/70 border-b border-base-200 box-border bg-base-100"
+                style={{ height: hourHeight }}
+              >
+                {h > 12 ? h - 12 : h} {h >= 12 ? "PM" : "AM"}
               </div>
             ))}
           </div>
@@ -120,45 +156,67 @@ export function WeeklyCalendar() {
           <div className="flex-1 flex relative min-w-[600px]">
             {/* Grid Lines */}
             {days.map((day) => (
-              <div key={day.toISOString()} className="flex-1 border-r border-base-200 last:border-r-0 relative">
-                {hours.map(h => (
-                  <div key={h} className="border-b border-base-200 w-full absolute" style={{ top: (h - startHour) * hourHeight, height: 1 }}></div>
+              <div
+                key={day.toISOString()}
+                className="flex-1 border-r border-base-200 last:border-r-0 relative"
+              >
+                {hours.map((h) => (
+                  <div
+                    key={h}
+                    className="border-b border-base-200 w-full absolute"
+                    style={{ top: (h - startHour) * hourHeight, height: 1 }}
+                  ></div>
                 ))}
               </div>
             ))}
 
             {/* Events */}
-            {events.filter(e => e.type === 'class').map(event => {
-              if (!event.startTime || !event.endTime) return null;
+            {events
+              .filter((e) => e.type === "class")
+              .map((event) => {
+                if (!event.startTime || !event.endTime) return null;
 
-              // Find column index
-              const dayIndex = days.findIndex(d => isSameDay(d, event.date));
-              if (dayIndex === -1) return null;
+                // Find column index
+                const dayIndex = days.findIndex((d) =>
+                  isSameDay(d, event.date),
+                );
+                if (dayIndex === -1) return null;
 
-              const startMinutes = event.startTime.hours * 60 + event.startTime.minutes;
-              const endMinutes = event.endTime.hours * 60 + event.endTime.minutes;
-              const startOffset = startMinutes - (startHour * 60);
-              const duration = endMinutes - startMinutes;
+                const startMinutes =
+                  event.startTime.hours * 60 + event.startTime.minutes;
+                const endMinutes =
+                  event.endTime.hours * 60 + event.endTime.minutes;
+                const startOffset = startMinutes - startHour * 60;
+                const duration = endMinutes - startMinutes;
 
-              if (startOffset < 0) return null; // Before start time
+                if (startOffset < 0) return null; // Before start time
 
-              return (
-                <div
-                  key={event.id}
-                  className="absolute p-1 rounded text-xs bg-primary/10 border-l-4 border-primary overflow-hidden hover:z-10 hover:shadow-md transition-all"
-                  style={{
-                    top: (startOffset / 60) * hourHeight,
-                    height: (duration / 60) * hourHeight,
-                    left: `${(dayIndex / 7) * 100}%`,
-                    width: `${100 / 7}%`,
-                  }}
-                >
-                  <div className="font-bold text-primary">{event.courseCode}</div>
-                  <div className="truncate">{(event.title || '').replace(event.courseCode || '', '').trim()}</div>
-                  <div className="text-[10px] opacity-75">{formatTime(event.startTime)} - {formatTime(event.endTime)}</div>
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={event.id}
+                    className="absolute p-1 rounded text-xs bg-primary/10 border-l-4 border-primary overflow-hidden hover:z-10 hover:shadow-md transition-all"
+                    style={{
+                      top: (startOffset / 60) * hourHeight,
+                      height: (duration / 60) * hourHeight,
+                      left: `${(dayIndex / 7) * 100}%`,
+                      width: `${100 / 7}%`,
+                    }}
+                  >
+                    <div className="font-bold text-primary">
+                      {event.courseCode}
+                    </div>
+                    <div className="truncate">
+                      {(event.title || "")
+                        .replace(event.courseCode || "", "")
+                        .trim()}
+                    </div>
+                    <div className="text-[10px] opacity-75">
+                      {formatTime(event.startTime)} -{" "}
+                      {formatTime(event.endTime)}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </div>

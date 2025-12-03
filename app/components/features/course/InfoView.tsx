@@ -75,17 +75,27 @@ export default function InfoView() {
 
   if (!selectedCourse) return null;
 
-  const processedSchedule = useMemo(() => selectedCourse
-    ? processSchedule(selectedCourse.data["schedule-info"] || [])
-    : [], [selectedCourse]);
+  const processedSchedule = useMemo(
+    () =>
+      selectedCourse
+        ? processSchedule(selectedCourse.data["schedule-info"] || [])
+        : [],
+    [selectedCourse],
+  );
 
-  const displayedSchedule = useMemo(() => processedSchedule
-    .filter((info) => {
-      if (isEditingSections) return true;
-      const selectedSection = selectedCourse?.sections?.[info.Component];
-      return !selectedSection || selectedSection === info.Section;
-    })
-    .sort((a: any, b: any) => (a.Section || "").localeCompare(b.Section || "")), [processedSchedule, isEditingSections, selectedCourse]);
+  const displayedSchedule = useMemo(
+    () =>
+      processedSchedule
+        .filter((info) => {
+          if (isEditingSections) return true;
+          const selectedSection = selectedCourse?.sections?.[info.Component];
+          return !selectedSection || selectedSection === info.Section;
+        })
+        .sort((a: any, b: any) =>
+          (a.Section || "").localeCompare(b.Section || ""),
+        ),
+    [processedSchedule, isEditingSections, selectedCourse],
+  );
 
   function handleSectionEditToggle() {
     if (isEditingSections) {

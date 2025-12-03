@@ -181,13 +181,13 @@ export default function Profile() {
     try {
       const payload = newValue
         ? {
-          query: UPDATE_USER_TELEMETRY_AND_ANON,
-          variables: { id: session.user.id, consent: newValue, anon: false },
-        }
+            query: UPDATE_USER_TELEMETRY_AND_ANON,
+            variables: { id: session.user.id, consent: newValue, anon: false },
+          }
         : {
-          query: UPDATE_USER_TELEMETRY,
-          variables: { id: session.user.id, consent: newValue },
-        };
+            query: UPDATE_USER_TELEMETRY,
+            variables: { id: session.user.id, consent: newValue },
+          };
 
       const result = await sendQuery(payload);
 

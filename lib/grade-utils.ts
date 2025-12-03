@@ -7,6 +7,7 @@ export function calculateSchemeGradeDetails(
   courseItems: Item[],
   placeholderGrades: Record<string, number>,
   dropLowest: Record<string, number>,
+  bonusPercent?: number,
 ) {
   let totalWeightGraded = 0;
   let totalScore = 0;
@@ -88,14 +89,27 @@ export function calculateSchemeGradeDetails(
     }
   });
 
+  const baseCurrentGrade =
+    totalWeightGraded > 0 ? (totalScore / totalWeightGraded) * 100 : null;
+
+  const adjustedGrade =
+    baseCurrentGrade !== null &&
+    bonusPercent !== undefined &&
+    !isNaN(bonusPercent)
+      ? Math.min(100, baseCurrentGrade + bonusPercent)
+      : baseCurrentGrade;
+
   return {
-    currentGrade:
-      totalWeightGraded > 0 ? (totalScore / totalWeightGraded) * 100 : null,
+    // `currentGrade` is the adjusted grade (includes bonus when provided)
+    currentGrade: adjustedGrade,
+    // `baseCurrentGrade` is the grade computed from weights (no bonus)
+    baseCurrentGrade: baseCurrentGrade,
     currentScore: totalScore,
     totalWeightGraded: totalWeightGraded,
     totalSchemeWeight: totalSchemeWeight,
     totalWeightCompleted: totalWeightCompleted,
     droppedItemIds: droppedItemIds,
+    bonusPercent: bonusPercent,
   };
 }
 
@@ -104,12 +118,14 @@ export function calculateSchemeGrade(
   courseItems: Item[],
   placeholderGrades: Record<string, number>,
   dropLowest: Record<string, number>,
+  bonusPercent?: number,
 ): number | null {
   const details = calculateSchemeGradeDetails(
     scheme,
     courseItems,
     placeholderGrades,
     dropLowest,
+    bonusPercent,
   );
   return details.currentGrade;
 }
@@ -185,6 +201,7 @@ export function calculateRequiredForTarget(
   courseItems: Item[],
   placeholderGrades: Record<string, number>,
   dropLowest: Record<string, number>,
+  bonusPercent?: number,
 ) {
   if (targetGrade === "" || targetGrade === null || targetGrade === undefined)
     return null;
@@ -199,14 +216,19 @@ export function calculateRequiredForTarget(
     courseItems,
     placeholderGrades,
     dropLowest,
+    bonusPercent,
   );
 
+  // When computing required score for remaining items we must use the
+  // base grade (without bonus) because the bonus is applied on top of the
+  // final displayed grade and is not part of weighting calculations.
+  const baseCurrent = details.baseCurrentGrade;
   const remainingWeight = details.totalSchemeWeight - details.totalWeightGraded;
-  if (remainingWeight <= 0) return null;
+  if (remainingWeight <= 0 || baseCurrent === null) return null;
 
   const neededTotal =
     (target * details.totalSchemeWeight -
-      details.currentGrade! * details.totalWeightGraded) /
+      baseCurrent * details.totalWeightGraded) /
     remainingWeight;
 
   return neededTotal;
@@ -310,6 +332,7 @@ export function getBestCourseGrade(
       courseItems,
       placeholderGrades,
       dropLowest,
+      course.data?.bonus_percent,
     );
     if (grade !== null) {
       hasGrade = true;
@@ -349,6 +372,7 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
       courseItems,
       placeholderGrades,
       dropLowest,
+      course.data?.bonus_percent,
     );
   }
 
@@ -362,6 +386,7 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
       courseItems,
       placeholderGrades,
       dropLowest,
+      course.data?.bonus_percent,
     );
     if (details.currentGrade !== null) {
       if (details.currentGrade > bestGrade) {

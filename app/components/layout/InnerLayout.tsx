@@ -1,4 +1,7 @@
-import { faArrowTrendUp, faEyeLowVision } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowTrendUp,
+  faEyeLowVision,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -11,7 +14,11 @@ import { GET_USER_FULL } from "../../../lib/graphql/queries";
 import { useCourses } from "../../contexts/CourseContext";
 import Modal from "../ui/Modal";
 
-export default function InnerLayout({ children }: { children: React.ReactNode }) {
+export default function InnerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { data: session, status } = useSession();
   const { loading: coursesLoading } = useCourses();
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -41,7 +48,10 @@ export default function InnerLayout({ children }: { children: React.ReactNode })
         // consistent shape across environments. Check defensively for the
         // flag; if it's missing, fall back to showing the onboarding modal.
         const userData = json?.data?.users_by_pk?.data;
-        if (userData && (userData.onboarded === true || userData.onboarded === 1))
+        if (
+          userData &&
+          (userData.onboarded === true || userData.onboarded === 1)
+        )
           return;
         setShowOnboarding(true);
       })
