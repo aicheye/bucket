@@ -2,16 +2,18 @@ import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth/next";
-import { APP_NAME } from "../../lib/constants";
+import { APP_NAME } from "../../../lib/constants";
 import {
   GET_TELEMETRY_DAU,
   GET_TELEMETRY_FEATURE_USAGE_30D,
   GET_TELEMETRY_FEATURE_USAGE_DAILY,
   GET_TELEMETRY_MAU_30D,
-} from "../../lib/graphql/queries";
-import { executeHasuraAdminQuery } from "../../lib/hasura";
-import authOptions from "../../lib/nextauth";
+} from "../../../lib/graphql/queries";
+import { executeHasuraAdminQuery } from "../../../lib/hasura";
+import authOptions from "../../../lib/nextauth";
+import Table from "../../components/ui/Table";
 import { DauChart, FeatureDailyMultiLine } from "./telemetry-charts";
+import { forbidden, unauthorized } from "next/navigation";
 
 interface TelemetryDau {
   dau: number;
@@ -34,30 +36,13 @@ interface TelemetryFeatureUsageDaily {
 export default async function TelemetryPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session)
-    return (
-      <div className="flex h-full flex-col items-center justify-center text-center">
-        <h2 className="text-2xl font-bold text-base-content/70">
-          Not authenticated
-        </h2>
-        <p className="text-base-content/60">
-          Please log in to view telemetry data.
-        </p>
-      </div>
-    );
+  if (!session) {
+    unauthorized();
+  }
 
   const adminId = process.env.TELEMETRY_ADMIN_ID;
   if (!adminId || String(session.user?.id) !== String(adminId)) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center text-center">
-        <h2 className="text-2xl font-bold text-base-content/70">
-          Not authorized
-        </h2>
-        <p className="text-base-content/60">
-          You do not have permission to view telemetry data.
-        </p>
-      </div>
-    );
+    forbidden();
   }
 
   const [dauRes, feat30Res, featDailyRes, mauRes] = await Promise.all([
@@ -158,12 +143,10 @@ export default async function TelemetryPage() {
         </div>
 
         {/* Table */}
-        <div className="card bg-base-100 shadow-sm overflow-hidden">
-          <div className="card-body p-0">
-            <div className="p-6 bg-base-200">
-              <h2 className="card-title">Most Used Features (30 Days)</h2>
-            </div>
-            <div className="overflow-x-auto p-6">
+        <Table className="card bg-base-100 shadow-sm">
+          <div className="card-body flex flex-col gap-4">
+            <h2 className="card-title">Most Used Features (30 Days)</h2>
+            <div className="overflow-x-auto">
               <div className="card overflow-x-auto border border-base-300 shadow-none">
                 <table className="table table-zebra w-full">
                   <thead>
@@ -190,7 +173,7 @@ export default async function TelemetryPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Table>
       </main>
     </div>
   );

@@ -5,7 +5,7 @@ import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { unauthorized, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../lib/constants";
 import { getCourseTypes } from "../../lib/course-utils";
@@ -286,16 +286,7 @@ export default function CoursesPage() {
   }
 
   if (status === "unauthenticated") {
-    return (
-      <div className="flex h-full flex-col items-center justify-center text-center">
-        <h2 className="text-2xl font-bold text-base-content/70">
-          Not authenticated
-        </h2>
-        <p className="text-base-content/60">
-          Please log in to view your dashboard.
-        </p>
-      </div>
-    );
+    unauthorized();
   }
 
   if (courses.length > 0 && status === "authenticated" && currentTerm) {
