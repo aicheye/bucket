@@ -658,11 +658,25 @@ export default function GradesView() {
                 </div>
               </div>
               <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
-                <GoalInput
-                  handleSaveTargetGrade={handleSaveTargetGrade}
-                  targetGrade={targetGrade}
-                  setTargetGrade={setTargetGrade}
-                />
+                {(() => {
+                  const isCompleted = usedDetails
+                    ? (usedDetails.totalWeightCompleted !== undefined
+                      ? usedDetails.totalWeightCompleted >= usedDetails.totalSchemeWeight
+                      : false)
+                    : false;
+                  const hasPending = courseItems.some(
+                    (it) => it.data.grade === "" && !it.data.isPlaceholder,
+                  );
+                  // Hide goal input for completed courses (no pending grades and completion)
+                  if (isCompleted && !hasPending) return null;
+                  return (
+                    <GoalInput
+                      handleSaveTargetGrade={handleSaveTargetGrade}
+                      targetGrade={targetGrade}
+                      setTargetGrade={setTargetGrade}
+                    />
+                  );
+                })()}
               </div>
             </div>
 

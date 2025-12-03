@@ -31,7 +31,7 @@ export default function ReqAvgBadge({
       </div>
       {showTooltip && (
         <div className="z-[3] absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden peer-hover:block z-50 w-48 p-3 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/5">
-          <div className="font-bold mb-2 border-b border-base-content/10 pb-1">
+          <div className="text-left font-bold mb-2 border-b border-base-content/10 pb-1">
             Legend
           </div>
           <div className="flex flex-col gap-2">

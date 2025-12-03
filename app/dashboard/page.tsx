@@ -390,15 +390,45 @@ export default function CoursesPage() {
           ? (sumTotalWeightCompleted / sumTotalSchemeWeight) * 100
           : 0;
 
-      // Calculate required average
+      // Calculate required average across remaining work to meet the term goal.
+      // We treat the provided `termGoal` as the displayed goal (i.e. includes
+      // any per-course bonus). To compute the base target that remaining work
+      // must achieve we subtract each course's bonus and weight the required
+      // contribution by course credits and the fraction of remaining weight.
       let requiredAverage: number | null = null;
-      if (termGoal && sumRemainingWeight > 0) {
+      if (termGoal) {
         const target = parseFloat(termGoal);
         if (!isNaN(target)) {
-          const numCourses = numCoursesWithDetails;
-          if (numCourses > 0) {
-            const numerator = target * numCourses - sumCurrentScore;
-            requiredAverage = (numerator / sumRemainingWeight) * 100;
+          // Build aggregates needed for the formula:
+          // p * sum( (R_i / W_i) * credits_i ) = target*totalCredits - sum( (S_i / W_i *100 + b_i) * credits_i )
+          let totalCredits = 0;
+          let lhsFactor = 0; // sum of (R_i / W_i) * credits_i
+          let rhsCurrent = 0; // sum of (S_i / W_i *100 + b_i) * credits_i
+
+          currentCourses.forEach((c) => {
+            const details = courseGrades.get(c.id);
+            if (!details) return;
+            const credits = c.credits ?? 0.5;
+            // Only consider courses with a valid scheme weight
+            const W = details.totalSchemeWeight;
+            const S = details.currentScore;
+            const R = W - details.totalWeightGraded;
+            const b = Number(c.data?.bonus_percent) || 0;
+            if (W > 0 && R > 0) {
+              lhsFactor += (R / W) * credits;
+            }
+            // S/W*100 is the base current percent contribution for the course
+            const baseCurrentPercent = W > 0 ? (S / W) * 100 : 0;
+            rhsCurrent += (baseCurrentPercent + (b || 0)) * credits;
+            totalCredits += credits;
+          });
+
+          if (lhsFactor > 0 && totalCredits > 0) {
+            const numerator = target * totalCredits - rhsCurrent;
+            // `p` is the percent (0-100) required on remaining items across
+            // courses (applied uniformly). This aligns with per-course
+            // `calculateRequired` which expects a percent for remaining items.
+            requiredAverage = (numerator / lhsFactor);
           }
         }
       }

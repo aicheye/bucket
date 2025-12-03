@@ -16,6 +16,7 @@ interface SchemeSelectorProps {
     currentScore: number;
     totalSchemeWeight: number;
     totalWeightGraded: number;
+    totalWeightCompleted?: number;
   };
   calculateRequired: (scheme: any[]) => number | null;
   getCourseTypes: () => string[];
@@ -56,6 +57,11 @@ export default function SchemeSelector({
             (details.totalSchemeWeight - details.totalWeightGraded);
           const required = calculateRequired(scheme);
 
+          const isCompleted =
+            details.totalSchemeWeight !== undefined &&
+            details.totalWeightCompleted !== undefined &&
+            details.totalWeightCompleted >= details.totalSchemeWeight;
+
           return (
             <div key={originalIndex} className="relative group w-full">
               <button
@@ -93,7 +99,7 @@ export default function SchemeSelector({
                     )}
                   </div>
                 </div>
-                {required === null ? (
+                {!isCompleted && (required === null ? (
                   <div className="flex items-end h-full self-end">
                     <RangeBadge rangeMin={min} rangeMax={max} />
                   </div>
@@ -105,7 +111,7 @@ export default function SchemeSelector({
                     />
                     <RangeBadge rangeMin={min} rangeMax={max} />
                   </div>
-                )}
+                ))}
               </button>
 
               <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[1] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/5">

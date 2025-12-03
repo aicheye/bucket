@@ -220,14 +220,21 @@ export function calculateRequiredForTarget(
   );
 
   // When computing required score for remaining items we must use the
-  // base grade (without bonus) because the bonus is applied on top of the
-  // final displayed grade and is not part of weighting calculations.
+  // base grade (without bonus). However, the target provided is the
+  // displayed target (includes any per-course bonus applied on top),
+  // so subtract the bonus for this course from the target to compute
+  // the "hidden" base-target that the remaining items must achieve.
   const baseCurrent = details.baseCurrentGrade;
   const remainingWeight = details.totalSchemeWeight - details.totalWeightGraded;
   if (remainingWeight <= 0 || baseCurrent === null) return null;
 
+  const effectiveTarget =
+    typeof bonusPercent === "number" && !isNaN(bonusPercent)
+      ? target - bonusPercent
+      : target;
+
   const neededTotal =
-    (target * details.totalSchemeWeight -
+    (effectiveTarget * details.totalSchemeWeight -
       baseCurrent * details.totalWeightGraded) /
     remainingWeight;
 
