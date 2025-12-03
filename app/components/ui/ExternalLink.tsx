@@ -8,19 +8,27 @@ interface ExternalLinkProps {
   href: string;
   children: ReactNode;
   className?: string;
+  decorations?: string;
+  title?: string;
+  "aria-label"?: string;
 }
 
 export default function ExternalLink({
   href,
   children,
   className = "",
+  decorations = "link link-primary",
+  title,
+  "aria-label": ariaLabel,
 }: ExternalLinkProps) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`link link-primary ${className}`}
+      className={`${decorations} ${className}`}
+      title={title}
+      aria-label={ariaLabel}
     >
       {children}
     </a>

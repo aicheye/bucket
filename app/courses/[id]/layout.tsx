@@ -4,9 +4,10 @@ import { faExternalLinkAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../../lib/constants";
 import { sendTelemetry } from "../../../lib/telemetry";
+import ExternalLink from "../../components/ui/ExternalLink";
 import Line from "../../components/ui/Line";
 import Modal from "../../components/ui/Modal";
 import { useCourses } from "../../contexts/CourseContext";
@@ -30,12 +31,15 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState(0.5);
   const { showLoading, hideLoading } = useLoading();
 
-  let selectedCourse = courses.find((c) => c.id === id);
-  // Fallback to optimistic course (set before navigation) so UI can render
-  // immediately while real data finishes loading.
-  if (!selectedCourse && optimisticCourse && optimisticCourse.id === id) {
-    selectedCourse = optimisticCourse;
-  }
+  const selectedCourse = useMemo(() => {
+    let course = courses.find((c) => c.id === id);
+    // Fallback to optimistic course (set before navigation) so UI can render
+    // immediately while real data finishes loading.
+    if (!course && optimisticCourse && optimisticCourse.id === id) {
+      course = optimisticCourse;
+    }
+    return course;
+  }, [courses, id, optimisticCourse]);
 
   const isOptimisticFallback =
     !!optimisticCourse &&
@@ -196,30 +200,30 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
           {selectedCourse.data.outline_url && (
             <>
               <Line direction="ver" className="h-10 hidden md:block" />
-              <a
+
+              <ExternalLink
                 href={selectedCourse.data.outline_url}
-                target="_blank"
-                rel="noopener noreferrer"
+                decorations="none"
                 className="hidden md:inline-flex btn btn-soft btn-info btn-sm btn-circle shrink-0"
                 title="View Original Outline"
+                aria-label="View Original Outline"
               >
-                <FontAwesomeIcon icon={faExternalLinkAlt} className="w-4 h-4" />
-              </a>
+                <FontAwesomeIcon icon={faExternalLinkAlt} />
+              </ExternalLink>
             </>
           )}
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           {selectedCourse.data.outline_url && (
-            <a
+            <ExternalLink
               href={selectedCourse.data.outline_url}
-              target="_blank"
-              rel="noopener noreferrer"
+              decorations="none"
               className="md:hidden btn btn-soft btn-info btn-sm flex-1"
               title="View original outline"
               aria-label="View original outline"
             >
               <FontAwesomeIcon icon={faExternalLinkAlt} /> Open Outline
-            </a>
+            </ExternalLink>
           )}
           <button
             className="btn btn-error btn-soft btn-sm flex-1 md:flex-none"

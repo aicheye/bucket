@@ -4,6 +4,7 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faEnvelope, faGlobe } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
+import ExternalLink from "../ui/ExternalLink";
 
 export default function Footer() {
   return (
@@ -14,11 +15,10 @@ export default function Footer() {
       <div className="mx-auto p-4 flex flex-col md:flex-row items-center justify-between gap-2">
         {/* Left: action links */}
         <div className="flex flex-wrap items-center gap-2">
-          <a
+          <ExternalLink
             href="https://github.com/aicheye/bucket"
-            target="_blank"
-            rel="noopener noreferrer"
             className="btn btn-ghost btn-sm gap-2"
+            decorations="text-base-content/70"
             aria-label="GitHub repository"
           >
             <span className="text-lg">
@@ -29,11 +29,12 @@ export default function Footer() {
               />
             </span>
             <span className="hidden lg:inline text-sm">GitHub</span>
-          </a>
+          </ExternalLink>
 
-          <a
+          <ExternalLink
             href="mailto:sean@seanyang.me"
             className="btn btn-ghost btn-sm gap-2"
+            decorations="text-base-content/70"
             aria-label="Email"
           >
             <span className="text-lg">
@@ -44,13 +45,12 @@ export default function Footer() {
               />
             </span>
             <span className="hidden lg:inline text-sm">Email</span>
-          </a>
+          </ExternalLink>
 
-          <a
+          <ExternalLink
             href="https://seanyang.me"
-            target="_blank"
-            rel="noopener noreferrer"
             className="btn btn-ghost btn-sm gap-2"
+            decorations="text-base-content/70"
             aria-label="Website"
           >
             <span className="text-lg">
@@ -61,7 +61,7 @@ export default function Footer() {
               />
             </span>
             <span className="hidden lg:inline text-sm">Website</span>
-          </a>
+          </ExternalLink>
         </div>
 
         {/* Right: legal / copy */}

@@ -9,8 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { getCourseGradeDetails } from "../../../lib/grade-utils";
+import { useMemo, useState } from "react";
 import { sendTelemetry } from "../../../lib/telemetry";
 import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
@@ -25,7 +24,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
-  const { courses, addCourse, loading, items } = useCourses();
+  const { courses, addCourse, loading, items, courseGrades } = useCourses();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -37,7 +36,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   const { showLoading, hideLoading } = useLoading();
 
   function toggleFolder(folder: string) {
-    setExpandedFolders((prev) => ({ ...prev, [folder]: !prev[folder] }));
+    setExpandedFolders((prev) => {
+      const isOpen = prev[folder] ?? true;
+      return { ...prev, [folder]: !isOpen };
+    });
   }
 
   function buttonClick() {
@@ -120,47 +122,57 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
     }
   }
 
-  // Group courses by folder
-  const groupedCourses: Record<string, typeof courses> = {};
-  const uncategorizedCourses: typeof courses = [];
+  // Memoize course grouping and sorting
+  const { groupedCourses, uncategorizedCourses, sortedFolders } = useMemo(() => {
+    const grouped: Record<string, typeof courses> = {};
+    const uncategorized: typeof courses = [];
 
-  courses.forEach((course) => {
-    const folder = course.term;
-    if (folder) {
-      if (!groupedCourses[folder]) groupedCourses[folder] = [];
-      groupedCourses[folder].push(course);
-    } else {
-      uncategorizedCourses.push(course);
-    }
-  });
+    courses.forEach((course) => {
+      const folder = course.term;
+      if (folder) {
+        if (!grouped[folder]) grouped[folder] = [];
+        grouped[folder].push(course);
+      } else {
+        uncategorized.push(course);
+      }
+    });
 
-  const seasonOrder: Record<string, number> = {
-    Winter: 1,
-    Spring: 2,
-    Summer: 3,
-    Fall: 4,
-  };
+    const seasonOrder: Record<string, number> = {
+      Winter: 1,
+      Spring: 2,
+      Summer: 3,
+      Fall: 4,
+    };
 
-  const sortedFolders = Object.keys(groupedCourses).sort((a, b) => {
-    const partsA = a.split(" ");
-    const partsB = b.split(" ");
+    const sorted = Object.keys(grouped).sort((a, b) => {
+      const partsA = a.split(" ");
+      const partsB = b.split(" ");
 
-    if (partsA.length === 2 && partsB.length === 2) {
-      const [seasonA, yearA] = partsA;
-      const [seasonB, yearB] = partsB;
+      if (partsA.length === 2 && partsB.length === 2) {
+        const [seasonA, yearA] = partsA;
+        const [seasonB, yearB] = partsB;
 
-      const yA = parseInt(yearA);
-      const yB = parseInt(yearB);
+        const yA = parseInt(yearA);
+        const yB = parseInt(yearB);
 
-      if (yA !== yB) return yB - yA; // Descending year
+        if (yA !== yB) return yB - yA; // Descending year
 
-      const sA = seasonOrder[seasonA] || 99;
-      const sB = seasonOrder[seasonB] || 99;
+        const sA = seasonOrder[seasonA] || 99;
+        const sB = seasonOrder[seasonB] || 99;
 
-      return sB - sA; // Descending season
-    }
-    return b.localeCompare(a); // Fallback to string compare descending
-  });
+        return sB - sA; // Descending season
+      }
+      return b.localeCompare(a); // Fallback to string compare descending
+    });
+
+    return {
+      groupedCourses: grouped,
+      uncategorizedCourses: uncategorized,
+      sortedFolders: sorted,
+    };
+  }, [courses]);
+
+
 
   return (
     <div
@@ -188,6 +200,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
               href="/dashboard"
               onClick={closeDrawer}
               className={`btn ${pathname === "/dashboard" ? "btn-primary" : "btn-base btn-soft"} btn-sm shadow-sm justify-start h-auto py-2 font-bold text-lg`}
+              title="View term dashboard"
             >
               <FontAwesomeIcon
                 icon={faGauge}
@@ -213,7 +226,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
               <button
                 onClick={buttonClick}
                 className="btn btn-sm btn-circle btn-primary"
-                title="Add Course"
+                title="Add course"
                 aria-label="Add course"
               >
                 <FontAwesomeIcon
@@ -237,7 +250,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                   let totalCurrentCredits = 0;
 
                   folderCourses.forEach((c) => {
-                    const details = getCourseGradeDetails(c, items);
+                    const details = courseGrades.get(c.id);
                     if (details && details.currentGrade !== null) {
                       const credits = c.credits ?? 0.5;
                       totalCurrent += details.currentGrade * credits;
@@ -271,40 +284,39 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                       </div>
                       <div className="collapse-content p-0 bg-base-300">
                         <div className="card bg-base-100 flex flex-col gap-2 p-2 py-3">
-                          {groupedCourses[folder].map((course) => (
-                            <Link
-                              key={course.id}
-                              href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : ""}`}
-                              onClick={closeDrawer}
-                              className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
-                                pathname?.startsWith(`/courses/${course.id}/`)
+                          {groupedCourses[folder].map((course) => {
+                            const details = courseGrades.get(course.id);
+                            return (
+                              <Link
+                                key={course.id}
+                                href={`/courses/${course.id}${gradesScreen ? "/grades" : infoScreen ? "/info" : "/grades"}`}
+                                onClick={closeDrawer}
+                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}/`)
                                   ? "btn-primary"
                                   : "btn-base"
-                              }`}
-                            >
-                              <div className="text-left w-full flex justify-between items-center gap-2">
-                                <div className="min-w-fit font-bold text-[14px]">
-                                  {course.code}
-                                </div>
-                                <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
-                                  <div>({course.credits})</div>
-                                  <div className="font-semibold">
-                                    {getCourseGradeDetails(course, items) ? (
-                                      <span>
-                                        {getCourseGradeDetails(
-                                          course,
-                                          items,
-                                        ).currentGrade.toFixed(1)}
-                                        %
-                                      </span>
-                                    ) : (
-                                      ""
-                                    )}
+                                  }`}
+                                title="View course"
+                              >
+                                <div className="text-left w-full flex justify-between items-center gap-2">
+                                  <div className="min-w-fit font-bold text-[14px]">
+                                    {course.code}
+                                  </div>
+                                  <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
+                                    <div>({course.credits})</div>
+                                    <div className="font-semibold">
+                                      {details ? (
+                                        <span>
+                                          {details.currentGrade.toFixed(1)}%
+                                        </span>
+                                      ) : (
+                                        ""
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </Link>
-                          ))}
+                              </Link>
+                            );
+                          })}
                         </div>
                       </div>
                       <div className="bg-base-300 p-2 pr-4 text-xs text-base-content/70 text-right w-full font-mono flex flex-col gap-1">
@@ -327,11 +339,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                     key={course.id}
                     href={`/courses/${course.id}/grades`}
                     onClick={closeDrawer}
-                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
-                      pathname?.startsWith(`/courses/${course.id}/`)
-                        ? "btn-primary bg-primary"
-                        : ""
-                    }`}
+                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}/`)
+                      ? "btn-primary bg-primary"
+                      : ""
+                      }`}
                   >
                     <div className="text-left w-full text-primary-content">
                       <div className="font-bold">{course.code}</div>

@@ -2,19 +2,19 @@ import { faBook, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { getCourseGradeDetails } from "../../../../lib/grade-utils";
-import type { Course, Item } from "../../../contexts/CourseContext";
+import type { Course } from "../../../contexts/CourseContext";
 import GradeBadge from "../GradeBadge";
 
 interface CoursesCardProps {
   courses: Course[];
-  items: Item[];
+  courseGrades: Map<string, ReturnType<typeof getCourseGradeDetails>>;
   onNavigateToCourse: (courseId: string, course: Course) => void;
   onAddItem: (courseId: string) => void;
 }
 
 export default function CoursesCard({
   courses,
-  items,
+  courseGrades,
   onNavigateToCourse,
   onAddItem,
 }: CoursesCardProps) {
@@ -33,7 +33,7 @@ export default function CoursesCard({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {courses.map((course) => {
-            const details = getCourseGradeDetails(course, items);
+            const details = courseGrades.get(course.id);
             const currentGrade = details?.currentGrade;
             const min = details ? details.currentScore : 0;
             const max = details
@@ -115,3 +115,4 @@ export default function CoursesCard({
     </div>
   );
 }
+

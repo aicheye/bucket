@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { APP_NAME } from "../../lib/constants";
 import AddCourseHelp from "../components/features/AddCourseHelp";
 import ProsePageContainer from "../components/features/ProsePageContainer";
+import ExternalLink from "../components/ui/ExternalLink";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} | Help & FAQ`,
@@ -122,10 +123,13 @@ export default function HelpPage() {
       <section id="contact" className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Contact / Feedback</h2>
         <p>
-          Report bugs or request features by emailing
-          <a href="mailto:sean@seanyang.me" className="underline ml-1">
+          Report bugs or request features by emailing{" "}
+          <ExternalLink
+            href="mailto:sean@seanyang.me"
+            decorations="hover:underline no-underline link link-primary"
+          >
             sean@seanyang.me
-          </a>
+          </ExternalLink>
           .
         </p>
       </section>

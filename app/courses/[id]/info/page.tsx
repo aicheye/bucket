@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { sendTelemetry } from "../../../../lib/telemetry";
 import MarkingSchemesCard from "../../../components/features/info/MarkingSchemesCard";
 import ScheduleCard from "../../../components/features/info/ScheduleCard";
@@ -75,17 +75,17 @@ export default function CourseDetailInfoPage() {
 
   if (!selectedCourse) return null;
 
-  const processedSchedule = selectedCourse
+  const processedSchedule = useMemo(() => selectedCourse
     ? processSchedule(selectedCourse.data["schedule-info"] || [])
-    : [];
+    : [], [selectedCourse]);
 
-  const displayedSchedule = processedSchedule
+  const displayedSchedule = useMemo(() => processedSchedule
     .filter((info) => {
       if (isEditingSections) return true;
       const selectedSection = selectedCourse?.sections?.[info.Component];
       return !selectedSection || selectedSection === info.Section;
     })
-    .sort((a: any, b: any) => (a.Section || "").localeCompare(b.Section || ""));
+    .sort((a: any, b: any) => (a.Section || "").localeCompare(b.Section || "")), [processedSchedule, isEditingSections, selectedCourse]);
 
   function handleSectionEditToggle() {
     if (isEditingSections) {

@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
 import ProsePageContainer from "../../components/features/ProsePageContainer";
 import { APP_NAME } from "../../../lib/constants";
+import { ExecutableDefinitionsRule } from "graphql";
+import ExternalLink from "../../components/ui/ExternalLink";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} | Privacy Policy`,
@@ -63,9 +65,9 @@ export default function PrivacyPage() {
         <p>
           You have the right to access, modify, or delete your personal data at
           any time by contacting us at{" "}
-          <a href="mailto:sean@seanyang.me" className="link link-primary">
+          <ExternalLink href="mailto:sean@seanyang.me" decorations="link link-primary no-underline hover:underline">
             sean@seanyang.me
-          </a>
+          </ExternalLink>
           .
         </p>
         <p>

@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import AuthButton from "../../../components/ui/AuthButton";
 import { APP_NAME } from "../../../../lib/constants";
+import Link from "next/link";
 
 function AuthPage({ error }: { error?: string | string[] }) {
   const { status } = useSession();
@@ -35,30 +36,30 @@ function AuthPage({ error }: { error?: string | string[] }) {
             <p className="text-base-content text-md font-medium text-center">
               {APP_NAME} helps you organize your courses, track grades and
               assignments, and plan your term — all in one place. See the{" "}
-              <a target="_blank" href="/help" className="link link-primary">
+              <Link target="_blank" href="/help" className="link link-primary">
                 help page
-              </a>{" "}
+              </Link>{" "}
               for more information on how to use the service.
             </p>
             <p className="text-base-content/80 text-sm text-center">
               By signing up, you agree to our{" "}
-              <a
+              <Link
                 href="/legal/privacy"
                 className="link link-primary"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Privacy Policy
-              </a>{" "}
+              </Link>{" "}
               and{" "}
-              <a
+              <Link
                 href="/legal/terms"
                 className="link link-primary"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Terms of Service
-              </a>
+              </Link>
               . We encourage you to read them carefully. They aren&apos;t long!
             </p>
           </>

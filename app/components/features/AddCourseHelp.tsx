@@ -1,4 +1,5 @@
 import Image from "next/image";
+import ExternalLink from "../ui/ExternalLink";
 
 export default function AddCourseHelp() {
   return (
@@ -6,14 +7,11 @@ export default function AddCourseHelp() {
       <h2 className="text-2xl font-semibold">Adding a Course</h2>
       <p>
         Find your course outline from{" "}
-        <a
-          target="_blank"
+        <ExternalLink
           href="https://outline.uwaterloo.ca/viewer"
-          className="link link-primary"
-          rel="noopener noreferrer"
         >
           Outline.uwaterloo.ca
-        </a>
+        </ExternalLink>
         .
       </p>
       <p className="text-base-content/50">

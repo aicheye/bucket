@@ -8,8 +8,10 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
+import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendQuery } from "../../lib/graphql";
 import {
   DELETE_COURSE_AND_ITEMS,
@@ -59,6 +61,7 @@ export interface Item {
 interface CourseContextType {
   courses: Course[];
   items: Item[];
+  courseGrades: Map<string, ReturnType<typeof getCourseGradeDetails>>;
   fetchCourses: () => Promise<void>;
   optimisticCourse?: Course | null;
   setOptimisticCourse: (c: Course | null) => void;
@@ -101,6 +104,14 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [optimisticCourse, setOptimisticCourse] = useState<Course | null>(null);
+
+  const courseGrades = useMemo(() => {
+    const grades = new Map<string, ReturnType<typeof getCourseGradeDetails>>();
+    courses.forEach((c) => {
+      grades.set(c.id, getCourseGradeDetails(c, items));
+    });
+    return grades;
+  }, [courses, items]);
 
   async function fetchItems() {
     if (!session?.user?.id) return;
@@ -459,6 +470,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       value={{
         courses,
         items,
+        courseGrades,
         fetchCourses,
         addCourse,
         deleteCourse,

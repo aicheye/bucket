@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { APP_NAME } from "../../../lib/constants";
 import ProsePageContainer from "../../components/features/ProsePageContainer";
+import ExternalLink from "../../components/ui/ExternalLink";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} | Terms of Service`,
@@ -31,15 +32,12 @@ export default function TermsPage() {
         </p>
         <p>
           Users must follow the University of Waterloo&apos;s{" "}
-          <a
+          <ExternalLink
             href="https://uwaterloo.ca/secretariat/policies-procedures-guidelines/policies"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="link link-primary"
           >
             policies, procedures, and guidelines
-          </a>{" "}
-          while using our services.
+          </ExternalLink>
+          {" "}while using our services.
         </p>
         <p>
           Prohibited activities include, but are not limited to, hacking,

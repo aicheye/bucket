@@ -51,6 +51,8 @@ export default function Navbar({
               href="/"
               className="font-bold text-xl flex items-center gap-2 w-fit py-0 px-2"
               onClick={closeDrawer}
+              title="Go to homepage"
+              aria-label="Go to homepage"
             >
               <FontAwesomeIcon
                 icon={faFillDrip}

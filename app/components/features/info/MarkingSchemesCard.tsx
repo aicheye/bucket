@@ -53,7 +53,7 @@ export default function MarkingSchemesCard({
     <div className="card bg-base-100 shadow-md">
       <div className="card-body p-4 sm:p-8">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="card-title">Marking Schemes</h2>
+          <h2 className="card-title text-2xl">Marking Schemes</h2>
           <button
             className={
               "btn btn-sm btn-soft" + (isEditing ? " btn-success" : "")
@@ -160,7 +160,7 @@ export default function MarkingSchemesCard({
                               />
                               <span className="w-4">
                                 {!isNaN(Number(item.Weight)) &&
-                                item.Weight !== ""
+                                  item.Weight !== ""
                                   ? "%"
                                   : ""}
                               </span>

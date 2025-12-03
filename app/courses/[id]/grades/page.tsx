@@ -12,7 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getCourseTypes as getCourseTypesUtil } from "../../../../lib/course-utils";
 import {
   buildCategoryKeptCountMap,
@@ -57,52 +57,56 @@ export default function CourseGradesPage() {
   // sorting depends on component weights and kept counts which are derived
   // from the marking scheme. Ensure `data` exists and provide a default
   // `weight` so downstream code can safely parse it.
-  const baseCourseItems = items
-    .filter((item) => item.course_id === id)
-    .map((item) => {
-      const data = {
-        ...(item.data || {}),
-        // Ensure required fields exist with sensible defaults so TS treats this as an Item
-        name: item.data?.name ?? "",
-        type: item.data?.type ?? "Assignment",
-        grade: item.data?.grade ?? "",
-        max_grade: item.data?.max_grade ?? "",
-        due_date: item.data?.due_date ?? "",
-        isPlaceholder: item.data?.isPlaceholder ?? false,
-        weight:
-          item?.data &&
-          item.data.weight !== undefined &&
-          item.data.weight !== null
-            ? item.data.weight
-            : "0",
-      };
-      return {
-        ...item,
-        data,
-      } as Item;
-    });
+  const baseCourseItems = useMemo(() => {
+    return items
+      .filter((item) => item.course_id === id)
+      .map((item) => {
+        const data = {
+          ...(item.data || {}),
+          // Ensure required fields exist with sensible defaults so TS treats this as an Item
+          name: item.data?.name ?? "",
+          type: item.data?.type ?? "Assignment",
+          grade: item.data?.grade ?? "",
+          max_grade: item.data?.max_grade ?? "",
+          due_date: item.data?.due_date ?? "",
+          isPlaceholder: item.data?.isPlaceholder ?? false,
+          weight:
+            item?.data &&
+              item.data.weight !== undefined &&
+              item.data.weight !== null
+              ? item.data.weight
+              : "0",
+        };
+        return {
+          ...item,
+          data,
+        } as Item;
+      });
+  }, [items, id]);
 
   // We'll compute `courseItems` (the sorted list) after we build
   // `componentMap` and `categoryKeptCountMap` below to avoid accessing
   // those maps before initialization.
 
-  const placeholderItems = Object.entries(placeholderGrades).map(
-    ([category, grade]) =>
-      ({
-        id: `placeholder-${category}`,
-        course_id: id as string,
-        owner_id: "system",
-        data: {
-          name: `${category} Placeholder`,
-          type: category,
-          grade: grade.toString(),
-          max_grade: "100",
-          due_date: "",
-          isPlaceholder: true,
-        },
-        last_modified: new Date().toISOString(),
-      }) as Item,
-  );
+  const placeholderItems = useMemo(() => {
+    return Object.entries(placeholderGrades).map(
+      ([category, grade]) =>
+        ({
+          id: `placeholder-${category}`,
+          course_id: id as string,
+          owner_id: "system",
+          data: {
+            name: `${category} Placeholder`,
+            type: category,
+            grade: grade.toString(),
+            max_grade: "100",
+            due_date: "",
+            isPlaceholder: true,
+          },
+          last_modified: new Date().toISOString(),
+        }) as Item,
+    );
+  }, [placeholderGrades, id]);
 
   const [showGradingSettings, setShowGradingSettings] = useState(false);
   const [dropLowest, setDropLowest] = useState<Record<string, number>>({});
@@ -380,10 +384,10 @@ export default function CourseGradesPage() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-        )
-          .toISOString()
-          .split("T")[0]
+        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+      )
+        .toISOString()
+        .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -412,27 +416,38 @@ export default function CourseGradesPage() {
   );
 
   // Find best scheme index (used as default active) and its dropped items
-  let bestScheme: any[] | null = null;
-  let bestOriginalIndex: number | null = null;
-  if (selectedCourse?.data["marking-schemes"]?.length > 0) {
-    let bestGrade = -1;
+  const { bestScheme, bestOriginalIndex } = useMemo(() => {
+    let bestScheme: any[] | null = null;
+    let bestOriginalIndex: number | null = null;
+    if (selectedCourse?.data["marking-schemes"]?.length > 0) {
+      let bestGrade = -1;
 
-    selectedCourse.data["marking-schemes"].forEach(
-      (scheme: any[], idx: number) => {
-        const details = calculateSchemeGradeDetails(
-          scheme,
-          baseCourseItems,
-          placeholderGrades,
-          dropLowest,
-        );
-        if (details.currentGrade !== null && details.currentGrade > bestGrade) {
-          bestGrade = details.currentGrade;
-          bestScheme = scheme;
-          bestOriginalIndex = idx;
-        }
-      },
-    );
-  }
+      selectedCourse.data["marking-schemes"].forEach(
+        (scheme: any[], idx: number) => {
+          const details = calculateSchemeGradeDetails(
+            scheme,
+            baseCourseItems,
+            placeholderGrades,
+            dropLowest,
+          );
+          if (
+            details.currentGrade !== null &&
+            details.currentGrade > bestGrade
+          ) {
+            bestGrade = details.currentGrade;
+            bestScheme = scheme;
+            bestOriginalIndex = idx;
+          }
+        },
+      );
+    }
+    return { bestScheme, bestOriginalIndex };
+  }, [
+    selectedCourse?.data,
+    baseCourseItems,
+    placeholderGrades,
+    dropLowest,
+  ]);
 
   const preferredScheme = selectedCourse?.data?.["preferred-marking-scheme"];
 
@@ -464,38 +479,40 @@ export default function CourseGradesPage() {
   }, [bestOriginalIndex, selectedCourse?.id, preferredScheme]);
 
   // Use the active scheme (selected by user) if available, otherwise fallback to bestScheme
-  const usedScheme =
-    activeSchemeIndex !== null && selectedCourse?.data["marking-schemes"]
+  const usedScheme = useMemo(() => {
+    return activeSchemeIndex !== null && selectedCourse?.data["marking-schemes"]
       ? selectedCourse.data["marking-schemes"][activeSchemeIndex]
       : bestScheme;
+  }, [activeSchemeIndex, selectedCourse?.data, bestScheme]);
 
-  const usedDetails =
-    usedScheme && selectedCourse
+  const usedDetails = useMemo(() => {
+    return usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-          usedScheme,
-          baseCourseItems,
-          placeholderGrades,
-          dropLowest,
-        )
+        usedScheme,
+        baseCourseItems,
+        placeholderGrades,
+        dropLowest,
+      )
       : null;
+  }, [usedScheme, selectedCourse, baseCourseItems, placeholderGrades, dropLowest]);
 
   const usedDroppedItemIds = usedDetails?.droppedItemIds || [];
 
-  const componentMap = buildComponentMap(usedScheme);
-  const categoryKeptCountMap = buildCategoryKeptCountMap(
+  const componentMap = useMemo(() => buildComponentMap(usedScheme), [usedScheme]);
+  const categoryKeptCountMap = useMemo(() => buildCategoryKeptCountMap(
     usedScheme,
     baseCourseItems,
     dropLowest,
-  );
+  ), [usedScheme, baseCourseItems, dropLowest]);
 
-  const courseItems = sortCourseItems(
+  const courseItems = useMemo(() => sortCourseItems(
     baseCourseItems,
     componentMap,
     categoryKeptCountMap,
-  );
+  ), [baseCourseItems, componentMap, categoryKeptCountMap]);
 
-  const displayItems = [...placeholderItems, ...courseItems];
-  const hasDueDates = displayItems.some((item) => item.data.due_date);
+  const displayItems = useMemo(() => [...placeholderItems, ...courseItems], [placeholderItems, courseItems]);
+  const hasDueDates = useMemo(() => displayItems.some((item) => item.data.due_date), [displayItems]);
 
   async function handleSaveTargetGrade() {
     if (!selectedCourse) return;
@@ -515,20 +532,20 @@ export default function CourseGradesPage() {
     );
   }
 
-  const allTypes = getCourseTypes();
+  const allTypes = useMemo(() => getCourseTypes(), [selectedCourse]);
 
   if (!selectedCourse) return null;
 
   // Compute per-type aggregates for the "Item Types Averages" table
   const showRemaining = allTypes.length > 1;
 
-  const typeStats = computeTypeStats(
+  const typeStats = useMemo(() => computeTypeStats(
     usedScheme ? usedScheme.map((c: any) => c.Component) : allTypes,
     displayItems,
     componentMap,
     categoryKeptCountMap,
     usedDroppedItemIds,
-  );
+  ), [usedScheme, allTypes, displayItems, componentMap, categoryKeptCountMap, usedDroppedItemIds]);
 
   return (
     <>

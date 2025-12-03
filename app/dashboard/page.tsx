@@ -6,11 +6,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../lib/constants";
 import { getCourseTypes } from "../../lib/course-utils";
 import { formatDateParam, parseDateParam } from "../../lib/date-utils";
-import { getCourseGradeDetails, gradeToGPA } from "../../lib/grade-utils";
+import { gradeToGPA } from "../../lib/grade-utils";
 import { sendQuery } from "../../lib/graphql";
 import { UPDATE_USER_DATA } from "../../lib/graphql/mutations";
 import { GET_USER_FULL } from "../../lib/graphql/queries";
@@ -32,6 +32,7 @@ export default function CoursesPage() {
     courses,
     loading,
     items,
+    courseGrades,
     addItem,
     updateItem,
     deleteItem,
@@ -43,10 +44,28 @@ export default function CoursesPage() {
   useEffect(() => {
     const userId = session?.user?.id;
     if (status === "authenticated" && userId) {
+      // Try to load from local storage first
+      try {
+        const cached = localStorage.getItem(`userData-${userId}`);
+        if (cached) {
+          setUserData(JSON.parse(cached));
+        }
+      } catch {
+        // ignore
+      }
+
       sendQuery({ query: GET_USER_FULL, variables: { id: userId } }).then(
         (res) => {
           if (res.data?.users_by_pk?.data) {
             setUserData(res.data.users_by_pk.data);
+            try {
+              localStorage.setItem(
+                `userData-${userId}`,
+                JSON.stringify(res.data.users_by_pk.data),
+              );
+            } catch {
+              // ignore
+            }
           }
         },
       );
@@ -298,6 +317,12 @@ export default function CoursesPage() {
       if (!userId) return;
 
       try {
+        localStorage.setItem(`userData-${userId}`, JSON.stringify(newUserData));
+      } catch {
+        // ignore
+      }
+
+      try {
         await sendQuery({
           query: UPDATE_USER_DATA,
           variables: { id: userId, data: newUserData },
@@ -308,269 +333,301 @@ export default function CoursesPage() {
     };
 
     // 1. Term Average
-    let totalCurrent = 0;
-    let totalCurrentCredits = 0;
-    let totalGPA = 0;
-    let totalGPACredits = 0;
-    let totalMin = 0;
-    let totalMinCredits = 0;
-    let totalMax = 0;
-    let totalMaxCredits = 0;
+    const termStats = useMemo(() => {
+      let totalCurrent = 0;
+      let totalCurrentCredits = 0;
+      let totalGPA = 0;
+      let totalGPACredits = 0;
+      let totalMin = 0;
+      let totalMinCredits = 0;
+      let totalMax = 0;
+      let totalMaxCredits = 0;
 
-    // For required average calculation
-    let sumCurrentScore = 0;
-    let sumRemainingWeight = 0;
+      // For required average calculation
+      let sumCurrentScore = 0;
+      let sumRemainingWeight = 0;
 
-    let sumTotalWeightGraded = 0;
-    let sumTotalSchemeWeight = 0;
-    let sumTotalWeightCompleted = 0;
-    let numCoursesWithDetails = 0;
+      let sumTotalWeightGraded = 0;
+      let sumTotalSchemeWeight = 0;
+      let sumTotalWeightCompleted = 0;
+      let numCoursesWithDetails = 0;
 
-    currentCourses.forEach((c) => {
-      const details = getCourseGradeDetails(c, items);
-      if (details) {
-        numCoursesWithDetails++;
-        const credits = c.credits ?? 0.5;
-        if (details.currentGrade !== null) {
-          totalCurrent += details.currentGrade * credits;
-          totalCurrentCredits += credits;
+      currentCourses.forEach((c) => {
+        const details = courseGrades.get(c.id);
+        if (details) {
+          numCoursesWithDetails++;
+          const credits = c.credits ?? 0.5;
+          if (details.currentGrade !== null) {
+            totalCurrent += details.currentGrade * credits;
+            totalCurrentCredits += credits;
 
-          totalGPA += gradeToGPA(details.currentGrade) * credits;
-          totalGPACredits += credits;
-        }
+            totalGPA += gradeToGPA(details.currentGrade) * credits;
+            totalGPACredits += credits;
+          }
 
-        const min = details.currentScore;
-        const max =
-          details.currentScore +
-          (details.totalSchemeWeight - details.totalWeightGraded);
-        totalMin += min * credits;
-        totalMax += max * credits;
-        totalMinCredits += credits;
-        totalMaxCredits += credits;
+          const min = details.currentScore;
+          const max =
+            details.currentScore +
+            (details.totalSchemeWeight - details.totalWeightGraded);
+          totalMin += min * credits;
+          totalMax += max * credits;
+          totalMinCredits += credits;
+          totalMaxCredits += credits;
 
-        sumCurrentScore += details.currentScore;
-        sumRemainingWeight +=
-          details.totalSchemeWeight - details.totalWeightGraded;
-        sumTotalWeightGraded += details.totalWeightGraded * credits;
-        sumTotalSchemeWeight += details.totalSchemeWeight * credits;
+          sumCurrentScore += details.currentScore;
+          sumRemainingWeight +=
+            details.totalSchemeWeight - details.totalWeightGraded;
+          sumTotalWeightGraded += details.totalWeightGraded * credits;
+          sumTotalSchemeWeight += details.totalSchemeWeight * credits;
 
-        if (details.totalWeightCompleted !== undefined) {
-          sumTotalWeightCompleted += details.totalWeightCompleted * credits;
-        } else {
-          sumTotalWeightCompleted += details.totalWeightGraded * credits;
-        }
-      }
-    });
-
-    const termAverage =
-      totalCurrentCredits > 0 ? totalCurrent / totalCurrentCredits : null;
-    const termGPA = totalGPACredits > 0 ? totalGPA / totalGPACredits : null;
-    const termMin = totalMinCredits > 0 ? totalMin / totalMinCredits : null;
-    const termMax = totalMaxCredits > 0 ? totalMax / totalMaxCredits : null;
-
-    // Calculate Cumulative Average (CAV) and Cumulative GPA (CGPA)
-    let totalCAV = 0;
-    let totalCGPA = 0;
-    let totalCredits = 0;
-    // Credits earned: sum of credits for courses with >=50% (or estimated >=50%)
-    let creditsEarned = 0;
-
-    courses.forEach((c) => {
-      const details = getCourseGradeDetails(c, items);
-      if (details && details.currentGrade !== null) {
-        const credits = c.credits ?? 0.5;
-        totalCAV += details.currentGrade * credits;
-        totalCGPA += gradeToGPA(details.currentGrade) * credits;
-        totalCredits += credits;
-      }
-      // Determine credits-earned eligibility based on >=50% rule.
-      if (details) {
-        const credits = c.credits ?? 0.5;
-        const hasCurrentGrade = details.currentGrade !== null;
-        // estimated final percent based on current scored points over total scheme weight
-        const estimatedPercent =
-          details.totalSchemeWeight > 0
-            ? (details.currentScore / details.totalSchemeWeight) * 100
-            : null;
-
-        const meetsThreshold =
-          (hasCurrentGrade && (details.currentGrade ?? 0) >= 50) ||
-          (estimatedPercent !== null && estimatedPercent >= 50);
-
-        if (meetsThreshold) {
-          creditsEarned += credits;
-        }
-      }
-    });
-
-    const cav = totalCredits > 0 ? totalCAV / totalCredits : null;
-    const cgpa = totalCredits > 0 ? totalCGPA / totalCredits : null;
-
-    // Time progress calculation
-    let timeProgress = 0;
-    if (currentTerm) {
-      const [season, yearStr] = currentTerm.split(" ");
-      const year = parseInt(yearStr);
-      let startDate: Date, endDate: Date;
-
-      if (season === "Winter") {
-        startDate = new Date(year, 0, 1); // Jan 1
-        endDate = new Date(year, 3, 30); // Apr 30
-      } else if (season === "Spring") {
-        startDate = new Date(year, 4, 1); // May 1
-        endDate = new Date(year, 7, 31); // Aug 31
-      } else {
-        // Fall
-        startDate = new Date(year, 8, 1); // Sep 1
-        endDate = new Date(year, 11, 31); // Dec 31
-      }
-
-      const today = new Date();
-      const totalDays =
-        (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
-      const elapsedDays =
-        (today.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
-      let progress = (elapsedDays / totalDays) * 100;
-      if (progress < 0) progress = 0;
-      if (progress > 100) progress = 100;
-      timeProgress = progress;
-    }
-
-    const weightCompletedPercent =
-      sumTotalSchemeWeight > 0
-        ? (sumTotalWeightCompleted / sumTotalSchemeWeight) * 100
-        : 0;
-
-    // Calculate required average
-    let requiredAverage: number | null = null;
-    if (termGoal && sumRemainingWeight > 0) {
-      const target = parseFloat(termGoal);
-      if (!isNaN(target)) {
-        // Target total points across all courses = target * numCourses
-        // But wait, term average is average of percentages.
-        // So (Sum of Final Grades) / N = Target
-        // Sum of Final Grades = Target * N
-        // Final Grade_i = CurrentScore_i + (RequiredAvg * RemainingWeight_i)
-        // Sum(CurrentScore_i) + RequiredAvg * Sum(RemainingWeight_i) = Target * N
-        // RequiredAvg = (Target * N - Sum(CurrentScore_i)) / Sum(RemainingWeight_i)
-
-        // We use numCoursesWithDetails as N because that's the number of courses we have details for
-        const numCourses = numCoursesWithDetails;
-        if (numCourses > 0) {
-          const numerator = target * numCourses - sumCurrentScore;
-          requiredAverage = (numerator / sumRemainingWeight) * 100;
-        }
-      }
-    }
-
-    // 2. Today's Classes (uses `selectedDate` so user can navigate days)
-    const viewDate = selectedDate;
-    const viewDay = viewDate.toLocaleDateString("en-US", { weekday: "short" });
-
-    const todaysClasses: Array<{
-      courseCode: string;
-      courseId: string;
-      Component: string;
-      Section: string;
-      "Start Time": { hours: number; minutes: number } | string;
-      "End Time": { hours: number; minutes: number } | string;
-      Location: string;
-    }> = [];
-
-    currentCourses.forEach((course) => {
-      if (!course.sections) return;
-
-      const schedule = course.data["schedule-info"] || [];
-      schedule.forEach((item: any) => {
-        const selectedSection = course.sections?.[item.Component];
-        if (selectedSection && selectedSection !== item.Section) return;
-
-        let isToday = false;
-        if (item["Meet Dates"] && Array.isArray(item["Meet Dates"])) {
-          isToday = item["Meet Dates"].some((d: string) => {
-            const date = new Date(d);
-            return (
-              date.getUTCDate() === viewDate.getDate() &&
-              date.getUTCMonth() === viewDate.getMonth() &&
-              date.getUTCFullYear() === viewDate.getFullYear()
-            );
-          });
-        } else if (
-          item["Days of Week"] &&
-          Array.isArray(item["Days of Week"])
-        ) {
-          isToday = item["Days of Week"].some((d: string) =>
-            d.startsWith(viewDay),
-          );
-        }
-
-        if (isToday) {
-          todaysClasses.push({
-            ...item,
-            courseCode: course.code,
-            courseId: course.id,
-          });
+          if (details.totalWeightCompleted !== undefined) {
+            sumTotalWeightCompleted += details.totalWeightCompleted * credits;
+          } else {
+            sumTotalWeightCompleted += details.totalWeightGraded * credits;
+          }
         }
       });
-    });
 
-    todaysClasses.sort((a, b) => {
-      const timeA = a["Start Time"];
-      const timeB = b["Start Time"];
+      const termAverage =
+        totalCurrentCredits > 0 ? totalCurrent / totalCurrentCredits : null;
+      const termGPA = totalGPACredits > 0 ? totalGPA / totalGPACredits : null;
+      const termMin = totalMinCredits > 0 ? totalMin / totalMinCredits : null;
+      const termMax = totalMaxCredits > 0 ? totalMax / totalMaxCredits : null;
 
-      const hA =
-        typeof timeA === "object" ? timeA.hours : parseInt(timeA.split(":")[0]);
-      const mA =
-        typeof timeA === "object"
-          ? timeA.minutes
-          : parseInt(timeA.split(":")[1]);
-      const hB =
-        typeof timeB === "object" ? timeB.hours : parseInt(timeB.split(":")[0]);
-      const mB =
-        typeof timeB === "object"
-          ? timeB.minutes
-          : parseInt(timeB.split(":")[1]);
+      const weightCompletedPercent =
+        sumTotalSchemeWeight > 0
+          ? (sumTotalWeightCompleted / sumTotalSchemeWeight) * 100
+          : 0;
 
-      if (hA !== hB) return hA - hB;
-      return mA - mB;
-    });
-
-    // ensure we have a real 'today' for deliverables and other global calculations
-    const today = new Date();
-
-    // 3. Upcoming Deliverables
-    const upcomingDeliverables: (Item & { courseCode?: string })[] = [];
-    const todayStart = new Date(today);
-    todayStart.setHours(0, 0, 0, 0);
-    const nextWeek = new Date(todayStart);
-    nextWeek.setDate(todayStart.getDate() + 7);
-
-    items.forEach((item) => {
-      if (currentCourses.some((c) => c.id === item.course_id)) {
-        if (item.data.due_date) {
-          const dueDateUTC = new Date(item.data.due_date);
-          const effectiveDueDate = new Date(
-            dueDateUTC.getUTCFullYear(),
-            dueDateUTC.getUTCMonth(),
-            dueDateUTC.getUTCDate(),
-          );
-
-          if (effectiveDueDate >= todayStart && effectiveDueDate <= nextWeek) {
-            upcomingDeliverables.push({
-              ...item,
-              courseCode: currentCourses.find((c) => c.id === item.course_id)
-                ?.code,
-            });
+      // Calculate required average
+      let requiredAverage: number | null = null;
+      if (termGoal && sumRemainingWeight > 0) {
+        const target = parseFloat(termGoal);
+        if (!isNaN(target)) {
+          const numCourses = numCoursesWithDetails;
+          if (numCourses > 0) {
+            const numerator = target * numCourses - sumCurrentScore;
+            requiredAverage = (numerator / sumRemainingWeight) * 100;
           }
         }
       }
-    });
 
-    upcomingDeliverables.sort(
-      (a, b) =>
-        new Date(a.data.due_date).getTime() -
-        new Date(b.data.due_date).getTime(),
-    );
+      return {
+        termAverage,
+        termGPA,
+        termMin,
+        termMax,
+        weightCompletedPercent,
+        requiredAverage,
+      };
+    }, [currentCourses, courseGrades, termGoal]);
+
+    const {
+      termAverage,
+      termGPA,
+      termMin,
+      termMax,
+      weightCompletedPercent,
+      requiredAverage,
+    } = termStats;
+
+    // Calculate Cumulative Average (CAV) and Cumulative GPA (CGPA)
+    const cumulativeStats = useMemo(() => {
+      let totalCAV = 0;
+      let totalCGPA = 0;
+      let totalCredits = 0;
+      // Credits earned: sum of credits for courses with >=50% (or estimated >=50%)
+      let creditsEarned = 0;
+
+      courses.forEach((c) => {
+        const details = courseGrades.get(c.id);
+        if (details && details.currentGrade !== null) {
+          const credits = c.credits ?? 0.5;
+          totalCAV += details.currentGrade * credits;
+          totalCGPA += gradeToGPA(details.currentGrade) * credits;
+          totalCredits += credits;
+        }
+        // Determine credits-earned eligibility based on >=50% rule.
+        if (details) {
+          const credits = c.credits ?? 0.5;
+          const hasCurrentGrade = details.currentGrade !== null;
+          // estimated final percent based on current scored points over total scheme weight
+          const estimatedPercent =
+            details.totalSchemeWeight > 0
+              ? (details.currentScore / details.totalSchemeWeight) * 100
+              : null;
+
+          const meetsThreshold =
+            (hasCurrentGrade && (details.currentGrade ?? 0) >= 50) ||
+            (estimatedPercent !== null && estimatedPercent >= 50);
+
+          if (meetsThreshold) {
+            creditsEarned += credits;
+          }
+        }
+      });
+
+      const cav = totalCredits > 0 ? totalCAV / totalCredits : null;
+      const cgpa = totalCredits > 0 ? totalCGPA / totalCredits : null;
+
+      return { cav, cgpa, creditsEarned };
+    }, [courses, courseGrades]);
+
+    const { cav, cgpa, creditsEarned } = cumulativeStats;
+
+    // Time progress calculation
+    const timeProgress = useMemo(() => {
+      let progress = 0;
+      if (currentTerm) {
+        const [season, yearStr] = currentTerm.split(" ");
+        const year = parseInt(yearStr);
+        let startDate: Date, endDate: Date;
+
+        if (season === "Winter") {
+          startDate = new Date(year, 0, 1); // Jan 1
+          endDate = new Date(year, 3, 30); // Apr 30
+        } else if (season === "Spring") {
+          startDate = new Date(year, 4, 1); // May 1
+          endDate = new Date(year, 7, 31); // Aug 31
+        } else {
+          // Fall
+          startDate = new Date(year, 8, 1); // Sep 1
+          endDate = new Date(year, 11, 31); // Dec 31
+        }
+
+        const today = new Date();
+        const totalDays =
+          (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+        const elapsedDays =
+          (today.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+        progress = (elapsedDays / totalDays) * 100;
+        if (progress < 0) progress = 0;
+        if (progress > 100) progress = 100;
+      }
+      return progress;
+    }, [currentTerm]);
+
+    // 2. Today's Classes (uses `selectedDate` so user can navigate days)
+    const todaysClasses = useMemo(() => {
+      const viewDate = selectedDate;
+      const viewDay = viewDate.toLocaleDateString("en-US", {
+        weekday: "short",
+      });
+
+      const classes: Array<{
+        courseCode: string;
+        courseId: string;
+        Component: string;
+        Section: string;
+        "Start Time": { hours: number; minutes: number } | string;
+        "End Time": { hours: number; minutes: number } | string;
+        Location: string;
+      }> = [];
+
+      currentCourses.forEach((course) => {
+        if (!course.sections) return;
+
+        const schedule = course.data["schedule-info"] || [];
+        schedule.forEach((item: any) => {
+          const selectedSection = course.sections?.[item.Component];
+          if (selectedSection && selectedSection !== item.Section) return;
+
+          let isToday = false;
+          if (item["Meet Dates"] && Array.isArray(item["Meet Dates"])) {
+            isToday = item["Meet Dates"].some((d: string) => {
+              const date = new Date(d);
+              return (
+                date.getUTCDate() === viewDate.getDate() &&
+                date.getUTCMonth() === viewDate.getMonth() &&
+                date.getUTCFullYear() === viewDate.getFullYear()
+              );
+            });
+          } else if (
+            item["Days of Week"] &&
+            Array.isArray(item["Days of Week"])
+          ) {
+            isToday = item["Days of Week"].some((d: string) =>
+              d.startsWith(viewDay),
+            );
+          }
+
+          if (isToday) {
+            classes.push({
+              ...item,
+              courseCode: course.code,
+              courseId: course.id,
+            });
+          }
+        });
+      });
+
+      classes.sort((a, b) => {
+        const timeA = a["Start Time"];
+        const timeB = b["Start Time"];
+
+        const hA =
+          typeof timeA === "object"
+            ? timeA.hours
+            : parseInt(timeA.split(":")[0]);
+        const mA =
+          typeof timeA === "object"
+            ? timeA.minutes
+            : parseInt(timeA.split(":")[1]);
+        const hB =
+          typeof timeB === "object"
+            ? timeB.hours
+            : parseInt(timeB.split(":")[0]);
+        const mB =
+          typeof timeB === "object"
+            ? timeB.minutes
+            : parseInt(timeB.split(":")[1]);
+
+        if (hA !== hB) return hA - hB;
+        return mA - mB;
+      });
+      return classes;
+    }, [currentCourses, selectedDate]);
+
+    // 3. Upcoming Deliverables
+    const upcomingDeliverables = useMemo(() => {
+      const deliverables: (Item & { courseCode?: string })[] = [];
+      const today = new Date();
+      const todayStart = new Date(today);
+      todayStart.setHours(0, 0, 0, 0);
+      const nextWeek = new Date(todayStart);
+      nextWeek.setDate(todayStart.getDate() + 7);
+
+      items.forEach((item) => {
+        if (currentCourses.some((c) => c.id === item.course_id)) {
+          if (item.data.due_date) {
+            const dueDateUTC = new Date(item.data.due_date);
+            const effectiveDueDate = new Date(
+              dueDateUTC.getUTCFullYear(),
+              dueDateUTC.getUTCMonth(),
+              dueDateUTC.getUTCDate(),
+            );
+
+            if (
+              effectiveDueDate >= todayStart &&
+              effectiveDueDate <= nextWeek
+            ) {
+              deliverables.push({
+                ...item,
+                courseCode: currentCourses.find((c) => c.id === item.course_id)
+                  ?.code,
+              });
+            }
+          }
+        }
+      });
+
+      deliverables.sort(
+        (a, b) =>
+          new Date(a.data.due_date).getTime() -
+          new Date(b.data.due_date).getTime(),
+      );
+      return deliverables;
+    }, [items, currentCourses]);
 
     return (
       <div className="flex flex-col flex-grow">
@@ -589,9 +646,9 @@ export default function CoursesPage() {
           getCourseTypes={getTypesForCourse}
         />
 
-        <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 sm:gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl justify-center sm:justify-start font-bold mb-4 flex items-center gap-2 ">
+            <h1 className="text-2xl sm:text-3xl justify-center sm:justify-start font-bold flex items-center gap-2 ">
               {currentTerm} Dashboard
               <div
                 className="tooltip tooltip-right flex items-center"
@@ -701,7 +758,7 @@ export default function CoursesPage() {
 
             <CoursesCard
               courses={currentCourses}
-              items={items}
+              courseGrades={courseGrades}
               onNavigateToCourse={(courseId, course) => {
                 if (setOptimisticCourse) setOptimisticCourse(course);
                 router.push(`/courses/${courseId}/info`);
