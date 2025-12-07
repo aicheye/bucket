@@ -3,7 +3,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { APP_NAME } from "../lib/constants";
-import Footer from "./components/layout/Footer";
 
 export default function Home() {
   const { status } = useSession();
@@ -24,9 +23,8 @@ export default function Home() {
   }, [status, router]);
 
   return (
-    <div className="flex h-screen w-full items-center justify-center">
-      <div className="loading loading-spinner loading-lg"></div>
-      <Footer />
+    <div className="flex flex-col h-full w-full items-center justify-center">
+      <div className="flex-1 loading loading-spinner loading-lg"></div>
     </div>
   );
 }
