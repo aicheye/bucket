@@ -181,13 +181,13 @@ export default function Profile() {
     try {
       const payload = newValue
         ? {
-            query: UPDATE_USER_TELEMETRY_AND_ANON,
-            variables: { id: session.user.id, consent: newValue, anon: false },
-          }
+          query: UPDATE_USER_TELEMETRY_AND_ANON,
+          variables: { id: session.user.id, consent: newValue, anon: false },
+        }
         : {
-            query: UPDATE_USER_TELEMETRY,
-            variables: { id: session.user.id, consent: newValue },
-          };
+          query: UPDATE_USER_TELEMETRY,
+          variables: { id: session.user.id, consent: newValue },
+        };
 
       const result = await sendQuery(payload);
 
@@ -422,6 +422,7 @@ export default function Profile() {
         return;
       }
 
+      if (typeof window !== "undefined") window.localStorage.clear();
       await signOut({ callbackUrl: "/" });
     } catch {
       showAlert("An error occurred. Please try again.");
@@ -587,6 +588,7 @@ export default function Profile() {
               role="menuitem"
               onClick={() => {
                 setOpen(false);
+                if (typeof window !== "undefined") window.localStorage.clear();
                 signOut({ callbackUrl: "/" });
               }}
               className="w-full text-left"

@@ -66,13 +66,12 @@ export const UPDATE_ONBOARD = `
   mutation UpdateOnboard($id: String!, $consent: Boolean!, $anon: Boolean!, $onboarded: Boolean!) {
     update_users_by_pk(
       pk_columns: {id: $id},
-      _set: {telemetry_consent: $consent, anonymous_mode: $anon},
-      _append: {data: {onboarded: $onboarded}}
+      _set: {telemetry_consent: $consent, anonymous_mode: $anon, onboarded: $onboarded}
     ) {
       id
       telemetry_consent
       anonymous_mode
-      data
+      onboarded
     }
   }
 `;

@@ -47,12 +47,8 @@ export default function InnerLayout({
         // The `data` JSONB may not always expose an `onboarded` flag in a
         // consistent shape across environments. Check defensively for the
         // flag; if it's missing, fall back to showing the onboarding modal.
-        const userData = json?.data?.users_by_pk?.data;
-        if (
-          userData &&
-          (userData.onboarded === true || userData.onboarded === 1)
-        )
-          return;
+        const user = json?.data?.users_by_pk;
+        if (user && user.onboarded === true) return;
         setShowOnboarding(true);
       })
       .catch(() => {

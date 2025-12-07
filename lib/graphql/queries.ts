@@ -25,6 +25,7 @@ export const GET_USER_FULL = `
       image
       telemetry_consent
       anonymous_mode
+      onboarded
       data
     }
   }
