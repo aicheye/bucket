@@ -3,22 +3,30 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { APP_NAME } from "../lib/constants";
+import Footer from "./components/layout/Footer";
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     document.title = APP_NAME;
-  }, [session]);
+  }, []);
 
   useEffect(() => {
-    if (session) {
+    if (status === "loading") return;
+
+    if (status === "authenticated") {
       router.push("/dashboard");
     } else {
       router.push("/api/auth/signin");
     }
-  }, [session, router]);
+  }, [status, router]);
 
-  return null;
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <div className="loading loading-spinner loading-lg"></div>
+      <Footer />
+    </div>
+  );
 }
