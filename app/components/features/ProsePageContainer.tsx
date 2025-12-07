@@ -13,8 +13,10 @@ export default function ProsePageContainer({
   children,
 }: ProsePageContainerProps) {
   return (
-    <div className="card flex flex-col flex-1 gap-8 max-w-3xl mx-auto p-12 w-full text-base-content text-left bg-base-100 my-8 shadow-lg">
-      {children}
+    <div className="flex flex-col w-full p-4 sm:py-8">
+      <div className="card flex flex-col flex-1 gap-8 max-w-3xl sm:p-12 p-8 mx-auto w-full text-base-content text-left bg-base-100 shadow-lg">
+        {children}
+      </div>
     </div>
   );
 }
