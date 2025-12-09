@@ -1,7 +1,5 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
-// Note: avoid calling `getServerSession` at the root layout to allow
-// pages to be statically generated. Session will be fetched client-side
-// by `SessionProvider` in `Providers` when needed.
 import { Suspense } from "react";
 import { APP_NAME } from "../lib/constants";
 import "./globals.css";
@@ -43,6 +41,7 @@ export default async function RootLayout({
             <div id="content" tabIndex={-1} className="flex-1">
               {children}
             </div>
+            <Analytics />
           </Providers>
         </Suspense>
       </body>
