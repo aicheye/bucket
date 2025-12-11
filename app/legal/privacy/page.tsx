@@ -1,13 +1,12 @@
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
-import ProsePageContainer from "../../components/features/ProsePageContainer";
 import { APP_NAME } from "../../../lib/constants";
-import { ExecutableDefinitionsRule } from "graphql";
+import ProsePageContainer from "../../components/features/ProsePageContainer";
 import ExternalLink from "../../components/ui/ExternalLink";
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} | Privacy Policy`,
+  title: `Privacy Policy - ${APP_NAME}`,
 };
 
 export default function PrivacyPage() {

@@ -4,7 +4,7 @@ import ProsePageContainer from "../../components/features/ProsePageContainer";
 import ExternalLink from "../../components/ui/ExternalLink";
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} | Terms of Service`,
+  title: `Terms of Service - ${APP_NAME}`,
 };
 
 export default function TermsPage() {

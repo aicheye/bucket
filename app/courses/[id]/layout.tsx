@@ -60,7 +60,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (selectedCourse) {
       const tab = isGradesView ? "Grades" : isInfoView ? "Info" : "Grades";
-      document.title = `${APP_NAME} | ${selectedCourse.code} - ${tab}`;
+      document.title = `${selectedCourse.code} (${tab}) - ${APP_NAME}`;
     } else {
       document.title = APP_NAME;
     }

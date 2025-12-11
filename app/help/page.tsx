@@ -5,7 +5,7 @@ import ProsePageContainer from "../components/features/ProsePageContainer";
 import ExternalLink from "../components/ui/ExternalLink";
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} | Help & FAQ`,
+  title: `Help & FAQ - ${APP_NAME}`,
 };
 
 export default function HelpPage() {

@@ -16,6 +16,7 @@ interface ItemFormModalProps {
   setItemData: (data: ItemFormData) => void;
   courses: Course[];
   getCourseTypes: (courseId: string) => string[];
+  categoryHasMarks?: (courseId: string, type: string) => boolean;
 }
 
 export default function ItemFormModal({
@@ -28,6 +29,7 @@ export default function ItemFormModal({
   setItemData,
   courses,
   getCourseTypes,
+  categoryHasMarks,
 }: ItemFormModalProps) {
   return (
     <Modal
@@ -86,6 +88,7 @@ export default function ItemFormModal({
             type="text"
             className="input input-bordered w-full"
             value={itemData.name}
+            disabled={itemData.isPlaceholder}
             onChange={(e) => setItemData({ ...itemData, name: e.target.value })}
           />
         </div>
@@ -96,7 +99,40 @@ export default function ItemFormModal({
           <select
             className="select select-bordered w-full"
             value={itemData.type}
-            onChange={(e) => setItemData({ ...itemData, type: e.target.value })}
+            onChange={(e) => {
+              const newType = e.target.value;
+              const selectedCourseId = addingItemCourseId || itemData.course_id || "";
+
+              // If currently creating a placeholder, check whether the
+              // newly selected type can have placeholders (i.e. already has marks).
+              if (itemData.isPlaceholder) {
+                const hasMarks =
+                  typeof categoryHasMarks === "function" && selectedCourseId
+                    ? categoryHasMarks(selectedCourseId, newType)
+                    : false;
+
+                if (hasMarks) {
+                  // New type already has marks -> disable placeholder and reset fields
+                  setItemData({
+                    ...itemData,
+                    type: newType,
+                    isPlaceholder: false,
+                    name: "",
+                    max_grade: "",
+                  });
+                } else {
+                  // Still a placeholder -> keep placeholder name and locked max
+                  setItemData({
+                    ...itemData,
+                    type: newType,
+                    name: `${newType} Placeholder`,
+                    max_grade: "100",
+                  });
+                }
+              } else {
+                setItemData({ ...itemData, type: newType });
+              }
+            }}
           >
             {(addingItemCourseId || itemData.course_id) &&
               getCourseTypes(
@@ -104,6 +140,37 @@ export default function ItemFormModal({
               ).map((t: string) => <option key={t}>{t}</option>)}
           </select>
         </div>
+        {editingItem === null && (() => {
+          const selectedCourseId = addingItemCourseId || itemData.course_id || "";
+          const shouldShow =
+            selectedCourseId &&
+            (typeof categoryHasMarks === "function"
+              ? !categoryHasMarks(selectedCourseId, itemData.type)
+              : true);
+          if (!shouldShow) return null;
+
+          return (
+            <div className="form-control w-full">
+              <label className="label mb-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="checkbox"
+                  checked={!!itemData.isPlaceholder}
+                  onChange={(e) =>
+                    setItemData({
+                      ...itemData,
+                      isPlaceholder: e.target.checked,
+                      due_date: e.target.checked ? "" : itemData.due_date,
+                      name: e.target.checked ? `${itemData.type} Placeholder` : itemData.name,
+                      max_grade: e.target.checked ? "100" : itemData.max_grade,
+                    })
+                  }
+                />
+                <span className="label-text">Create as placeholder</span>
+              </label>
+            </div>
+          );
+        })()}
         <div className="grid grid-cols-2 gap-4">
           <div className="form-control w-full">
             <label className="label mb-2">
@@ -125,26 +192,29 @@ export default function ItemFormModal({
             <input
               type="text"
               className="input input-bordered w-full"
-              value={itemData.max_grade}
+              value={itemData.isPlaceholder ? "100" : itemData.max_grade}
+              disabled={!!itemData.isPlaceholder}
               onChange={(e) =>
-                setItemData({ ...itemData, max_grade: e.target.value })
+                !itemData.isPlaceholder && setItemData({ ...itemData, max_grade: e.target.value })
               }
             />
           </div>
         </div>
-        <div className="form-control w-full">
-          <label className="label mb-2">
-            <span className="label-text">Due Date</span>
-          </label>
-          <input
-            type="date"
-            className="input input-bordered w-full"
-            value={itemData.due_date?.split("T")[0] ?? ""}
-            onChange={(e) =>
-              setItemData({ ...itemData, due_date: e.target.value })
-            }
-          />
-        </div>
+        {!itemData.isPlaceholder && (
+          <div className="form-control w-full">
+            <label className="label mb-2">
+              <span className="label-text">Due Date</span>
+            </label>
+            <input
+              type="date"
+              className="input input-bordered w-full"
+              value={itemData.due_date?.split("T")[0] ?? ""}
+              onChange={(e) =>
+                setItemData({ ...itemData, due_date: e.target.value })
+              }
+            />
+          </div>
+        )}
       </div>
     </Modal>
   );

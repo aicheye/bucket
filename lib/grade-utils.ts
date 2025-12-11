@@ -294,6 +294,16 @@ export function computeTypeStats(
         : 0;
     let earnedContributionSum = 0;
     let hasAnyContribution = false;
+    
+    includedItems.forEach((it) => {
+      if (it.data.isPlaceholder) {
+        const g = parseFloat(it.data.grade || "0");
+        const m = parseFloat(it.data.max_grade || "0");
+        if (it.data.grade === "" || isNaN(g) || isNaN(m) || m === 0) return;
+        earnedContributionSum = (g / m) * compWeight;
+        hasAnyContribution = true;
+      }
+    });
 
     includedItems.forEach((it) => {
       const g = parseFloat(it.data.grade || "0");

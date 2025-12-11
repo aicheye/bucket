@@ -257,9 +257,9 @@ export default function CoursesPage() {
 
   useEffect(() => {
     if (currentTerm) {
-      document.title = `${APP_NAME} | ${currentTerm} Dashboard`;
+      document.title = `${currentTerm} Dashboard - ${APP_NAME}`;
     } else {
-      document.title = `${APP_NAME} Dashboard`;
+      document.title = `Dashboard - ${APP_NAME}`;
     }
   }, [currentTerm]);
 
@@ -665,6 +665,11 @@ export default function CoursesPage() {
           setItemData={setItemData}
           courses={currentCourses}
           getCourseTypes={getTypesForCourse}
+          categoryHasMarks={(courseId: string, type: string) => {
+            return items.some(
+              (it) => it.course_id === courseId && it.data.type === type && it.data.grade !== "" && !it.data.isPlaceholder,
+            );
+          }}
         />
 
         <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 gap-4">

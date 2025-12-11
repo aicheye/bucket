@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { APP_NAME } from "../../../lib/constants";
 import ProsePageContainer from "../../components/features/ProsePageContainer";
-import Line from "../../components/ui/Line";
 import ExternalLink from "../../components/ui/ExternalLink";
+import Line from "../../components/ui/Line";
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} | License`,
+  title: `License - ${APP_NAME}`,
 };
 
 function MITLicense() {

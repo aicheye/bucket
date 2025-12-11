@@ -2,6 +2,7 @@ import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth/next";
+import { forbidden, unauthorized } from "next/navigation";
 import { APP_NAME } from "../../../lib/constants";
 import {
   GET_TELEMETRY_DAU,
@@ -13,7 +14,6 @@ import { executeHasuraAdminQuery } from "../../../lib/hasura";
 import authOptions from "../../../lib/nextauth";
 import Table from "../../components/ui/Table";
 import { DauChart, FeatureDailyMultiLine } from "./telemetry-charts";
-import { forbidden, unauthorized } from "next/navigation";
 
 interface TelemetryDau {
   dau: number;
@@ -180,5 +180,5 @@ export default async function TelemetryPage() {
 }
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} | Telemetry`,
+  title: `Telemetry - ${APP_NAME}`,
 };

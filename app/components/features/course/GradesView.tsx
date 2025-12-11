@@ -627,6 +627,11 @@ export default function GradesView() {
         setItemData={setItemData}
         getCourseTypes={() => getCourseTypes()}
         courses={courses}
+        categoryHasMarks={(courseId: string, type: string) => {
+          return baseCourseItems.some(
+            (it) => it.course_id === courseId && it.data.type === type && it.data.grade !== "" && !it.data.isPlaceholder,
+          );
+        }}
       />
 
       <div className="card bg-base-100 shadow-md">
