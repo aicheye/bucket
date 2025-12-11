@@ -201,7 +201,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
       </Modal>
 
       <div className="flex flex-col h-full gap-4 overflow-y-auto">
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="sm:flex-1 flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <Link
               href="/dashboard"
@@ -235,7 +235,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
 
           <Line direction="hor" className="w-full" />
 
-          <div className="flex flex-col sm:gap-4 gap-2 flex-1">
+          <div className="flex flex-col sm:gap-4 gap-2">
             <div className="flex justify-between items-center">
               <input
                 onChange={fileChange}
@@ -320,11 +320,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                                   }
                                   closeDrawer();
                                 }}
-                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
-                                  pathname?.startsWith(`/courses/${course.id}`)
-                                    ? "btn-primary"
-                                    : "btn-base"
-                                }`}
+                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}`)
+                                  ? "btn-primary"
+                                  : "btn-base"
+                                  }`}
                                 title="View course"
                               >
                                 <div className="text-left w-full flex justify-between items-center gap-2">
@@ -376,11 +375,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                       }
                       closeDrawer();
                     }}
-                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
-                      pathname?.startsWith(`/courses/${course.id}`)
-                        ? "btn-primary bg-primary"
-                        : ""
-                    }`}
+                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
+                      ? "btn-primary bg-primary"
+                      : ""
+                      }`}
                   >
                     <div className="text-left w-full text-primary-content">
                       <div className="font-bold">{course.code}</div>
@@ -402,7 +400,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
           </div>
         </div>
         <Link
-          className="btn btn-info btn-md btn-soft"
+          className="btn btn-info btn-md sm:btn-soft"
           title="Help"
           aria-label="Help"
           href="/help"
