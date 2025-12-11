@@ -59,12 +59,11 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (selectedCourse) {
-      const tab = isGradesView ? "Grades" : isInfoView ? "Info" : "Grades";
-      document.title = `${selectedCourse.code} (${tab}) - ${APP_NAME}`;
+      document.title = `${selectedCourse.code} (${view.charAt(0).toUpperCase() + view.slice(1)}) - ${APP_NAME}`;
     } else {
-      document.title = APP_NAME;
+      document.title = `Course Not Found - ${APP_NAME}`;
     }
-  }, [selectedCourse, isGradesView, isInfoView]);
+  }, [selectedCourse, view]);
 
   async function handleCreditsBlur() {
     if (!selectedCourse || isNaN(credits)) return;

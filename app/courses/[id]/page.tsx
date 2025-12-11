@@ -2,9 +2,9 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import { DEFAULT_COURSE_VIEW } from "../../../lib/constants";
 import GradesView from "../../components/features/course/GradesView";
 import InfoView from "../../components/features/course/InfoView";
-import { DEFAULT_COURSE_VIEW } from "../../../lib/constants";
 
 export default function CoursePage() {
   const router = useRouter();

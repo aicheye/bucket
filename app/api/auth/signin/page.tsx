@@ -3,14 +3,18 @@
 import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import AuthButton from "../../../components/ui/AuthButton";
-import { APP_NAME } from "../../../../lib/constants";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { APP_NAME } from "../../../../lib/constants";
+import AuthButton from "../../../components/ui/AuthButton";
 
 function AuthPage({ error }: { error?: string | string[] }) {
   const { status } = useSession();
+
+  useEffect(() => {
+    document.title = `Sign In - ${APP_NAME}`;
+  }, []);
 
   return (
     <div className="flex-1 h-full flex flex-col justify-center items-center">

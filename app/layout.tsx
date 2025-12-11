@@ -7,7 +7,7 @@ import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: APP_NAME,
-  description: "The all-in-one course management tool",
+  description: "The all-in-one University of Waterloo course management tool",
   icons: {
     icon: [
       { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
