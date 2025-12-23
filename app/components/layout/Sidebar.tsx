@@ -23,9 +23,10 @@ interface SidebarProps {
   gradesScreen: boolean;
   infoScreen: boolean;
   inDrawer?: boolean;
+  onClose?: () => void;
 }
 
-export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false }: SidebarProps) {
+export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, onClose }: SidebarProps) {
   const {
     courses,
     addCourse,
@@ -58,6 +59,10 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false }: 
   }
 
   function closeDrawer() {
+    if (onClose) {
+      onClose();
+      return;
+    }
     const drawerCheckbox = document.getElementById(
       "my-drawer-2",
     ) as HTMLInputElement;

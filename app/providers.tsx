@@ -2,7 +2,7 @@
 import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
 import Footer from "./components/layout/Footer";
@@ -59,6 +59,43 @@ export default function Providers({
   const gradesScreen = searchParams?.get("view")?.endsWith("grades");
   const infoScreen = searchParams?.get("view")?.endsWith("info");
 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const originalThemeColor = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Store original color once
+    if (originalThemeColor.current === null) {
+      const meta = document.querySelector("meta[name='theme-color']");
+      originalThemeColor.current = meta ? meta.getAttribute("content") : "";
+    }
+
+    let meta = document.querySelector("meta[name='theme-color']");
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "theme-color");
+      document.head.appendChild(meta);
+    }
+
+    if (isDrawerOpen) {
+      // Get sidebar color (bg-base-200)
+      const color = getComputedStyle(document.body).backgroundColor;
+      meta.setAttribute("content", color);
+    } else {
+      if (originalThemeColor.current) {
+        meta.setAttribute("content", originalThemeColor.current);
+      } else {
+        // If originally not set, we might want to remove it or set to default.
+        // For now, let's set it to the body background as a safe default if it was empty,
+        // or just leave it if we can't restore "nothing".
+        // Actually, if we created it, we should probably remove it, but keeping it consistent with body is good.
+        const color = getComputedStyle(document.body).backgroundColor;
+        meta.setAttribute("content", color);
+      }
+    }
+  }, [isDrawerOpen]);
+
   useEffect(() => {
     logger.info("Providers initialized");
   }, []);
@@ -100,6 +137,8 @@ export default function Providers({
                           id="my-drawer-2"
                           type="checkbox"
                           className="drawer-toggle"
+                          checked={isDrawerOpen}
+                          onChange={(e) => setIsDrawerOpen(e.target.checked)}
                         />
                         <div className="drawer-content flex flex-col min-h-0 flex-1">
                           <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -120,6 +159,7 @@ export default function Providers({
                               gradesScreen={gradesScreen}
                               infoScreen={infoScreen}
                               inDrawer={true}
+                              onClose={() => setIsDrawerOpen(false)}
                             />
                           </div>
                         </div>

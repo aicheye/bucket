@@ -122,8 +122,3 @@ footer {
     -webkit-overflow-scrolling: touch;
   }
 }
-
-/* Utility class for safe-area bottom padding */
-.pb-safe {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-}
