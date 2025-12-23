@@ -80,7 +80,7 @@ export default function Providers({
               >
                 {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
                 {showSidebar ? (
-                  <div className="h-full hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:h-[calc(100vh - var(--navbar-total-height))] lg:w-64 lg:overflow-y-auto">
+                  <div className="h-full hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:h-[calc(100dvh - var(--navbar-total-height))] lg:w-64 lg:overflow-y-auto">
                     <Sidebar
                       gradesScreen={gradesScreen}
                       infoScreen={infoScreen}
@@ -102,11 +102,11 @@ export default function Providers({
                           className="drawer-toggle"
                         />
                         <div className="drawer-content flex flex-col min-h-0 flex-1">
-                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <div className="flex-1 flex flex-col" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
+                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                            <div className="flex-1 flex flex-col">
                               {children}
                             </div>
-                            <div className="mt-auto" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                            <div className="mt-auto">
                               <Footer />
                             </div>
                           </div>
@@ -140,9 +140,9 @@ export default function Providers({
                   ) : (
                     // If sidebar is hidden, render a straightforward stacked layout for mobile
                     <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-                        <div className="flex-1 flex flex-col" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>{children}</div>
-                        <div className="mt-auto" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                        <div className="flex-1 flex flex-col">{children}</div>
+                        <div className="mt-auto">
                           <Footer />
                         </div>
                       </div>
@@ -150,9 +150,9 @@ export default function Providers({
                   )}
 
                   {/* Large-screen main content (unchanged layout) */}
-                  <div className="hidden lg:flex flex-1 flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-                    <div className="flex-1 flex flex-col" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>{children}</div>
-                    <div className="mt-auto" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                  <div className="hidden lg:flex flex-1 flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                    <div className="flex-1 flex flex-col">{children}</div>
+                    <div className="mt-auto">
                       <Footer />
                     </div>
                   </div>
