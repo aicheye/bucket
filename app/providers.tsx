@@ -2,7 +2,7 @@
 import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
 import Footer from "./components/layout/Footer";
@@ -59,45 +59,39 @@ export default function Providers({
   const gradesScreen = searchParams?.get("view")?.endsWith("grades");
   const infoScreen = searchParams?.get("view")?.endsWith("info");
 
-  useEffect(() => {
-    logger.info("Providers initialized");
-  }, []);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Update theme-color meta tag when drawer is toggled (for iOS address bar)
   useEffect(() => {
-    if (!showSidebar) return;
-
-    const drawerCheckbox = document.getElementById("my-drawer-2") as HTMLInputElement;
-    if (!drawerCheckbox) return;
+    if (typeof window === "undefined") return;
 
     const updateThemeColor = () => {
-      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.setAttribute('name', 'theme-color');
-        document.head.appendChild(metaThemeColor);
+      let meta = document.querySelector("meta[name='theme-color']");
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
       }
-
-      // Always use sidebar color (base-200) to keep it constant
-      const sidebar = document.querySelector('.drawer-side .bg-base-200');
-      if (sidebar) {
-        const sidebarColor = getComputedStyle(sidebar).backgroundColor;
-        metaThemeColor.setAttribute('content', sidebarColor);
-      } else {
-        // Fallback to body background
-        const color = getComputedStyle(document.body).backgroundColor;
-        metaThemeColor.setAttribute('content', color);
-      }
+      // Always set to body background color (sidebar/footer color)
+      const color = getComputedStyle(document.body).backgroundColor;
+      meta.setAttribute("content", color);
     };
 
-    drawerCheckbox.addEventListener('change', updateThemeColor);
     // Initial update
     updateThemeColor();
 
-    return () => {
-      drawerCheckbox.removeEventListener('change', updateThemeColor);
-    };
-  }, [showSidebar]);
+    // Watch for theme changes
+    const observer = new MutationObserver(updateThemeColor);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    logger.info("Providers initialized");
+  }, []);
 
   return (
     <LoadingProvider>
@@ -128,38 +122,37 @@ export default function Providers({
                 <div
                   className={`flex flex-1 flex-col w-full ${showSidebar ? "lg:ml-64" : ""}`}
                 >
-                  {/* Mobile: drawer that overlays content and appears above the navbar */}
+                  {/* Mobile: drawer that overlays content and appears below the header */}
                   {showSidebar ? (
-                    <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="drawer flex-1 flex flex-col min-h-0">
+                    <div className="block lg:hidden w-full flex-1 flex flex-col">
+                      <div className="drawer flex-1 flex flex-col">
                         <input
                           id="my-drawer-2"
                           type="checkbox"
                           className="drawer-toggle"
+                          checked={isDrawerOpen}
+                          onChange={(e) => setIsDrawerOpen(e.target.checked)}
                         />
                         <div className="drawer-content flex flex-col min-h-0 flex-1">
-                          <div className="flex flex-col w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <div className="flex-1 flex flex-col min-h-0">
+                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <div className="flex-1 flex flex-col">
                               {children}
                             </div>
                           </div>
                           <Footer />
                         </div>
-                        <div className="drawer-side z-[60] overflow-hidden h-[100dvh]">
+                        <div className="drawer-side z-50">
                           <label
                             htmlFor="my-drawer-2"
-                            className="drawer-overlay !fixed !inset-0 !h-[100dvh]"
+                            className="drawer-overlay"
+                            aria-label="close sidebar"
                           ></label>
-                          <div
-                            className="h-full overflow-hidden bg-base-200"
-                            style={{
-                              paddingTop: 'env(safe-area-inset-top, 0px)',
-                              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                            }}
-                          >
+                          <div className="h-full min-h-0">
                             <Sidebar
                               gradesScreen={gradesScreen}
                               infoScreen={infoScreen}
+                              inDrawer={true}
+                              onClose={() => setIsDrawerOpen(false)}
                             />
                           </div>
                         </div>
@@ -168,7 +161,7 @@ export default function Providers({
                   ) : (
                     // If sidebar is hidden, render a straightforward stacked layout for mobile
                     <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-col w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="flex-1 flex flex-col">{children}</div>
                       </div>
                       <Footer />
@@ -177,7 +170,9 @@ export default function Providers({
 
                   {/* Large-screen main content (unchanged layout) */}
                   <div className="hidden lg:flex flex-1 flex-col w-full min-h-0">
-                    <div className="flex-1 flex flex-col overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>{children}</div>
+                    <div className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div className="flex-1 flex flex-col">{children}</div>
+                    </div>
                     <Footer />
                   </div>
                 </div>
