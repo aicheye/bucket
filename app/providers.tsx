@@ -2,7 +2,7 @@
 import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
 import Footer from "./components/layout/Footer";
@@ -60,41 +60,34 @@ export default function Providers({
   const infoScreen = searchParams?.get("view")?.endsWith("info");
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const originalThemeColor = useRef<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Store original color once
-    if (originalThemeColor.current === null) {
-      const meta = document.querySelector("meta[name='theme-color']");
-      originalThemeColor.current = meta ? meta.getAttribute("content") : "";
-    }
-
-    let meta = document.querySelector("meta[name='theme-color']");
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "theme-color");
-      document.head.appendChild(meta);
-    }
-
-    if (isDrawerOpen) {
-      // Get sidebar color (bg-base-200)
+    const updateThemeColor = () => {
+      let meta = document.querySelector("meta[name='theme-color']");
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
+      }
+      // Always set to body background color (sidebar/footer color)
       const color = getComputedStyle(document.body).backgroundColor;
       meta.setAttribute("content", color);
-    } else {
-      if (originalThemeColor.current) {
-        meta.setAttribute("content", originalThemeColor.current);
-      } else {
-        // If originally not set, we might want to remove it or set to default.
-        // For now, let's set it to the body background as a safe default if it was empty,
-        // or just leave it if we can't restore "nothing".
-        // Actually, if we created it, we should probably remove it, but keeping it consistent with body is good.
-        const color = getComputedStyle(document.body).backgroundColor;
-        meta.setAttribute("content", color);
-      }
-    }
-  }, [isDrawerOpen]);
+    };
+
+    // Initial update
+    updateThemeColor();
+
+    // Watch for theme changes
+    const observer = new MutationObserver(updateThemeColor);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     logger.info("Providers initialized");
