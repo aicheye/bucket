@@ -63,52 +63,6 @@ export default function Providers({
     logger.info("Providers initialized");
   }, []);
 
-  // Update theme-color meta tag when drawer is toggled (for iOS address bar)
-  useEffect(() => {
-    if (!showSidebar) return;
-
-    const drawerCheckbox = document.getElementById("my-drawer-2") as HTMLInputElement;
-    if (!drawerCheckbox) return;
-
-    const updateThemeColor = () => {
-      // Get computed color of base-200 (sidebar background)
-      const base200 = getComputedStyle(document.documentElement).getPropertyValue('--b2') ||
-        getComputedStyle(document.body).backgroundColor;
-
-      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.setAttribute('name', 'theme-color');
-        document.head.appendChild(metaThemeColor);
-      }
-
-      if (drawerCheckbox.checked) {
-        // Drawer is open - use sidebar color (base-200)
-        // DaisyUI uses oklch colors, get the actual computed background
-        const sidebar = document.querySelector('.drawer-side .bg-base-200');
-        if (sidebar) {
-          const sidebarColor = getComputedStyle(sidebar).backgroundColor;
-          metaThemeColor.setAttribute('content', sidebarColor);
-        }
-      } else {
-        // Drawer is closed - use navbar color (base-200)
-        const navbar = document.querySelector('.navbar');
-        if (navbar) {
-          const navbarColor = getComputedStyle(navbar).backgroundColor;
-          metaThemeColor.setAttribute('content', navbarColor);
-        }
-      }
-    };
-
-    drawerCheckbox.addEventListener('change', updateThemeColor);
-    // Initial update
-    updateThemeColor();
-
-    return () => {
-      drawerCheckbox.removeEventListener('change', updateThemeColor);
-    };
-  }, [showSidebar]);
-
   return (
     <LoadingProvider>
       <SessionProvider session={session} refetchOnWindowFocus={false}>
@@ -138,33 +92,39 @@ export default function Providers({
                 <div
                   className={`flex flex-1 flex-col w-full ${showSidebar ? "lg:ml-64" : ""}`}
                 >
-                  {/* Mobile: drawer that overlays content and appears above the navbar */}
+                  {/* Mobile: drawer that overlays content and appears below the header */}
                   {showSidebar ? (
-                    <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="drawer flex-1 flex flex-col min-h-0">
+                    <div className="block lg:hidden w-full flex-1 flex flex-col">
+                      <div className="drawer flex-1 flex flex-col">
                         <input
                           id="my-drawer-2"
                           type="checkbox"
                           className="drawer-toggle"
                         />
                         <div className="drawer-content flex flex-col min-h-0 flex-1">
-                          <div className="flex flex-col w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <div className="flex-1 flex flex-col min-h-0">
+                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <div className="flex-1 flex flex-col">
                               {children}
                             </div>
                           </div>
                           <Footer />
                         </div>
-                        <div className="drawer-side z-[60] overflow-hidden h-[100dvh]">
+                        <div className="drawer-side">
                           <label
                             htmlFor="my-drawer-2"
-                            className="drawer-overlay !fixed !inset-0 !h-[100dvh]"
+                            className="drawer-overlay"
+                            style={{
+                              top: "calc(var(--navbar-total-height))",
+                              height:
+                                "calc(100vh - var(--navbar-total-height))",
+                            }}
                           ></label>
                           <div
-                            className="h-full overflow-hidden bg-base-200"
                             style={{
-                              paddingTop: 'env(safe-area-inset-top, 0px)',
-                              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                              marginTop: "calc(var(--navbar-total-height)  )",
+                              height:
+                                "calc(100vh - var(--navbar-total-height))",
+                              minHeight: 0,
                             }}
                           >
                             <Sidebar
@@ -178,7 +138,7 @@ export default function Providers({
                   ) : (
                     // If sidebar is hidden, render a straightforward stacked layout for mobile
                     <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-col w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="flex-1 flex flex-col">{children}</div>
                       </div>
                       <Footer />
@@ -187,7 +147,9 @@ export default function Providers({
 
                   {/* Large-screen main content (unchanged layout) */}
                   <div className="hidden lg:flex flex-1 flex-col w-full min-h-0">
-                    <div className="flex-1 flex flex-col overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>{children}</div>
+                    <div className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div className="flex-1 flex flex-col">{children}</div>
+                    </div>
                     <Footer />
                   </div>
                 </div>
