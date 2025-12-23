@@ -22,9 +22,10 @@ import Modal from "../ui/Modal";
 interface SidebarProps {
   gradesScreen: boolean;
   infoScreen: boolean;
+  inDrawer?: boolean;
 }
 
-export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
+export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false }: SidebarProps) {
   const {
     courses,
     addCourse,
@@ -118,10 +119,11 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
 
   return (
     <div
-      className="h-[calc(100vh-var(--navbar-height))] w-64 bg-base-200 flex flex-col border-r border-base-content/10"
+      className="h-full w-64 bg-base-200 flex flex-col border-r border-base-content/10"
       style={{
         WebkitOverflowScrolling: "touch",
         overscrollBehavior: "contain",
+        paddingTop: inDrawer ? 'env(safe-area-inset-top, 0px)' : undefined,
       }}
     >
       <Modal
@@ -140,7 +142,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{
         overscrollBehavior: "contain",
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
       }}>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">

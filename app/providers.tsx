@@ -109,27 +109,17 @@ export default function Providers({
                           </div>
                           <Footer />
                         </div>
-                        <div className="drawer-side">
+                        <div className="drawer-side z-50">
                           <label
                             htmlFor="my-drawer-2"
                             className="drawer-overlay"
-                            style={{
-                              top: "calc(var(--navbar-total-height))",
-                              height:
-                                "calc(100vh - var(--navbar-total-height))",
-                            }}
+                            aria-label="close sidebar"
                           ></label>
-                          <div
-                            style={{
-                              marginTop: "calc(var(--navbar-total-height)  )",
-                              height:
-                                "calc(100vh - var(--navbar-total-height))",
-                              minHeight: 0,
-                            }}
-                          >
+                          <div className="h-full min-h-0">
                             <Sidebar
                               gradesScreen={gradesScreen}
                               infoScreen={infoScreen}
+                              inDrawer={true}
                             />
                           </div>
                         </div>
