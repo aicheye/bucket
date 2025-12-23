@@ -71,8 +71,20 @@ export default function Providers({
         meta.setAttribute("name", "theme-color");
         document.head.appendChild(meta);
       }
-      // Always set to body background color (sidebar/footer color)
-      const color = getComputedStyle(document.body).backgroundColor;
+
+      let color;
+      if (isDrawerOpen) {
+        const sidebar = document.querySelector(".drawer-side .bg-base-200");
+        if (sidebar) {
+          color = getComputedStyle(sidebar).backgroundColor;
+        }
+      }
+
+      if (!color) {
+        // Always set to body background color (sidebar/footer color)
+        color = getComputedStyle(document.body).backgroundColor;
+      }
+
       meta.setAttribute("content", color);
     };
 
@@ -87,7 +99,7 @@ export default function Providers({
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [isDrawerOpen]);
 
   useEffect(() => {
     logger.info("Providers initialized");
