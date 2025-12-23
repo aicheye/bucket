@@ -66,22 +66,22 @@ export default function Providers({
   // Update theme-color meta tag when drawer is toggled (for iOS address bar)
   useEffect(() => {
     if (!showSidebar) return;
-    
+
     const drawerCheckbox = document.getElementById("my-drawer-2") as HTMLInputElement;
     if (!drawerCheckbox) return;
 
     const updateThemeColor = () => {
       // Get computed color of base-200 (sidebar background)
-      const base200 = getComputedStyle(document.documentElement).getPropertyValue('--b2') || 
-                      getComputedStyle(document.body).backgroundColor;
-      
+      const base200 = getComputedStyle(document.documentElement).getPropertyValue('--b2') ||
+        getComputedStyle(document.body).backgroundColor;
+
       let metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (!metaThemeColor) {
         metaThemeColor = document.createElement('meta');
         metaThemeColor.setAttribute('name', 'theme-color');
         document.head.appendChild(metaThemeColor);
       }
-      
+
       if (drawerCheckbox.checked) {
         // Drawer is open - use sidebar color (base-200)
         // DaisyUI uses oklch colors, get the actual computed background
@@ -103,7 +103,7 @@ export default function Providers({
     drawerCheckbox.addEventListener('change', updateThemeColor);
     // Initial update
     updateThemeColor();
-    
+
     return () => {
       drawerCheckbox.removeEventListener('change', updateThemeColor);
     };
