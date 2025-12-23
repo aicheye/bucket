@@ -99,9 +99,13 @@ export function calculateSchemeGradeDetails(
       ? Math.min(100, baseCurrentGrade + bonusPercent)
       : baseCurrentGrade;
 
+  const currentGrade = adjustedGrade !== null 
+    ? Math.max(32, adjustedGrade)
+    : null;
+
   return {
-    // `currentGrade` is the adjusted grade (includes bonus when provided)
-    currentGrade: adjustedGrade,
+    // `currentGrade` is the adjusted grade (includes bonus and 32% floor)
+    currentGrade: currentGrade,
     // `baseCurrentGrade` is the grade computed from weights (no bonus)
     baseCurrentGrade: baseCurrentGrade,
     currentScore: totalScore,
@@ -338,6 +342,10 @@ export function getBestCourseGrade(
   const placeholderGrades = course.data.placeholder_grades || {};
   const dropLowest = course.data.drop_lowest || {};
 
+  if (course.data.official_grade !== undefined && course.data.official_grade !== null) {
+    return course.data.official_grade;
+  }
+
   if (!schemes || schemes.length === 0) return null;
 
   let bestGrade = -1;
@@ -376,7 +384,44 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
     preferredIndex = Number.isInteger(parsed) ? parsed : null;
   }
 
-  if (!schemes || schemes.length === 0) return null;
+  if (!schemes || schemes.length === 0) {
+    if (course.data.official_grade !== undefined && course.data.official_grade !== null) {
+       const official = Number(course.data.official_grade);
+       return {
+         currentGrade: official,
+         baseCurrentGrade: official,
+         currentScore: official,
+         totalWeightGraded: 100,
+         totalSchemeWeight: 100,
+         totalWeightCompleted: 100,
+         droppedItemIds: [],
+         bonusPercent: 0,
+       };
+    }
+    return null;
+  }
+  
+  const enforceOfficial = (d: any) => {
+    if (
+      course.data.official_grade !== undefined &&
+      course.data.official_grade !== null
+    ) {
+      const official = Number(course.data.official_grade);
+      const weight = d.totalSchemeWeight || 100;
+      return {
+        ...d,
+        currentGrade: official,
+        currentScore: (official / 100) * weight,
+        // Ensure it looks completed
+        totalWeightGraded: weight,
+        totalWeightCompleted: weight,
+        totalSchemeWeight: weight,
+        bonusPercent: 0,
+      };
+    }
+    return d;
+  };
+
   // If a preferred scheme index is set and valid, use it
   if (
     preferredIndex !== null &&
@@ -384,13 +429,13 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
     preferredIndex >= 0 &&
     preferredIndex < schemes.length
   ) {
-    return calculateSchemeGradeDetails(
+    return enforceOfficial(calculateSchemeGradeDetails(
       schemes[preferredIndex],
       courseItems,
       placeholderGrades,
       dropLowest,
       course.data?.bonus_percent,
-    );
+    ));
   }
 
   // Otherwise, fall back to the best scheme (highest current grade)
@@ -413,7 +458,7 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
     }
   }
 
-  return bestDetails;
+  return bestDetails ? enforceOfficial(bestDetails) : null;
 }
 
 /**

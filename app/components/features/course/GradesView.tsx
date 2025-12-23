@@ -45,8 +45,15 @@ interface ParsedItem {
 export default function GradesView() {
   const { id } = useParams();
   const { data: session } = useSession();
-  const { courses, items, addItem, deleteItem, updateItem, updateCourseData } =
-    useCourses();
+  const {
+    courses,
+    items,
+    addItem,
+    deleteItem,
+    updateItem,
+    updateCourseData,
+    isCourseCompleted,
+  } = useCourses();
 
   const selectedCourse = courses.find((c) => c.id === id);
   const [placeholderGrades, setPlaceholderGrades] = useState<
@@ -113,6 +120,9 @@ export default function GradesView() {
   const [bonusPercent, setBonusPercent] = useState<number | undefined>(
     undefined,
   );
+  const [officialGrade, setOfficialGrade] = useState<number | undefined>(
+    undefined,
+  );
 
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -159,6 +169,11 @@ export default function GradesView() {
       setTargetGrade(selectedCourse.data.target_grade.toString());
     } else {
       setTargetGrade("");
+    }
+    if (selectedCourse?.data?.official_grade !== undefined) {
+      setOfficialGrade(selectedCourse.data.official_grade);
+    } else {
+      setOfficialGrade(undefined);
     }
   }, [id, selectedCourse]);
 
@@ -411,6 +426,7 @@ export default function GradesView() {
       drop_lowest: dropLowest,
       placeholder_grades: placeholderGrades,
       bonus_percent: bonusPercent,
+      official_grade: officialGrade,
     });
     sendTelemetry("edit_grading_settings", {
       course_id: selectedCourse.id,
@@ -559,9 +575,35 @@ export default function GradesView() {
     );
   }
 
-  const allTypes = useMemo(() => getCourseTypes(), [selectedCourse]);
+  const isWeightCompleted = useMemo(() => {
+    return usedDetails
+      ? (usedDetails.totalWeightCompleted !== undefined
+        ? usedDetails.totalWeightCompleted >= usedDetails.totalSchemeWeight
+        : false)
+      : false;
+  }, [usedDetails]);
 
-  if (!selectedCourse) return null;
+  const isLiveCompleted = useMemo(() => {
+    // Check local officialGrade state (live) or persisted data
+    // The persist check is handled by initializing state from data, so checking state is enough
+    if (officialGrade !== undefined && officialGrade !== null) return true;
+    
+    // Fall back to context check if state is undefined (though state is init from context)
+    if (selectedCourse && isCourseCompleted(selectedCourse)) return true;
+
+    return isWeightCompleted;
+  }, [officialGrade, selectedCourse, isCourseCompleted, isWeightCompleted]);
+
+  const showGoalInput = useMemo(() => {
+    if (isLiveCompleted) return false;
+    
+    const hasPending = courseItems.some(
+      (it) => it.data.grade === "" && !it.data.isPlaceholder,
+    );
+    return !(!hasPending && isWeightCompleted);
+  }, [isLiveCompleted, isWeightCompleted, courseItems]);
+
+  const allTypes = useMemo(() => getCourseTypes(), [selectedCourse]);
 
   // Compute per-type aggregates for the "Item Types Averages" table
   const showRemaining = allTypes.length > 1;
@@ -584,6 +626,10 @@ export default function GradesView() {
       usedDroppedItemIds,
     ],
   );
+
+  if (!selectedCourse) return null;
+
+
 
   return (
     <>
@@ -613,6 +659,8 @@ export default function GradesView() {
         setPlaceholderGrades={setPlaceholderGrades}
         bonusPercent={bonusPercent}
         setBonusPercent={setBonusPercent}
+        officialGrade={officialGrade}
+        setOfficialGrade={setOfficialGrade}
         getCourseTypes={getCourseTypes}
         courseItems={courseItems}
       />
@@ -662,27 +710,15 @@ export default function GradesView() {
                   </a>
                 </div>
               </div>
-              <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
-                {(() => {
-                  const isCompleted = usedDetails
-                    ? (usedDetails.totalWeightCompleted !== undefined
-                      ? usedDetails.totalWeightCompleted >= usedDetails.totalSchemeWeight
-                      : false)
-                    : false;
-                  const hasPending = courseItems.some(
-                    (it) => it.data.grade === "" && !it.data.isPlaceholder,
-                  );
-                  // Hide goal input for completed courses (no pending grades and completion)
-                  if (isCompleted && !hasPending) return null;
-                  return (
-                    <GoalInput
-                      handleSaveTargetGrade={handleSaveTargetGrade}
-                      targetGrade={targetGrade}
-                      setTargetGrade={setTargetGrade}
-                    />
-                  );
-                })()}
-              </div>
+              {showGoalInput && (
+                <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
+                  <GoalInput
+                    handleSaveTargetGrade={handleSaveTargetGrade}
+                    targetGrade={targetGrade}
+                    setTargetGrade={setTargetGrade}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 w-full md:w-auto">
@@ -716,6 +752,8 @@ export default function GradesView() {
                 bestOriginalIndex={bestOriginalIndex}
                 activeSchemeIndex={activeSchemeIndex}
                 setActiveSchemeIndex={setActiveSchemeIndex}
+                officialGrade={officialGrade}
+                isCompleted={isLiveCompleted}
                 calculateDetails={(scheme) =>
                   calculateSchemeGradeDetails(
                     scheme,

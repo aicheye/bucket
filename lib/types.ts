@@ -19,6 +19,7 @@ export interface Course {
     drop_lowest?: Record<string, number>;
     placeholder_grades?: Record<string, number>;
     target_grade?: number;
+    official_grade?: number;
     "preferred-marking-scheme"?: number | string;
     term_goals?: Record<string, string>;
     [key: string]: unknown;

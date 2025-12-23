@@ -86,8 +86,8 @@ export default function Modal({
       onKeyDown={handleKeyDown}
     >
       <div className="modal-box" style={{ position: "relative", zIndex: 50 }}>
-        {title && <h3 className="font-bold text-lg">{title}</h3>}
-        <div className="py-4">{children}</div>
+        {title && <h3 className="font-bold text-lg mb-4">{title}</h3>}
+        <div>{children}</div>
         <div className="modal-action">{actions}</div>
       </div>
       <form method="dialog" className="modal-backdrop" style={{ zIndex: 40 }}>

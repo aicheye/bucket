@@ -4,7 +4,7 @@
 
 // App name and version
 export const APP_NAME: string = "Bucket";
-export const APP_VERSION: string = "alpha 1";
+export const APP_VERSION: string = "alpha 2";
 
 // defaults
 export const DEFAULT_COURSE_VIEW = "grades";

@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { INSERT_TELEMETRY } from "../../../lib/graphql/mutations";
-import { GET_USER, LAST_TELEMETRY } from "../../../lib/graphql/queries";
+import { COUNT_RECENT_TELEMETRY, GET_USER, LAST_TELEMETRY } from "../../../lib/graphql/queries";
 import {
   executeHasuraAdminQuery,
   executeHasuraQuery,
@@ -11,6 +11,8 @@ import { logger } from "../../../lib/logger";
 import authOptions from "../../../lib/nextauth";
 
 const DEFAULT_RATE_LIMIT_MINUTES = 15;
+const GLOBAL_RATE_LIMIT_WINDOW_MINUTES = 5;
+const GLOBAL_RATE_LIMIT_MAX_EVENTS = 30;
 
 function hmacHex(secret: string, value: string) {
   return crypto
@@ -73,8 +75,8 @@ export async function POST(request: Request) {
     if (!event)
       return NextResponse.json({ error: "Missing event" }, { status: 400 });
 
-    // Basic whitelist -- keep events small and predictable
-    const allowed = [
+    // Whitelist of valid events -- only these will be recorded
+    const VALID_EVENTS = [
       "session_heartbeat",
       "view_course",
       "view_grades",
@@ -99,9 +101,22 @@ export async function POST(request: Request) {
       "view_term_dashboard",
       "update_course_credits",
       "select_marking_scheme",
+      "import_transcript",
+      "set_official_grade",
+      "set_bonus",
     ];
 
-    const normalizedEvent = allowed.includes(event) ? event : "other";
+    // Reject invalid events
+    if (!VALID_EVENTS.includes(event)) {
+      logger.warn("Invalid telemetry event rejected", {
+        event,
+        userId: session.user.id,
+      });
+      return NextResponse.json(
+        { error: "Invalid event", event },
+        { status: 400 },
+      );
+    }
 
     // Anonymize user id server-side
     const anon = hmacHex(process.env.TELEMETRY_SECRET, String(session.user.id));
@@ -132,17 +147,39 @@ export async function POST(request: Request) {
       );
     }
 
+    // Global rate limit: prevent too many events from the same user in a short window
+    const globalLimitSince = new Date(
+      Date.now() - GLOBAL_RATE_LIMIT_WINDOW_MINUTES * 60 * 1000,
+    ).toISOString();
+    const countRes = await executeHasuraAdminQuery(
+      COUNT_RECENT_TELEMETRY,
+      { anon, since: globalLimitSince },
+      session.user.id,
+    );
+    const recentCount = countRes?.data?.telemetry_aggregate?.aggregate?.count || 0;
+    if (recentCount >= GLOBAL_RATE_LIMIT_MAX_EVENTS) {
+      logger.warn("Global telemetry rate limit exceeded", {
+        userId: session.user.id,
+        count: recentCount,
+        window: GLOBAL_RATE_LIMIT_WINDOW_MINUTES,
+      });
+      return NextResponse.json(
+        { inserted: false, reason: "rate_limit_exceeded" },
+        { status: 429 },
+      );
+    }
+
     // Rate-limit identical events from the same user in a short window
     // Use a shorter window for session heartbeats to avoid spamming (10 minutes),
     // but keep the default for other events.
     const eventRateLimitMinutes =
-      normalizedEvent === "session_heartbeat" ? 10 : DEFAULT_RATE_LIMIT_MINUTES;
+      event === "session_heartbeat" ? 10 : DEFAULT_RATE_LIMIT_MINUTES;
     const since = new Date(
       Date.now() - eventRateLimitMinutes * 60 * 1000,
     ).toISOString();
     const checkRes = await executeHasuraAdminQuery(
       LAST_TELEMETRY,
-      { anon, event: normalizedEvent, since },
+      { anon, event, since },
       session.user.id,
     );
     if (checkRes?.data?.telemetry?.length > 0) {
@@ -159,7 +196,7 @@ export async function POST(request: Request) {
       objects: [
         {
           anon_user_hash: anon,
-          event: normalizedEvent,
+          event: event,
           properties: JSON.stringify(sanitized),
           created_at: new Date().toISOString(),
         },
@@ -183,7 +220,7 @@ export async function POST(request: Request) {
     }
 
     logger.debug("Telemetry event recorded", {
-      event: normalizedEvent,
+      event: event,
       userId: session.user.id,
     });
     return NextResponse.json({ inserted: true }, { status: 201 });

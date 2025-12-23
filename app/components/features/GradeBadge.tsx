@@ -46,11 +46,13 @@ export default function GradeBadge({
   gpa,
   disabled = false,
   size,
+  toFixed = 1,
 }: {
   grade?: number;
   gpa?: number;
   disabled?: boolean;
   size?: "sm" | "lg";
+  toFixed?: number;
 }) {
   let colorKey = "accent";
 
@@ -77,7 +79,8 @@ export default function GradeBadge({
   }
 
   if (disabled) {
-    textClass = "text-white";
+    bgClass = "bg-base-content/10";
+    textClass = "text-base-content opacity-70";
   }
 
   if (size === "sm") {
@@ -87,7 +90,7 @@ export default function GradeBadge({
           className={`badge ${bgClass} text-sm font-bold ${textClass} border-none`}
         >
           {grade !== undefined
-            ? grade.toFixed(1) + "%"
+            ? grade.toFixed(toFixed) + "%"
             : gpa !== undefined
               ? gpa.toFixed(2)
               : "-"}
@@ -113,7 +116,7 @@ export default function GradeBadge({
               <span>{gpa.toFixed(2)}</span>
             ) : grade !== undefined ? (
               <>
-                {grade.toFixed(1)}
+                {grade.toFixed(toFixed)}
                 <span className={"text-[18px] opacity-80 ml-0.5"}>%</span>
               </>
             ) : (

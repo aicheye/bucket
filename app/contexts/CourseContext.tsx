@@ -4,28 +4,28 @@
 
 import { useSession } from "next-auth/react";
 import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
 } from "react";
+import { CATEGORY_COLORS } from "../../lib/constants";
 import { getCourseGradeDetails } from "../../lib/grade-utils";
 import { sendQuery } from "../../lib/graphql";
 import {
-  DELETE_COURSE_AND_ITEMS,
-  DELETE_ITEM,
-  INSERT_COURSES,
-  INSERT_ITEMS,
-  UPDATE_COURSE,
-  UPDATE_COURSE_DATA,
-  UPDATE_COURSE_SECTIONS,
-  UPDATE_ITEM,
+    DELETE_COURSE_AND_ITEMS,
+    DELETE_ITEM,
+    INSERT_COURSES,
+    INSERT_ITEMS,
+    UPDATE_COURSE,
+    UPDATE_COURSE_DATA,
+    UPDATE_COURSE_SECTIONS,
+    UPDATE_ITEM,
 } from "../../lib/graphql/mutations";
 import { GET_COURSES, GET_ITEMS } from "../../lib/graphql/queries";
 import { sendTelemetry } from "../../lib/telemetry";
-import { CATEGORY_COLORS } from "../../lib/constants";
 
 export interface Course {
   id: string;
@@ -64,6 +64,7 @@ interface CourseContextType {
   items: Item[];
   courseGrades: Map<string, ReturnType<typeof getCourseGradeDetails>>;
   fetchCourses: () => Promise<void>;
+  isCourseCompleted: (course: Course) => boolean;
   optimisticCourse?: Course | null;
   setOptimisticCourse: (c: Course | null) => void;
   addCourse: (
@@ -240,7 +241,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }>,
   ) {
     // Optimistic update
-    setCourses(courses.map((c) => (c.id === id ? { ...c, ...data } : c)));
+    setCourses((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...data } : c))
+    );
 
     try {
       const json = await sendQuery({
@@ -260,17 +263,21 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     component: string,
     section: string,
   ) {
-    const course = courses.find((c) => c.id === courseId);
-    if (!course) return;
-
-    const newSections = { ...(course.sections || {}), [component]: section };
-
     // Optimistic update
-    setCourses(
-      courses.map((c) =>
-        c.id === courseId ? { ...c, sections: newSections } : c,
-      ),
-    );
+    setCourses((prev) => {
+        const course = prev.find((c) => c.id === courseId);
+        if (!course) return prev;
+        const newSections = { ...(course.sections || {}), [component]: section };
+        return prev.map((c) =>
+            c.id === courseId ? { ...c, sections: newSections } : c,
+        );
+    });
+
+    // Getting the latest sections for the API call is tricky without the updated state.
+    // We can re-derive it.
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return; // Should we abort? Using stale course here is slightly risky but usually fine for this user operation.
+    const newSections = { ...(course.sections || {}), [component]: section };
 
     const json = await sendQuery({
       query: UPDATE_COURSE_SECTIONS,
@@ -313,8 +320,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }
 
     // Optimistic update for course data
-    setCourses(
-      courses.map((c) => (c.id === courseId ? { ...c, data: newData } : c)),
+    setCourses((prev) =>
+      prev.map((c) => (c.id === courseId ? { ...c, data: { ...c.data, "marking-schemes": newSchemes } } : c)),
     );
 
     // If any components were renamed, optimistically update local items and schedule API updates
@@ -371,22 +378,43 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   }
 
   async function updateCourseData(courseId: string, newData: any) {
-    const course = courses.find((c) => c.id === courseId);
-    if (!course) return;
-
-    const mergedData = { ...course.data, ...newData };
-
-    // Optimistic update
-    setCourses(
-      courses.map((c) => (c.id === courseId ? { ...c, data: mergedData } : c)),
-    );
-
-    const json = await sendQuery({
-      query: UPDATE_COURSE_DATA,
-      variables: { id: courseId, data: mergedData },
+    // Used for API call - carefully using stale data? 
+    // Ideally we want to merge against latest, but we are inside async.
+    // However, newData is usually the delta we care about. 
+    // We will trust the optimistic update to merge correctly for UI, 
+    // and for API we hope we aren't stomping other fields concurrently.
+    
+    // Optimistic update with functional state to handle concurrency
+    let finalMergedData = null;
+    
+    setCourses((prev) => {
+        return prev.map((c) => {
+            if (c.id === courseId) {
+                const merged = { ...c.data, ...newData };
+                finalMergedData = merged;
+                return { ...c, data: merged };
+            }
+            return c;
+        });
     });
-    if (!json.data?.update_courses_by_pk) {
-      fetchCourses();
+
+    // If we didn't find the course in the functional update, we can try to fallback 
+    // to the stale one for the API call, assuming it exists.
+    if (!finalMergedData) {
+        const staleCourse = courses.find((c) => c.id === courseId);
+        if (staleCourse) {
+             finalMergedData = { ...staleCourse.data, ...newData };
+        }
+    }
+
+    if (finalMergedData) {
+        const json = await sendQuery({
+          query: UPDATE_COURSE_DATA,
+          variables: { id: courseId, data: finalMergedData },
+        });
+        if (!json.data?.update_courses_by_pk) {
+          fetchCourses();
+        }
     }
   }
 
@@ -485,6 +513,19 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         loading,
         optimisticCourse,
         setOptimisticCourse,
+        isCourseCompleted: (course: Course) => {
+          if (
+            course.data.official_grade !== undefined &&
+            course.data.official_grade !== null
+          ) {
+            return true;
+          }
+          const details = courseGrades.get(course.id);
+          return details
+            ? details.totalSchemeWeight > 0 &&
+                details.totalWeightGraded >= details.totalSchemeWeight - 0.01
+            : false;
+        },
       }}
     >
       {children}

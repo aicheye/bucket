@@ -108,7 +108,7 @@ export default function InnerLayout({
   };
 
   return (
-    <div className="flex flex-col items-center justify-start h-full">
+    <div className="flex flex-col justify-start min-h-full w-full">
       <Modal
         isOpen={showOnboarding}
         onClose={() => {
@@ -189,8 +189,8 @@ export default function InnerLayout({
           <Line direction="hor" className="w-full" />
         </div>
       </Modal>
-      <main className="p-4 sm:p-8 w-full h-full">
-        <div className="max-w-5xl mx-auto w-full h-full">
+      <main className="p-4 sm:p-8 w-full flex-1">
+        <div className="max-w-5xl mx-auto w-full flex-1">
           {(status === "loading" && !session) || coursesLoading ? (
             <div className="flex flex-col gap-6 mx-auto w-full">
               <div className="skeleton h-8 w-1/3 mb-4"></div>

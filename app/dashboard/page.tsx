@@ -37,6 +37,7 @@ export default function CoursesPage() {
     updateItem,
     deleteItem,
     setOptimisticCourse,
+    isCourseCompleted,
   } = useCourses();
   const [termGoal, setTermGoal] = useState<string>("");
   const [userData, setUserData] = useState<Record<string, any>>({});
@@ -73,6 +74,7 @@ export default function CoursesPage() {
   }, [status, session]);
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [isImportTranscriptOpen, setIsImportTranscriptOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [addingItemCourseId, setAddingItemCourseId] = useState<string | null>(
     null,
@@ -356,10 +358,17 @@ export default function CoursesPage() {
             totalGPACredits += credits;
           }
 
-          const min = details.currentScore;
-          const max =
+
+
+          const bonus = details.bonusPercent || 0;
+          const minRaw = details.currentScore + bonus;
+          const maxRaw =
             details.currentScore +
+            bonus +
             (details.totalSchemeWeight - details.totalWeightGraded);
+
+          const min = Math.min(100, Math.max(32, minRaw));
+          const max = Math.min(100, maxRaw);
           totalMin += min * credits;
           totalMax += max * credits;
           totalMinCredits += credits;
@@ -409,18 +418,32 @@ export default function CoursesPage() {
             const details = courseGrades.get(c.id);
             if (!details) return;
             const credits = c.credits ?? 0.5;
-            // Only consider courses with a valid scheme weight
+
+            // For courses with official grades or fully graded, the "remaining weight" is 0.
+            // We should use their final grade contribution directly.
+            // `currentGrade` includes bonus and is the final percentage for the course.
             const W = details.totalSchemeWeight;
-            const S = details.currentScore;
             const R = W - details.totalWeightGraded;
-            const b = Number(c.data?.bonus_percent) || 0;
-            if (W > 0 && R > 0) {
-              lhsFactor += (R / W) * credits;
+
+            // If fully graded (or official grade override effectively makes it fully graded)
+            if (R <= 0 || details.totalWeightGraded >= details.totalSchemeWeight) {
+              const finalGrade = details.currentGrade ?? 0;
+              // The contribution is the final grade * credits.
+              // We treat this as "achieved" so it subtracts from the target.
+              rhsCurrent += finalGrade * credits;
+              totalCredits += credits;
+            } else {
+              // Course is in progress
+              const S = details.currentScore;
+              const b = Number(c.data?.bonus_percent) || 0;
+              if (W > 0) {
+                lhsFactor += (R / W) * credits;
+              }
+              // S/W*100 is the base current percent contribution for the course
+              const baseCurrentPercent = W > 0 ? (S / W) * 100 : 0;
+              rhsCurrent += (baseCurrentPercent + (b || 0)) * credits;
+              totalCredits += credits;
             }
-            // S/W*100 is the base current percent contribution for the course
-            const baseCurrentPercent = W > 0 ? (S / W) * 100 : 0;
-            rhsCurrent += (baseCurrentPercent + (b || 0)) * credits;
-            totalCredits += credits;
           });
 
           if (lhsFactor > 0 && totalCredits > 0) {
@@ -453,36 +476,28 @@ export default function CoursesPage() {
     } = termStats;
 
     // Calculate Cumulative Average (CAV) and Cumulative GPA (CGPA)
+    // Calculate Cumulative Average (CAV) and Cumulative GPA (CGPA)
     const cumulativeStats = useMemo(() => {
       let totalCAV = 0;
       let totalCGPA = 0;
       let totalCredits = 0;
-      // Credits earned: sum of credits for courses with >=50% (or estimated >=50%)
+      // Credits earned: sum of credits for courses with >=50% (official grade)
       let creditsEarned = 0;
 
       courses.forEach((c) => {
-        const details = courseGrades.get(c.id);
-        if (details && details.currentGrade !== null) {
+        // Only include courses with an official grade
+        if (
+          c.data.official_grade !== undefined &&
+          c.data.official_grade !== null
+        ) {
+          const official = Number(c.data.official_grade);
           const credits = c.credits ?? 0.5;
-          totalCAV += details.currentGrade * credits;
-          totalCGPA += gradeToGPA(details.currentGrade) * credits;
+
+          totalCAV += official * credits;
+          totalCGPA += gradeToGPA(official) * credits;
           totalCredits += credits;
-        }
-        // Determine credits-earned eligibility based on >=50% rule.
-        if (details) {
-          const credits = c.credits ?? 0.5;
-          const hasCurrentGrade = details.currentGrade !== null;
-          // estimated final percent based on current scored points over total scheme weight
-          const estimatedPercent =
-            details.totalSchemeWeight > 0
-              ? (details.currentScore / details.totalSchemeWeight) * 100
-              : null;
 
-          const meetsThreshold =
-            (hasCurrentGrade && (details.currentGrade ?? 0) >= 50) ||
-            (estimatedPercent !== null && estimatedPercent >= 50);
-
-          if (meetsThreshold) {
+          if (official >= 50) {
             creditsEarned += credits;
           }
         }
@@ -492,7 +507,7 @@ export default function CoursesPage() {
       const cgpa = totalCredits > 0 ? totalCGPA / totalCredits : null;
 
       return { cav, cgpa, creditsEarned };
-    }, [courses, courseGrades]);
+    }, [courses]);
 
     const { cav, cgpa, creditsEarned } = cumulativeStats;
 
@@ -790,10 +805,11 @@ export default function CoursesPage() {
                 router.push(`/courses/${courseId}?view=info`);
               }}
               onAddItem={openAddItem}
+              isCompleted={isCourseCompleted}
             />
           </>
         ) : (
-          <div className="text-sm mt-1 opacity-50 italic">
+          <div className="text-sm mt-1 opacity-50 italic md:text-left text-center">
             No grades available yet.
           </div>
         )}

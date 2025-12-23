@@ -5,6 +5,7 @@ import { getCategoryColor } from "../../../../contexts/CourseContext";
 import GradeBadge from "../../GradeBadge";
 import RangeBadge from "../../RangeBadge";
 import ReqAvgBadge from "../../ReqAvgBadge";
+import ReqOfficialBadge from "../../ReqOfficialBadge";
 
 interface SchemeSelectorProps {
   schemes: any[][];
@@ -17,10 +18,14 @@ interface SchemeSelectorProps {
     totalSchemeWeight: number;
     totalWeightGraded: number;
     totalWeightCompleted?: number;
+    bonusPercent?: number;
+    baseCurrentGrade?: number | null;
   };
   calculateRequired: (scheme: any[]) => number | null;
   getCourseTypes: () => string[];
   onSelectPersist?: (index: number) => Promise<void> | void;
+  officialGrade?: number;
+  isCompleted?: boolean;
 }
 
 export default function SchemeSelector({
@@ -32,6 +37,8 @@ export default function SchemeSelector({
   calculateRequired,
   getCourseTypes,
   onSelectPersist,
+  officialGrade,
+  isCompleted: courseCompleted,
 }: SchemeSelectorProps) {
   const sortable = schemes
     .map((scheme, idx) => ({
@@ -45,28 +52,80 @@ export default function SchemeSelector({
   return (
     <div className="bg-base-200/40 card p-4 border border-base-content/5 shadow-sm">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-4xl">
+        {officialGrade !== undefined && (
+          <div className="relative group w-full">
+            <div className="h-[6rem] flex flex-row justify-between items-stretch p-4 bg-primary/5 card border border-primary/20 shadow-md w-full">
+              <div className="flex flex-col justify-between h-full">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-primary">
+                    OFFICIAL GRADE
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <GradeBadge grade={officialGrade} toFixed={0} />
+                </div>
+              </div>
+              {(() => {
+                // Calculate required average based on best/active scheme to reach official grade
+                const targetScheme = activeSchemeIndex !== null
+                  ? schemes[activeSchemeIndex]
+                  : (bestOriginalIndex !== null ? schemes[bestOriginalIndex] : null);
+
+                if (!targetScheme) return null;
+
+                const details = calculateDetails(targetScheme);
+                // Calculate required for official grade
+                const baseCurrent = details.baseCurrentGrade;
+                const remainingWeight = details.totalSchemeWeight - details.totalWeightGraded;
+
+                if (remainingWeight <= 0 || baseCurrent === null || baseCurrent === undefined) return null;
+
+                const bonus = details.bonusPercent || 0;
+                const effectiveTarget = bonus !== undefined && !isNaN(bonus) ? officialGrade - bonus : officialGrade;
+
+                const neededTotal = (effectiveTarget * details.totalSchemeWeight - baseCurrent * details.totalWeightGraded) / remainingWeight;
+
+                return (
+                  <div className="flex flex-col items-end gap-2 min-w-[140px] text-sm self-end">
+                    <div className="tooltip tooltip-top" data-tip="Average on remaining items needed to reach official grade">
+                      <ReqOfficialBadge
+                        requiredAverage={neededTotal}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
         {sortable.map(({ scheme, originalIndex, details }) => {
           const isActive =
-            activeSchemeIndex !== null
+            officialGrade === undefined &&
+            (activeSchemeIndex !== null
               ? originalIndex === activeSchemeIndex
-              : originalIndex === bestOriginalIndex;
+              : originalIndex === bestOriginalIndex);
 
-          const min = details.currentScore;
-          const max =
+          const bonus = details.bonusPercent || 0;
+          const minRaw = details.currentScore + bonus;
+          const maxRaw =
             details.currentScore +
+            bonus +
             (details.totalSchemeWeight - details.totalWeightGraded);
+
+          const min = Math.min(100, Math.max(32, minRaw));
+          const max = Math.min(100, maxRaw);
           const required = calculateRequired(scheme);
 
-          const isCompleted =
-            details.totalSchemeWeight !== undefined &&
-            details.totalWeightCompleted !== undefined &&
-            details.totalWeightCompleted >= details.totalSchemeWeight;
+          const isCompleted = courseCompleted;
+
+          const isDisabled = officialGrade !== undefined;
 
           return (
             <div key={originalIndex} className="relative group w-full">
               <button
                 type="button"
                 onClick={async () => {
+                  if (isDisabled) return;
                   setActiveSchemeIndex(originalIndex);
                   try {
                     await onSelectPersist?.(originalIndex);
@@ -74,9 +133,10 @@ export default function SchemeSelector({
                     // ignore
                   }
                 }}
+                disabled={isDisabled}
                 aria-pressed={isActive}
-                title={`Activate scheme ${originalIndex + 1}`}
-                className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full cursor-pointer ${!isActive ? "opacity-60 grayscale" : ""}`}
+                title={isDisabled ? "Official grade is set" : `Activate scheme ${originalIndex + 1}`}
+                className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full ${isDisabled ? "cursor-default opacity-40 grayscale" : "cursor-pointer"} ${!isActive && !isDisabled ? "opacity-60 grayscale" : ""}`}
               >
                 <div className="flex flex-col justify-between h-full">
                   <div className="flex items-center gap-2 mb-1">

@@ -1,4 +1,4 @@
-import { faBook, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBook, faCheck, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { getCourseGradeDetails } from "../../../../lib/grade-utils";
@@ -10,6 +10,7 @@ interface CoursesCardProps {
   courseGrades: Map<string, ReturnType<typeof getCourseGradeDetails>>;
   onNavigateToCourse: (courseId: string, course: Course) => void;
   onAddItem: (courseId: string) => void;
+  isCompleted: (course: Course) => boolean;
 }
 
 export default function CoursesCard({
@@ -17,6 +18,7 @@ export default function CoursesCard({
   courseGrades,
   onNavigateToCourse,
   onAddItem,
+  isCompleted: isCompletedFunc,
 }: CoursesCardProps) {
   return (
     <div className="card bg-base-100 shadow-sm col-span-1 md:col-span-3">
@@ -35,17 +37,22 @@ export default function CoursesCard({
           {courses.map((course) => {
             const details = courseGrades.get(course.id);
             const currentGrade = details?.currentGrade;
-            const min = details ? details.currentScore : 0;
+            const minRaw = details ? details.currentScore + (details.bonusPercent || 0) : 0;
+            const min = Math.max(32, minRaw);
             const max = details
               ? details.currentScore +
-                (details.totalSchemeWeight - details.totalWeightGraded)
+              (details.bonusPercent || 0) +
+              (details.totalSchemeWeight - details.totalWeightGraded)
               : 0;
+
+            const isCompleted = isCompletedFunc(course);
 
             return (
               <Link
                 key={course.id}
                 href={`/courses/${course.id}`}
-                className="card bg-base-200 hover:bg-base-300 transition-colors shadow-sm"
+                className={`card bg-base-200 hover:bg-base-300 transition-colors shadow-sm ${isCompleted ? "opacity-75 grayscale-[0.5]" : ""
+                  }`}
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigateToCourse(course.id, course);
@@ -58,22 +65,36 @@ export default function CoursesCard({
                       <div className="text-sm font-normal opacity-70">
                         ({course.credits})
                       </div>
+                      {isCompleted && (
+                        <div
+                          className="badge badge-success badge-sm w-5 h-5 p-0 flex items-center justify-center rounded-full"
+                          title="Completed"
+                        >
+                          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        className="btn btn-xs btn-circle btn-secondary hover:opacity-100"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onAddItem(course.id);
-                        }}
-                        title="Quick add item"
-                        aria-label="Quick add item"
-                      >
-                        <FontAwesomeIcon icon={faPlus} />
-                      </button>
+                      {!isCompleted && (
+                        <button
+                          className="btn btn-xs btn-circle btn-secondary hover:opacity-100"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onAddItem(course.id);
+                          }}
+                          title="Quick add item"
+                          aria-label="Quick add item"
+                        >
+                          <FontAwesomeIcon icon={faPlus} />
+                        </button>
+                      )}
                       {currentGrade !== null && (
-                        <GradeBadge grade={currentGrade} size="sm" />
+                        <GradeBadge
+                          grade={currentGrade}
+                          size="sm"
+                          toFixed={course.data.official_grade !== undefined && course.data.official_grade !== null ? 0 : 1}
+                        />
                       )}
                     </div>
                   </h2>
@@ -84,16 +105,6 @@ export default function CoursesCard({
                         <span>Max: {max.toFixed(1)}%</span>
                       </div>
                       <div className="flex flex-col gap-1 mt-2">
-                        <progress
-                          className="progress progress-error opacity-60 w-full h-1"
-                          value={min || 0}
-                          max="100"
-                        ></progress>
-                        <progress
-                          className="progress progress-success opacity-60 w-full h-1"
-                          value={max || 0}
-                          max="100"
-                        ></progress>
                         <progress
                           className="progress progress-primary w-full h-3"
                           value={currentGrade || 0}

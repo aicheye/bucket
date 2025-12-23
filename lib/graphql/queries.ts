@@ -112,3 +112,18 @@ export const LAST_TELEMETRY = `
     }
   }
 `;
+
+export const COUNT_RECENT_TELEMETRY = `
+  query CountRecentTelemetry($anon: String!, $since: timestamptz!) {
+    telemetry_aggregate(
+      where: {
+        anon_user_hash: {_eq: $anon},
+        created_at: {_gte: $since}
+      }
+    ) {
+      aggregate {
+        count
+      }
+    }
+  }
+`;

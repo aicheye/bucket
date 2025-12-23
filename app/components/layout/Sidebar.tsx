@@ -11,10 +11,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DEFAULT_COURSE_VIEW } from "../../../lib/constants";
-import { sendTelemetry } from "../../../lib/telemetry";
 import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
 import { useAlertState } from "../../hooks/useAlertState";
+import AddCourseModal from "../features/dashboard/AddCourseModal";
 import GradeBadge from "../features/GradeBadge";
 import Line from "../ui/Line";
 import Modal from "../ui/Modal";
@@ -32,6 +32,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
     items,
     courseGrades,
     setOptimisticCourse,
+    isCourseCompleted,
   } = useCourses();
   const { data: session } = useSession();
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<
     Record<string, boolean>
   >({});
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
 
   const { showLoading, hideLoading } = useLoading();
 
@@ -51,74 +53,7 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   }
 
   function buttonClick() {
-    document.getElementById("outlineInput")?.click();
-  }
-
-  async function fileChange() {
-    const input = document.getElementById("outlineInput") as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    const text = await file.text();
-
-    try {
-      showLoading();
-      const res = await fetch("/api/parse_outline", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ html_text: text }),
-      });
-
-      if (!res.ok) {
-        let errorMessage = `Error: ${res.status} ${res.statusText}`;
-        try {
-          const errorData = await res.json();
-          if (errorData.error) errorMessage = errorData.error;
-        } catch {
-          // ignore json parse error
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await res.json();
-
-      const existingCourse = courses.find(
-        (c) => c.code === data.code && c.term === data.term,
-      );
-
-      if (existingCourse) {
-        showAlert(`Course ${data.code} (${data.term}) already exists.`);
-        input.value = "";
-        return;
-      }
-
-      if (session?.user?.id) {
-        const newCourseId = await addCourse(
-          data.code,
-          data.term,
-          data.data,
-          session.user.id,
-        );
-        if (newCourseId) {
-          router.push(`/courses/${newCourseId}`);
-        }
-        // Record successful outline parse and add
-        sendTelemetry("parse_outline", { code: data.code, term: data.term });
-      }
-    } catch {
-      showAlert("Failed to upload course");
-    } finally {
-      try {
-        hideLoading();
-      } catch {
-        // ignore
-      }
-    }
-
-    // Clear the input so the same file can be selected again if needed
-    input.value = "";
+    setShowAddCourseModal(true);
   }
 
   function closeDrawer() {
@@ -183,8 +118,11 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
 
   return (
     <div
-      className="h-[calc(100vh-var(--navbar-height))] w-64 bg-base-200 overflow-y-auto p-4 flex flex-col border-r border-base-content/10"
-      style={{ WebkitOverflowScrolling: "touch" }}
+      className="h-[calc(100vh-var(--navbar-height))] w-64 bg-base-200 flex flex-col border-r border-base-content/10"
+      style={{ 
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "contain"
+      }}
     >
       <Modal
         isOpen={alertState.isOpen}
@@ -200,8 +138,8 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
         <p>{alertState.message}</p>
       </Modal>
 
-      <div className="flex flex-col h-full gap-4 overflow-y-auto">
-        <div className="sm:flex-1 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{ overscrollBehavior: "contain" }}>
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <Link
               href="/dashboard"
@@ -237,13 +175,6 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
 
           <div className="flex flex-col sm:gap-4 gap-2">
             <div className="flex justify-between items-center">
-              <input
-                onChange={fileChange}
-                type="file"
-                id="outlineInput"
-                accept=".html"
-                style={{ display: "none" }}
-              />
               <h2 className="font-bold text-lg">Courses</h2>
               <button
                 onClick={buttonClick}
@@ -308,6 +239,8 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                         <div className="card bg-base-100 flex flex-col gap-2 p-2 py-3">
                           {groupedCourses[folder].map((course) => {
                             const details = courseGrades.get(course.id);
+                            const isCompleted = isCourseCompleted(course);
+
                             return (
                               <Link
                                 key={course.id}
@@ -323,20 +256,18 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                                 className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}`)
                                   ? "btn-primary"
                                   : "btn-base"
-                                  }`}
+                                  } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
                                 title="View course"
                               >
                                 <div className="text-left w-full flex justify-between items-center gap-2">
-                                  <div className="min-w-fit font-bold text-[14px]">
+                                  <div className="min-w-fit font-bold text-[14px] flex items-center gap-1 flex-1">
                                     {course.code}
+                                    <div className="text-xs font-mono font-normal opacity-70">({course.credits})</div>
                                   </div>
-                                  <div className="flex font-mono text-xs items-center justify-between w-full gap-4 opacity-70">
-                                    <div>({course.credits})</div>
+                                  <div className="flex font-mono text-xs items-center justify-between gap-4 opacity-70">
                                     <div className="font-semibold">
                                       {details ? (
-                                        <span>
-                                          {details.currentGrade.toFixed(1)}%
-                                        </span>
+                                        details.currentGrade.toFixed(course.data.official_grade !== undefined && course.data.official_grade !== null ? 0 : 1) + "%"
                                       ) : (
                                         ""
                                       )}
@@ -363,33 +294,38 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
                   );
                 })}
 
-                {uncategorizedCourses.map((course) => (
-                  <Link
-                    key={course.id}
-                    href={`/courses/${course.id}?view=grades`}
-                    onClick={() => {
-                      try {
-                        setOptimisticCourse?.(course);
-                      } catch {
-                        // ignore
-                      }
-                      closeDrawer();
-                    }}
-                    className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
-                      ? "btn-primary bg-primary"
-                      : ""
-                      }`}
-                  >
-                    <div className="text-left w-full text-primary-content">
-                      <div className="font-bold">{course.code}</div>
-                      <div className="text-xs opacity-70">{course.term}</div>
-                    </div>
-                  </Link>
-                ))}
+                {uncategorizedCourses.map((course) => {
+                  const details = courseGrades.get(course.id);
+                  const isCompleted = isCourseCompleted(course);
+
+                  return (
+                    <Link
+                      key={course.id}
+                      href={`/courses/${course.id}?view=grades`}
+                      onClick={() => {
+                        try {
+                          setOptimisticCourse?.(course);
+                        } catch {
+                          // ignore
+                        }
+                        closeDrawer();
+                      }}
+                      className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
+                        ? "btn-primary bg-primary"
+                        : ""
+                        } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
+                    >
+                      <div className="text-left w-full text-primary-content">
+                        <div className="font-bold">{course.code}</div>
+                        <div className="text-xs opacity-70">{course.term}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </>
             )}
             {!loading && courses.length === 0 && (
-              <div className="text-center text-sm opacity-50 mt-4">
+              <div className="text-center text-sm opacity-50">
                 No courses yet. Click + to add one. Not sure how? See the{" "}
                 <Link target="_blank" href="/help" className="underline">
                   help page
@@ -399,8 +335,9 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
             )}
           </div>
         </div>
+        <div className="flex-1"></div>
         <Link
-          className="btn btn-info btn-md sm:btn-soft"
+          className="btn btn-info btn-md sm:btn-soft w-full"
           title="Help"
           aria-label="Help"
           href="/help"
@@ -414,6 +351,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
           Help & FAQ
         </Link>
       </div>
+      <AddCourseModal
+        isOpen={showAddCourseModal}
+        onClose={() => setShowAddCourseModal(false)}
+      />
     </div>
   );
 }

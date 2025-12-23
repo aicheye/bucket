@@ -103,6 +103,14 @@ export default function LicensesPage() {
             </ExternalLink>
             .
           </li>
+
+          <li>
+            <strong>pdf2json:</strong> PDF text extraction (v3.1.3). License: Apache 2.0.{" "}
+            <ExternalLink href="https://github.com/modesty/pdf2json/blob/master/license.txt">
+              Full license text
+            </ExternalLink>
+            .
+          </li>
           <li>
             <strong>Font Awesome Free Icons:</strong> UI Icons. License: CC BY
             4.0.{" "}

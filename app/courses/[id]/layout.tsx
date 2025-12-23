@@ -1,6 +1,6 @@
 "use client";
 
-import { faExternalLinkAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle, faExternalLinkAlt, faFileCode, faFileImport, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -8,6 +8,7 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../../lib/constants";
 import { sendTelemetry } from "../../../lib/telemetry";
 import ExternalLink from "../../components/ui/ExternalLink";
+import FileUploadZone from "../../components/ui/FileUploadZone";
 import Line from "../../components/ui/Line";
 import Modal from "../../components/ui/Modal";
 import { useCourses } from "../../contexts/CourseContext";
@@ -25,10 +26,16 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
     deleteItem,
     updateCourse,
     optimisticCourse,
+    updateCourseData,
+    updateMarkingSchemes,
   } = useCourses();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [credits, setCredits] = useState(0.5);
+  const [showImportDetailsModal, setShowImportDetailsModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [pendingImportData, setPendingImportData] = useState<any>(null);
+  const [showMismatchConfirm, setShowMismatchConfirm] = useState(false);
   const { showLoading, hideLoading } = useLoading();
 
   const selectedCourse = useMemo(() => {
@@ -106,6 +113,80 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
     }
   }
 
+  async function processImportData(data: any) {
+    if (!selectedCourse) return;
+    try {
+      showLoading();
+
+      if (data.data["marking-schemes"]) {
+        await updateMarkingSchemes(selectedCourse.id, data.data["marking-schemes"]);
+      }
+
+      const { "marking-schemes": schemes, ...otherData } = data.data;
+      await updateCourseData(selectedCourse.id, otherData);
+
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+      const isCodeMismatch = norm(data.code) !== norm(selectedCourse.code);
+      const isTermMismatch = norm(data.term) !== norm(selectedCourse.term);
+
+      if (isCodeMismatch || isTermMismatch) {
+        // If we just overwrote data despite mismatch, we should log it or just be done.
+        // The warning happens BEFORE this function is called.
+      }
+
+      sendTelemetry("import_outline_details", { course_id: selectedCourse.id });
+      setShowMismatchConfirm(false);
+      setPendingImportData(null);
+      // If the import modal was open, close it too
+      setShowImportDetailsModal(false);
+
+    } catch (err) {
+      alert("Failed to import details from outline.");
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function handleImportDetails(file: File | null) {
+    if (!file || !selectedCourse) return;
+    const text = await file.text();
+
+    try {
+      showLoading();
+      const res = await fetch("/api/parse_outline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html_text: text }),
+      });
+
+      if (!res.ok) throw new Error("Failed to parse");
+      const data = await res.json();
+
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+      const isMatch =
+        norm(data.code) === norm(selectedCourse.code) &&
+        norm(data.term) === norm(selectedCourse.term);
+
+      if (!isMatch) {
+        setPendingImportData(data);
+        setShowMismatchConfirm(true);
+        return;
+      }
+
+      // If match, proceed directly
+      await processImportData(data);
+
+    } catch (err) {
+      alert("Failed to import details from outline.");
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function toggleImportModal() {
+    setShowImportDetailsModal(!showImportDetailsModal);
+  }
+
   if (loading && !selectedCourse) {
     return (
       <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
@@ -139,6 +220,53 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+
+      <Modal
+        isOpen={showMismatchConfirm}
+        onClose={() => {
+          setShowMismatchConfirm(false);
+          setPendingImportData(null);
+        }}
+        title="Course Mismatch"
+        actions={
+          <>
+            <button
+              className="btn"
+              onClick={() => {
+                setShowMismatchConfirm(false);
+                setPendingImportData(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-warning"
+              onClick={() => processImportData(pendingImportData)}
+            >
+              Import Anyway
+            </button>
+          </>
+        }
+      >
+        <div className="py-2">
+          <div className="alert alert-warning">
+            <FontAwesomeIcon icon={faExclamationTriangle} />
+            The outline you uploaded appears to be for a different course
+          </div>
+          <div className="bg-base-200 p-3 rounded-md my-2 text-sm font-mono">
+            <div className="flex justify-between">
+              <span className="opacity-70">Uploaded:</span>
+              <span className="font-bold">{pendingImportData?.code} ({pendingImportData?.term})</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Current:</span>
+              <span className="font-bold">{selectedCourse?.code} ({selectedCourse?.term})</span>
+            </div>
+          </div>
+          <p className="text-sm opacity-80">Do you want to proceed? This will overwrite the current course data with data from the outline.</p>
+        </div>
+      </Modal>
+
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -166,11 +294,38 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
       >
         <p>Are you sure you want to delete this course?</p>
       </Modal>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4 md:gap-8">
-          <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center w-full md:w-auto">
-            <div className="prose max-w-none w-full md:justify-start justify-center md:text-left text-center flex-1">
-              <h1 className="lead text-xl font-bold mb-0">
+
+      {/* Import Details Modal */}
+      <Modal
+        isOpen={showImportDetailsModal}
+        onClose={() => setShowImportDetailsModal(false)}
+        title="Import Details from Outline"
+        actions={
+          <button className="btn" onClick={() => setShowImportDetailsModal(false)}>Cancel</button>
+        }
+      >
+        <FileUploadZone
+          title="Upload Course Outline"
+          description="Save the course outline as an HTML file and upload it here to update markings schemes and schedule."
+          accept="text/html"
+          onFileSelect={(file) => {
+            handleImportDetails(file);
+            if (file) setShowImportDetailsModal(false);
+          }}
+          icon={faFileCode}
+          helpLink="/help#outlines"
+          helpText="How to get outline?"
+        />
+      </Modal>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+        <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0">
+          <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center flex-1 min-w-0">
+            <div className="md:justify-start justify-center md:text-left text-center w-full flex-1 min-w-0">
+              <h1
+                className="lead text-xl font-bold mb-0"
+                title={selectedCourse.data.description}
+              >
                 {selectedCourse.data.description}
               </h1>
               <h2 className="text-md text-base-content/70 my-0">
@@ -178,9 +333,9 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               </h2>
             </div>
 
-            <Line direction="ver" className="h-10 hidden md:block" />
+            <Line direction="ver" className="h-10 hidden md:block shrink-0" />
 
-            <div className="flex flex-row items-center gap-2 form-control card p-2 bg-base-200/50 border border-base-content/10 shadow-sm">
+            <div className="flex flex-row items-center gap-2 form-control card p-2 bg-base-200/50 border border-base-content/10 shadow-sm shrink-0">
               <div className="relative flex items-center flex-1 sm:flex-none justify-end">
                 <input
                   type="number"
@@ -199,7 +354,7 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
 
           {selectedCourse.data.outline_url && (
             <>
-              <Line direction="ver" className="h-10 hidden md:block" />
+              <Line direction="ver" className="h-10 hidden md:block shrink-0" />
 
               <ExternalLink
                 href={selectedCourse.data.outline_url}
@@ -212,8 +367,21 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               </ExternalLink>
             </>
           )}
+
+          {!selectedCourse.data.outline_url && (
+            <>
+              <Line direction="ver" className="h-10 hidden md:block shrink-0" />
+              <button
+                className="hidden md:inline-flex btn btn-soft btn-secondary btn-sm btn-circle shrink-0 cursor-pointer"
+                title="Import Details from Outline"
+                onClick={toggleImportModal}
+              >
+                <FontAwesomeIcon icon={faFileImport} />
+              </button>
+            </>
+          )}
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
           {selectedCourse.data.outline_url && (
             <ExternalLink
               href={selectedCourse.data.outline_url}
@@ -224,6 +392,14 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
             >
               <FontAwesomeIcon icon={faExternalLinkAlt} /> Open Outline
             </ExternalLink>
+          )}
+          {!selectedCourse.data.outline_url && (
+            <button
+              className="md:hidden btn btn-soft btn-secondary btn-sm flex-1 cursor-pointer"
+              onClick={toggleImportModal}
+            >
+              <FontAwesomeIcon icon={faFileImport} /> Import Outline
+            </button>
           )}
           <button
             className="btn btn-error btn-soft btn-sm flex-1 md:flex-none"
