@@ -92,7 +92,7 @@ export default function Providers({
                 <div
                   className={`flex flex-1 flex-col w-full ${showSidebar ? "lg:ml-64" : ""}`}
                 >
-                  {/* Mobile: drawer that overlays content and appears below the header */}
+                  {/* Mobile: drawer that overlays content and appears above the navbar */}
                   {showSidebar ? (
                     <div className="block lg:hidden w-full flex-1 flex flex-col">
                       <div className="drawer flex-1 flex flex-col">
@@ -111,22 +111,15 @@ export default function Providers({
                             </div>
                           </div>
                         </div>
-                        <div className="drawer-side">
+                        <div className="drawer-side z-[60]">
                           <label
                             htmlFor="my-drawer-2"
                             className="drawer-overlay"
-                            style={{
-                              top: "calc(var(--navbar-total-height))",
-                              height:
-                                "calc(100vh - var(--navbar-total-height))",
-                            }}
                           ></label>
                           <div
+                            className="h-screen"
                             style={{
-                              marginTop: "calc(var(--navbar-total-height)  )",
-                              height:
-                                "calc(100vh - var(--navbar-total-height))",
-                              minHeight: 0,
+                              paddingTop: 'env(safe-area-inset-top, 0px)',
                             }}
                           >
                             <Sidebar
