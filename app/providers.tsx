@@ -102,22 +102,21 @@ export default function Providers({
                           className="drawer-toggle"
                         />
                         <div className="drawer-content flex flex-col min-h-0 flex-1">
-                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                            <div className="flex-1 flex flex-col">
+                          <div className="flex flex-col w-full flex-1 overflow-y-auto overflow-x-hidden sm:min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <div className="flex-1 flex flex-col min-h-0">
                               {children}
                             </div>
-                            <div className="mt-auto">
-                              <Footer />
-                            </div>
+                            <Footer />
                           </div>
                         </div>
-                        <div className="drawer-side z-[60]">
+                        <div className="drawer-side z-[60] overflow-hidden" style={{ height: 'calc(100dvh - env(safe-area-inset-bottom, 0px))' }}>
                           <label
                             htmlFor="my-drawer-2"
-                            className="drawer-overlay"
+                            className="drawer-overlay !fixed !inset-0"
+                            style={{ height: '100dvh' }}
                           ></label>
                           <div
-                            className="h-screen"
+                            className="h-full overflow-hidden"
                             style={{
                               paddingTop: 'env(safe-area-inset-top, 0px)',
                             }}
@@ -133,21 +132,17 @@ export default function Providers({
                   ) : (
                     // If sidebar is hidden, render a straightforward stacked layout for mobile
                     <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                      <div className="flex flex-col w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="flex-1 flex flex-col">{children}</div>
-                        <div className="mt-auto">
-                          <Footer />
-                        </div>
+                        <Footer />
                       </div>
                     </div>
                   )}
 
                   {/* Large-screen main content (unchanged layout) */}
-                  <div className="hidden lg:flex flex-1 flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                  <div className="hidden lg:flex flex-1 flex-col w-full overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex-1 flex flex-col">{children}</div>
-                    <div className="mt-auto">
-                      <Footer />
-                    </div>
+                    <Footer />
                   </div>
                 </div>
               </div>
