@@ -9,7 +9,7 @@ import ExternalLink from "../ui/ExternalLink";
 export default function Footer() {
   return (
     <footer
-      className="bg-base-200 border-t border-base-content/10"
+      className="bg-base-200 border-t border-base-content/10 sticky bottom-0 z-40 flex-shrink-0"
       role="contentinfo"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
