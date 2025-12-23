@@ -106,7 +106,7 @@ export default function Providers({
                             <div className="flex-1 flex flex-col" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
                               {children}
                             </div>
-                            <div className="mt-auto sticky bottom-0 z-10" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                            <div className="mt-auto sticky bottom-0" style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
                               <Footer />
                             </div>
                           </div>

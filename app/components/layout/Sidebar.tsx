@@ -122,7 +122,8 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
       style={{
         WebkitOverflowScrolling: "touch",
         overscrollBehavior: "contain",
-        paddingBottom: "var(--safe-area-inset-bottom)"
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        marginBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
       <Modal

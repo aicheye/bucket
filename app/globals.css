@@ -127,9 +127,3 @@ footer {
 .pb-safe {
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
-
-/* Ensure footer stays above iOS safe area */
-footer {
-  position: relative;
-  z-index: 10;
-}
