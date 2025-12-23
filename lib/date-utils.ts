@@ -86,3 +86,31 @@ export function utcToLocalDate(utcDateString: string): Date {
     dueDateUTC.getUTCDate(),
   );
 }
+
+/**
+ * Get the current season based on the month
+ * Jan-Apr: Winter, May-Aug: Spring, Sep-Dec: Fall
+ */
+export function getCurrentSeason(date: Date = new Date()): string {
+  const month = date.getMonth(); // 0-11
+  if (month >= 0 && month < 4) {
+    // Jan-Apr (0-3)
+    return "Winter";
+  } else if (month >= 4 && month < 8) {
+    // May-Aug (4-7)
+    return "Spring";
+  } else {
+    // Sep-Dec (8-11)
+    return "Fall";
+  }
+}
+
+/**
+ * Get the default term based on the current date
+ * Returns a term string like "Winter 2024" or "Spring 2025"
+ */
+export function getDefaultTerm(date: Date = new Date()): string {
+  const season = getCurrentSeason(date);
+  const year = date.getFullYear();
+  return `${season} ${year}`;
+}

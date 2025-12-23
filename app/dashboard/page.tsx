@@ -9,7 +9,7 @@ import { unauthorized, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../lib/constants";
 import { getCourseTypes } from "../../lib/course-utils";
-import { formatDateParam, parseDateParam } from "../../lib/date-utils";
+import { formatDateParam, getDefaultTerm, parseDateParam } from "../../lib/date-utils";
 import { gradeToGPA } from "../../lib/grade-utils";
 import { sendQuery } from "../../lib/graphql";
 import { UPDATE_USER_DATA } from "../../lib/graphql/mutations";
@@ -158,6 +158,23 @@ export default function CoursesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // State for selected term - get from URL params or default to calculated term
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+
+  // Initialize selectedTerm from URL or set to default based on current date
+  useEffect(() => {
+    const termParam = searchParams?.get("term");
+    if (termParam) {
+      // Use the term from URL if provided
+      setSelectedTerm(termParam);
+    } else {
+      // Otherwise, use the default term based on current date
+      const defaultTerm = getDefaultTerm();
+      setSelectedTerm(defaultTerm);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString()]);
+
   // initialize selectedDate from `?date=YYYY-MM-DD` if present, otherwise today
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     try {
@@ -255,7 +272,15 @@ export default function CoursesPage() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const currentTerm = sortedFolders.length > 0 ? sortedFolders[0] : null;
+  const currentTerm = selectedTerm && sortedFolders.includes(selectedTerm) ? selectedTerm : (sortedFolders.length > 0 ? sortedFolders[0] : null);
+
+  // Handle term change and update URL
+  const handleTermChange = (term: string) => {
+    setSelectedTerm(term);
+    const url = new URL(window.location.href);
+    url.searchParams.set("term", term);
+    window.history.replaceState(null, "", url.pathname + "?" + url.searchParams.toString());
+  };
 
   useEffect(() => {
     if (currentTerm) {
@@ -688,9 +713,25 @@ export default function CoursesPage() {
         />
 
         <div className="flex flex-col md:flex-row justify-between items-center sm:items-start md:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl justify-center sm:justify-start font-bold flex items-center gap-2 ">
-              {currentTerm} Dashboard
+          <h1 className="text-2xl sm:text-3xl justify-center sm:justify-start font-bold flex flex-col sm:flex-row items-center gap-2 ">
+            {sortedFolders.length > 1 ? (
+              <select
+                id="term-select"
+                className="select font-bold text-2xl"
+                value={currentTerm || ""}
+                onChange={(e) => handleTermChange(e.target.value)}
+              >
+                {sortedFolders.map((term) => (
+                  <option key={term} value={term}>
+                    {term}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>{currentTerm}</span>
+            )}
+            <div className="flex gap-2">
+              Dashboard
               <div
                 className="tooltip tooltip-right flex items-center"
                 data-tip={"How are grades calculated?"}
@@ -702,8 +743,8 @@ export default function CoursesPage() {
                   <FontAwesomeIcon icon={faInfoCircle} />
                 </Link>
               </div>
-            </h1>
-          </div>
+            </div>
+          </h1>
           {(cav !== null || cgpa !== null) && (
             <div className="flex gap-6 items-start">
               {cav !== null && (

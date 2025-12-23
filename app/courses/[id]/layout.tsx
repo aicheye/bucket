@@ -14,7 +14,8 @@ import Modal from "../../components/ui/Modal";
 import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
 
-export default function CourseLayout({ children }: { children: ReactNode }) {
+// Client component that manages dynamic title updates
+function CourseLayoutContent({ children }: { children: ReactNode }) {
   const { id } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,13 +65,21 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
   const isGradesView = view === "grades";
   const isInfoView = view === "info";
 
+  // Update document title whenever course data or view changes
   useEffect(() => {
-    if (selectedCourse) {
-      document.title = `${selectedCourse.code} (${view.charAt(0).toUpperCase() + view.slice(1)}) - ${APP_NAME}`;
-    } else {
-      document.title = `Course Not Found - ${APP_NAME}`;
+    if (typeof document === "undefined") return;
+
+    let titleText = APP_NAME;
+
+    if (selectedCourse?.code) {
+      const capitalizedView = view.charAt(0).toUpperCase() + view.slice(1);
+      titleText = `${selectedCourse.code} (${capitalizedView}) - ${APP_NAME}`;
+    } else if (id && !loading) {
+      titleText = `Course Not Found - ${APP_NAME}`;
     }
-  }, [selectedCourse, view]);
+
+    document.title = titleText;
+  }, [selectedCourse?.code, view, loading, id]);
 
   async function handleCreditsBlur() {
     if (!selectedCourse || isNaN(credits)) return;
@@ -444,4 +453,8 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
       {children}
     </div>
   );
+}
+
+export default function CourseLayout({ children }: { children: ReactNode }) {
+  return <CourseLayoutContent>{children}</CourseLayoutContent>;
 }
