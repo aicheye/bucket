@@ -74,13 +74,13 @@ export default function Providers({
 
       let color;
       if (isDrawerOpen) {
-        const sidebar = document.querySelector(".drawer-side .bg-base-200");
+        const sidebar = document.querySelector(".sidebar-container");
         if (sidebar) {
           color = getComputedStyle(sidebar).backgroundColor;
         }
       }
 
-      if (!color) {
+      if (!color || color === "rgba(0, 0, 0, 0)" || color === "transparent") {
         // Always set to body background color (sidebar/footer color)
         color = getComputedStyle(document.body).backgroundColor;
       }
@@ -91,6 +91,9 @@ export default function Providers({
     // Initial update
     updateThemeColor();
 
+    // Update again after a short delay to ensure DOM is ready
+    const timeout = setTimeout(updateThemeColor, 100);
+
     // Watch for theme changes
     const observer = new MutationObserver(updateThemeColor);
     observer.observe(document.documentElement, {
@@ -98,7 +101,10 @@ export default function Providers({
       attributeFilter: ["data-theme"],
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeout);
+    };
   }, [isDrawerOpen]);
 
   useEffect(() => {

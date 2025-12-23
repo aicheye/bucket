@@ -124,7 +124,7 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, on
 
   return (
     <div
-      className="h-full w-64 bg-base-200 flex flex-col border-r border-base-content/10"
+      className="sidebar-container h-full w-64 bg-base-200 flex flex-col border-r border-base-content/10"
       style={{
         WebkitOverflowScrolling: "touch",
         overscrollBehavior: "contain",
