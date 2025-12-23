@@ -122,7 +122,6 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
       style={{
         WebkitOverflowScrolling: "touch",
         overscrollBehavior: "contain",
-        marginBottom: "calc(env(safe-area-inset-bottom, 0px) * 2)",
       }}
     >
       <Modal
@@ -139,7 +138,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
         <p>{alertState.message}</p>
       </Modal>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{ overscrollBehavior: "contain" }}>
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{
+        overscrollBehavior: "contain", 
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+       }}>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <Link
