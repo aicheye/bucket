@@ -189,7 +189,7 @@ export default function InnerLayout({
           <Line direction="hor" className="w-full" />
         </div>
       </Modal>
-      <main className="p-4 sm:p-8 w-full flex-1">
+      <main className="p-4 sm:p-8 w-full flex-1 pb-safe">
         <div className="max-w-5xl mx-auto w-full flex-1">
           {(status === "loading" && !session) || coursesLoading ? (
             <div className="flex flex-col gap-6 mx-auto w-full">

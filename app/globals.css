@@ -115,3 +115,22 @@ footer {
   outline-offset: 2px;
 }
 
+/* iOS scrollbar fixes - ensure scrollbars don't go behind footer */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    /* Add padding to ensure scrollbar is visible above footer */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Utility class for safe-area bottom padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Ensure content area has proper spacing to prevent scrollbar overlap with footer */
+main {
+  margin-bottom: calc(var(--footer-height) + env(safe-area-inset-bottom, 0px));
+}

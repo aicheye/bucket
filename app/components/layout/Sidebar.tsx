@@ -119,9 +119,10 @@ export default function Sidebar({ gradesScreen, infoScreen }: SidebarProps) {
   return (
     <div
       className="h-[calc(100vh-var(--navbar-height))] w-64 bg-base-200 flex flex-col border-r border-base-content/10"
-      style={{ 
+      style={{
         WebkitOverflowScrolling: "touch",
-        overscrollBehavior: "contain"
+        overscrollBehavior: "contain",
+        paddingBottom: "var(--safe-area-inset-bottom)"
       }}
     >
       <Modal

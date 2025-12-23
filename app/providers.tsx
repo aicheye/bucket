@@ -102,11 +102,11 @@ export default function Providers({
                           className="drawer-toggle"
                         />
                         <div className="drawer-content flex flex-col min-h-0 flex-1">
-                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0">
+                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                             <div className="flex-1 flex flex-col pb-8">
                               {children}
                             </div>
-                            <div>
+                            <div className="mt-auto relative z-10">
                               <Footer />
                             </div>
                           </div>
@@ -140,9 +140,9 @@ export default function Providers({
                   ) : (
                     // If sidebar is hidden, render a straightforward stacked layout for mobile
                     <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0">
+                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="flex-1 flex flex-col pb-8">{children}</div>
-                        <div>
+                        <div className="mt-auto relative z-10">
                           <Footer />
                         </div>
                       </div>
@@ -150,9 +150,9 @@ export default function Providers({
                   )}
 
                   {/* Large-screen main content (unchanged layout) */}
-                  <div className="hidden lg:flex flex-1 flex-col w-full overflow-y-auto justify-between min-h-0">
+                  <div className="hidden lg:flex flex-1 flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <div className="flex-1 flex flex-col pb-8">{children}</div>
-                    <div>
+                    <div className="mt-auto relative z-10">
                       <Footer />
                     </div>
                   </div>
