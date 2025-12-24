@@ -41,13 +41,67 @@ export default function SchemeSelector({
   isCompleted: courseCompleted,
 }: SchemeSelectorProps) {
   const sortable = schemes
-    .map((scheme, idx) => ({
-      scheme,
-      originalIndex: idx,
-      details: calculateDetails(scheme),
-    }))
-    .filter((item) => item.details.currentGrade !== null)
-    .sort((a, b) => b.details.currentGrade! - a.details.currentGrade!);
+    .map((scheme, idx) => {
+      const details = calculateDetails(scheme);
+      const bonus = details.bonusPercent || 0;
+      let required = calculateRequired(scheme);
+
+      if (officialGrade !== undefined) {
+        const remainingWeight =
+          details.totalSchemeWeight - details.totalWeightGraded;
+
+        if (remainingWeight > 0) {
+          const effectiveTarget = officialGrade - 0.5 - bonus;
+          required =
+            (effectiveTarget * details.totalSchemeWeight -
+              details.currentScore * 100) /
+            remainingWeight;
+        } else {
+          required = null;
+        }
+      }
+
+      const isFilled =
+        (details.totalWeightCompleted ?? details.totalWeightGraded) >=
+        details.totalSchemeWeight - 0.01;
+
+      return {
+        scheme,
+        originalIndex: idx,
+        details,
+        required,
+        isFilled,
+      };
+    })
+    .filter(
+      (item) =>
+        item.details.currentGrade !== null || officialGrade !== undefined,
+    )
+    .sort((a, b) => {
+      // 1. Filled schemes first
+      if (a.isFilled && !b.isFilled) return -1;
+      if (!a.isFilled && b.isFilled) return 1;
+
+      // If both filled, sort by current grade high-low
+      if (a.isFilled && b.isFilled) {
+        const gradeA = a.details.currentGrade ?? -1;
+        const gradeB = b.details.currentGrade ?? -1;
+        return gradeB - gradeA;
+      }
+
+      // 2. Unfilled schemes: sort by required average low-high
+      if (a.required !== null && b.required !== null) {
+        return a.required - b.required;
+      }
+
+      if (a.required !== null && b.required === null) return -1;
+      if (a.required === null && b.required !== null) return 1;
+
+      // Both null required, sort by current grade high-low
+      const gradeA = a.details.currentGrade ?? -1;
+      const gradeB = b.details.currentGrade ?? -1;
+      return gradeB - gradeA;
+    });
 
   return (
     <div className="bg-base-200/40 card p-4 border border-base-content/5 shadow-sm">
@@ -65,56 +119,10 @@ export default function SchemeSelector({
                   <GradeBadge grade={officialGrade} toFixed={0} />
                 </div>
               </div>
-              {(() => {
-                // Calculate required average based on best/active scheme to reach official grade
-                const targetScheme =
-                  activeSchemeIndex !== null
-                    ? schemes[activeSchemeIndex]
-                    : bestOriginalIndex !== null
-                      ? schemes[bestOriginalIndex]
-                      : null;
-
-                if (!targetScheme) return null;
-
-                const details = calculateDetails(targetScheme);
-                // Calculate required for official grade
-                const baseCurrent = details.baseCurrentGrade;
-                const remainingWeight =
-                  details.totalSchemeWeight - details.totalWeightGraded;
-
-                if (
-                  remainingWeight <= 0 ||
-                  baseCurrent === null ||
-                  baseCurrent === undefined
-                )
-                  return null;
-
-                const bonus = details.bonusPercent || 0;
-                const effectiveTarget =
-                  bonus !== undefined && !isNaN(bonus)
-                    ? officialGrade - bonus
-                    : officialGrade;
-
-                const neededTotal =
-                  (effectiveTarget * details.totalSchemeWeight -
-                    baseCurrent * details.totalWeightGraded) /
-                  remainingWeight;
-
-                return (
-                  <div className="flex flex-col items-end gap-2 min-w-[140px] text-sm self-end">
-                    <div
-                      className="tooltip tooltip-top"
-                      data-tip="Average on remaining items needed to reach official grade"
-                    >
-                      <ReqOfficialBadge requiredAverage={neededTotal} />
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
           </div>
         )}
-        {sortable.map(({ scheme, originalIndex, details }) => {
+        {sortable.map(({ scheme, originalIndex, details, required }) => {
           const isActive =
             officialGrade === undefined &&
             (activeSchemeIndex !== null
@@ -130,7 +138,6 @@ export default function SchemeSelector({
 
           const min = Math.min(100, Math.max(32, minRaw));
           const max = Math.min(100, maxRaw);
-          const required = calculateRequired(scheme);
 
           const isCompleted = courseCompleted;
 
@@ -153,10 +160,10 @@ export default function SchemeSelector({
                 aria-pressed={isActive}
                 title={
                   isDisabled
-                    ? "Official grade is set"
+                    ? null
                     : `Activate scheme ${originalIndex + 1}`
                 }
-                className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full ${isDisabled ? "cursor-default opacity-40 grayscale" : "cursor-pointer"} ${!isActive && !isDisabled ? "opacity-60 grayscale" : ""}`}
+                className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full ${isDisabled ? "cursor-default" : "cursor-pointer"} ${!isActive && !isDisabled ? "opacity-60 grayscale" : ""}`}
               >
                 <div className="flex flex-col justify-between h-full">
                   <div className="flex items-center gap-2 mb-1">
@@ -170,27 +177,42 @@ export default function SchemeSelector({
                   </div>
                   <div className="flex items-baseline gap-1">
                     {isActive ? (
-                      <GradeBadge grade={details.currentGrade!} />
+                      <GradeBadge grade={details.currentGrade ?? undefined} />
                     ) : (
                       <GradeBadge
-                        grade={details.currentGrade!}
+                        grade={details.currentGrade ?? undefined}
                         disabled={true}
                       />
                     )}
                   </div>
                 </div>
-                {!isCompleted &&
+                {(!isCompleted || officialGrade !== undefined) &&
                   (required === null ? (
-                    <div className="flex items-end h-full self-end">
-                      <RangeBadge rangeMin={min} rangeMax={max} />
-                    </div>
+                    officialGrade === undefined ? (
+                      <div className="flex items-end h-full self-end">
+                        <RangeBadge rangeMin={min} rangeMax={max} />
+                      </div>
+                    ) : null
                   ) : (
                     <div className="flex flex-col items-end gap-2 min-w-[140px] text-sm self-end">
-                      <ReqAvgBadge
-                        requiredAverage={required}
-                        average={details.currentGrade!}
-                      />
-                      <RangeBadge rangeMin={min} rangeMax={max} />
+                      {officialGrade !== undefined ? (
+                        <div
+                          className="tooltip tooltip-bottom"
+                          data-tip="Average on remaining items to achieve official grade"
+                        >
+                          <ReqOfficialBadge
+                            requiredAverage={required}
+                          />
+                        </div>
+                      ) : (
+                        <ReqAvgBadge
+                          requiredAverage={required}
+                          average={details.currentGrade ?? 0}
+                        />
+                      )}
+                      {officialGrade === undefined && (
+                        <RangeBadge rangeMin={min} rangeMax={max} />
+                      )}
                     </div>
                   ))}
               </button>

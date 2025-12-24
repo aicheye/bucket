@@ -469,6 +469,25 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
     return enforceOfficial(bestDetails);
   }
 
+  // If no grades found in any scheme, return details for the first scheme (or preferred)
+  if (schemes.length > 0) {
+    const schemeIndex =
+      preferredIndex !== null &&
+      Number.isInteger(preferredIndex) &&
+      preferredIndex >= 0 &&
+      preferredIndex < schemes.length
+        ? preferredIndex
+        : 0;
+    const details = calculateSchemeGradeDetails(
+      schemes[schemeIndex],
+      courseItems,
+      placeholderGrades,
+      dropLowest,
+      course.data?.bonus_percent,
+    );
+    return enforceOfficial(details);
+  }
+
   if (
     course.data.official_grade !== undefined &&
     course.data.official_grade !== null

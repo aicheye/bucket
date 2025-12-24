@@ -271,11 +271,10 @@ export default function Sidebar({
                                   }
                                   closeDrawer();
                                 }}
-                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
-                                  pathname?.startsWith(`/courses/${course.id}`)
+                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}`)
                                     ? "btn-primary"
                                     : "btn-base"
-                                } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
+                                  } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
                                 title="View course"
                               >
                                 <div className="text-left w-full flex justify-between items-center gap-2">
@@ -287,15 +286,15 @@ export default function Sidebar({
                                   </div>
                                   <div className="flex font-mono text-xs items-center justify-between gap-4 opacity-70">
                                     <div className="font-semibold">
-                                      {details
+                                      {details && details.currentGrade !== null
                                         ? details.currentGrade.toFixed(
+                                          course.data.official_grade !==
+                                            undefined &&
                                             course.data.official_grade !==
-                                              undefined &&
-                                              course.data.official_grade !==
-                                                null
-                                              ? 0
-                                              : 1,
-                                          ) + "%"
+                                            null
+                                            ? 0
+                                            : 1,
+                                        ) + "%"
                                         : ""}
                                     </div>
                                   </div>
@@ -336,11 +335,10 @@ export default function Sidebar({
                         }
                         closeDrawer();
                       }}
-                      className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
-                        pathname?.startsWith(`/courses/${course.id}`)
+                      className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
                           ? "btn-primary bg-primary"
                           : ""
-                      } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
+                        } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
                     >
                       <div className="text-left w-full text-primary-content">
                         <div className="font-bold">{course.code}</div>

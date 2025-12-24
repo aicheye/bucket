@@ -8,7 +8,7 @@ export default function ReqOfficialBadge({
 }) {
   return (
     <div className="relative">
-      <div className="border-none flex gap-2 items-center bg-base-300 text-base-content badge badge-lg opacity-80">
+      <div className="border-none flex gap-2 items-center bg-base-200 text-base-content badge badge-lg">
         <FaIcon
           icon={faInfoCircle}
           className="text-xs opacity-70"
