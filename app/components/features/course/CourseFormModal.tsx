@@ -395,7 +395,7 @@ export default function CourseFormModal({
         let msg = "Failed to parse outline";
         try {
           msg = (await res.json()).error || msg;
-        } catch { }
+        } catch {}
         throw new Error(msg);
       }
 
@@ -568,9 +568,9 @@ export default function CourseFormModal({
                 step === 0 || isEditMode
                   ? handleClose
                   : () => {
-                    setStep(0);
-                    setMode(null);
-                  }
+                      setStep(0);
+                      setMode(null);
+                    }
               }
             >
               {step === 0 || isEditMode ? "Cancel" : "Back"}
@@ -687,7 +687,7 @@ export default function CourseFormModal({
         {mode === "transcript" && step === 1 && (
           <FileUploadZone
             title="Upload PDF Transcript"
-            description="Export your unofficial transcript from Quest as a PDF."
+            description="Export your unofficial transcript from Quest as a PDF. Your transcript is never stored or shared."
             accept="application/pdf"
             onFileSelect={handleTranscriptFileChange}
             icon={faFileUpload}

@@ -139,7 +139,9 @@ export default function Providers({
                 />
               </div>
 
-              <div className={`drawer ${showSidebar ? "lg:drawer-open" : ""} min-h-screen lg:min-h-0 lg:h-[calc(100dvh-var(--navbar-height))]`}>
+              <div
+                className={`drawer ${showSidebar ? "lg:drawer-open" : ""} min-h-screen lg:min-h-0 lg:h-[calc(100dvh-var(--navbar-height))]`}
+              >
                 <input
                   id="my-drawer-2"
                   type="checkbox"
@@ -180,7 +182,9 @@ export default function Providers({
                   </div>
                 )}
               </div>
-            </Heartbeat>          </SnowProvider>        </CourseProvider>
+            </Heartbeat>{" "}
+          </SnowProvider>{" "}
+        </CourseProvider>
         <GlobalLoading />
       </SessionProvider>
     </LoadingProvider>

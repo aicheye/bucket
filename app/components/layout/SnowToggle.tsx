@@ -8,7 +8,10 @@ export default function SnowToggle() {
   const { isSnowEnabled, toggleSnow } = useSnow();
 
   return (
-    <label className="swap swap-rotate btn btn-ghost btn-circle text-base-content" title="Toggle snow effect">
+    <label
+      className="swap swap-rotate btn btn-ghost btn-circle text-base-content"
+      title="Toggle snow effect"
+    >
       <input type="checkbox" checked={isSnowEnabled} onChange={toggleSnow} />
 
       {/* snow on */}

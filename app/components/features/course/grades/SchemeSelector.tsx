@@ -159,9 +159,7 @@ export default function SchemeSelector({
                 disabled={isDisabled}
                 aria-pressed={isActive}
                 title={
-                  isDisabled
-                    ? null
-                    : `Activate scheme ${originalIndex + 1}`
+                  isDisabled ? null : `Activate scheme ${originalIndex + 1}`
                 }
                 className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full ${isDisabled ? "cursor-default" : "cursor-pointer"} ${!isActive && !isDisabled ? "opacity-60 grayscale" : ""}`}
               >
@@ -200,9 +198,7 @@ export default function SchemeSelector({
                           className="tooltip tooltip-bottom"
                           data-tip="Average on remaining items to achieve official grade"
                         >
-                          <ReqOfficialBadge
-                            requiredAverage={required}
-                          />
+                          <ReqOfficialBadge requiredAverage={required} />
                         </div>
                       ) : (
                         <ReqAvgBadge

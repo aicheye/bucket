@@ -29,6 +29,10 @@ export default function PrivacyPage() {
             dates, etc.
           </li>
         </ul>
+        <p>
+          Your transcript is never stored or shared and is used solely to
+          provide the services offered by {APP_NAME}.
+        </p>
         <h2 className="text-2xl font-bold">Data Usage</h2>
         <p>
           Anonymized usage data is collected to calculate metrics limited to the
