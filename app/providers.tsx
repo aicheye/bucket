@@ -2,7 +2,7 @@
 import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Snowfall from "react-snowfall";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
@@ -74,31 +74,32 @@ export default function Providers({
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  useEffect(() => {
+  const updateThemeColor = useCallback(() => {
     if (typeof window === "undefined") return;
 
-    const updateThemeColor = () => {
-      // Use a small timeout to ensure the DOM/CSS has updated with the new theme variables
-      setTimeout(() => {
-        let meta = document.querySelector("meta[name='theme-color']");
-        if (!meta) {
-          meta = document.createElement("meta");
-          meta.setAttribute("name", "theme-color");
-          document.head.appendChild(meta);
-        }
+    // Use a small timeout to ensure the DOM/CSS has updated with the new theme variables
+    setTimeout(() => {
+      let meta = document.querySelector("meta[name='theme-color']");
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
+      }
 
-        // Create a dummy element to get the correct theme color (bg-base-200)
-        // This avoids issues with overlays or body background being different
-        const dummy = document.createElement("div");
-        dummy.className = "bg-base-200 fixed top-0 left-0 w-1 h-1 -z-50 opacity-0 pointer-events-none";
-        document.body.appendChild(dummy);
-        const color = getComputedStyle(dummy).backgroundColor;
-        document.body.removeChild(dummy);
+      // Create a dummy element to get the correct theme color (bg-base-200)
+      // This avoids issues with overlays or body background being different
+      const dummy = document.createElement("div");
+      dummy.className =
+        "bg-base-200 fixed top-0 left-0 w-1 h-1 -z-50 opacity-0 pointer-events-none";
+      document.body.appendChild(dummy);
+      const color = getComputedStyle(dummy).backgroundColor;
+      document.body.removeChild(dummy);
 
-        meta.setAttribute("content", color);
-      }, 100);
-    };
+      meta.setAttribute("content", color);
+    }, 100);
+  }, []);
 
+  useEffect(() => {
     // Initial update
     updateThemeColor();
 
@@ -110,7 +111,12 @@ export default function Providers({
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [updateThemeColor]);
+
+  // Update theme color when drawer opens/closes to prevent iOS status bar dimming
+  useEffect(() => {
+    updateThemeColor();
+  }, [isDrawerOpen, updateThemeColor]);
 
   useEffect(() => {
     logger.info("Providers initialized");
