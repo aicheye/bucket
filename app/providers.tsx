@@ -78,16 +78,19 @@ export default function Providers({
     if (typeof window === "undefined") return;
 
     const updateThemeColor = () => {
-      let meta = document.querySelector("meta[name='theme-color']");
-      if (!meta) {
-        meta = document.createElement("meta");
-        meta.setAttribute("name", "theme-color");
-        document.head.appendChild(meta);
-      }
+      // Use a small timeout to ensure the DOM/CSS has updated with the new theme variables
+      setTimeout(() => {
+        let meta = document.querySelector("meta[name='theme-color']");
+        if (!meta) {
+          meta = document.createElement("meta");
+          meta.setAttribute("name", "theme-color");
+          document.head.appendChild(meta);
+        }
 
-      // Always set to body background color (navbar color)
-      const color = getComputedStyle(document.body).backgroundColor;
-      meta.setAttribute("content", color);
+        // Always set to body background color (navbar color)
+        const color = getComputedStyle(document.body).backgroundColor;
+        meta.setAttribute("content", color);
+      }, 100);
     };
 
     // Initial update
@@ -116,7 +119,7 @@ export default function Providers({
             <Heartbeat>
               <SnowfallWrapper />
               <div
-                className="fixed inset-0 flex flex-col overflow-hidden"
+                className="flex flex-col min-h-screen"
                 style={{ paddingTop: "var(--navbar-total-height)" }}
               >
                 <Navbar
@@ -141,8 +144,8 @@ export default function Providers({
                   >
                     {/* Mobile: drawer that overlays content and appears below the header */}
                     {showSidebar ? (
-                      <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                        <div className="drawer flex-1 min-h-0">
+                      <div className="block lg:hidden w-full flex-1 flex flex-col">
+                        <div className="drawer flex-1">
                           <input
                             id="my-drawer-2"
                             type="checkbox"
@@ -150,11 +153,8 @@ export default function Providers({
                             checked={isDrawerOpen}
                             onChange={(e) => setIsDrawerOpen(e.target.checked)}
                           />
-                          <div className="drawer-content flex flex-col min-h-0 flex-1 h-full">
-                            <div
-                              className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
-                              style={{ WebkitOverflowScrolling: "touch" }}
-                            >
+                          <div className="drawer-content flex flex-col flex-1">
+                            <div className="flex flex-col w-full flex-1 justify-between">
                               <div className="flex-1 flex flex-col">
                                 {children}
                               </div>
@@ -180,11 +180,8 @@ export default function Providers({
                       </div>
                     ) : (
                       // If sidebar is hidden, render a straightforward stacked layout for mobile
-                      <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                        <div
-                          className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
-                          style={{ WebkitOverflowScrolling: "touch" }}
-                        >
+                      <div className="block lg:hidden w-full flex-1 flex flex-col">
+                        <div className="flex flex-col w-full flex-1 justify-between">
                           <div className="flex-1 flex flex-col">{children}</div>
                           <Footer />
                         </div>
@@ -192,14 +189,11 @@ export default function Providers({
                     )}
 
                     {/* Large-screen main content (unchanged layout) */}
-                    <div className="hidden lg:flex flex-1 flex-col w-full min-h-0">
-                      <div
-                        className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0"
-                        style={{ WebkitOverflowScrolling: "touch" }}
-                      >
+                    <div className="hidden lg:flex flex-1 flex-col w-full">
+                      <div className="flex-1 flex flex-col w-full justify-between">
                         <div className="flex-1 flex flex-col">{children}</div>
+                        <Footer />
                       </div>
-                      <Footer />
                     </div>
                   </div>
                 </div>

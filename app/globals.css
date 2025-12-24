@@ -19,7 +19,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Prevent horizontal overflow on small screens (fixes blank area to the right) */
 html, body {
   max-width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* iOS safe-area / sticky header + footer fixes
