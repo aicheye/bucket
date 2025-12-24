@@ -134,25 +134,27 @@ export default function ScheduleCard({
                       : info["End Time"]}
                   </td>
                   <td className="min-w-fit">{info.Location}</td>
-                  <td className="flex flex-col gap-2">
-                    {info.Instructors && info.Instructors.length > 0 ? (
-                      info.Instructors?.map((inst: any) => (
-                        <div key={inst.Email}>
-                          <p>{inst.Name}</p>
-                          <ExternalLink
-                            href={`mailto:${inst.Email}`}
-                            className="text-xs"
-                            decorations="text-base-content/70 hover:underline"
-                          >
-                            ({inst.Email})
-                          </ExternalLink>
+                  <td>
+                    <div className="flex flex-col gap-2">
+                      {info.Instructors && info.Instructors.length > 0 ? (
+                        info.Instructors?.map((inst: any) => (
+                          <div key={inst.Email}>
+                            <p>{inst.Name}</p>
+                            <ExternalLink
+                              href={`mailto:${inst.Email}`}
+                              className="text-xs"
+                              decorations="text-base-content/70 hover:underline"
+                            >
+                              ({inst.Email})
+                            </ExternalLink>
+                          </div>
+                        ))
+                      ) : (
+                        <div>
+                          <span className="text-xs opacity-50 italic">TBA</span>
                         </div>
-                      ))
-                    ) : (
-                      <div>
-                        <span className="text-xs opacity-50 italic">TBA</span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

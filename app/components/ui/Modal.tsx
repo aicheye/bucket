@@ -39,24 +39,6 @@ export default function Modal({
       } catch {
         // swallow
       }
-
-      // Defensive: ensure no other lingering native dialog backdrops remain
-      try {
-        if (typeof document !== "undefined") {
-          const openDialogs = Array.from(
-            document.querySelectorAll("dialog"),
-          ).filter((d) => (d as HTMLDialogElement).open) as HTMLDialogElement[];
-          openDialogs.forEach((d) => {
-            try {
-              d.close();
-            } catch {
-              // swallow
-            }
-          });
-        }
-      } catch {
-        // swallow
-      }
     };
   }, [isOpen]);
 

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import Snowfall from "react-snowfall";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
+import OnboardingCheck from "./components/features/OnboardingCheck";
 import Footer from "./components/layout/Footer";
 import GlobalLoading from "./components/layout/GlobalLoading";
 import Navbar from "./components/layout/Navbar";
@@ -120,6 +121,7 @@ export default function Providers({
   return (
     <LoadingProvider>
       <SessionProvider session={session} refetchOnWindowFocus={false}>
+        <OnboardingCheck />
         <CourseProvider>
           <SnowProvider>
             <Heartbeat>
