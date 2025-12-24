@@ -85,19 +85,8 @@ export default function Providers({
         document.head.appendChild(meta);
       }
 
-      let color;
-      if (isDrawerOpen) {
-        const sidebar = document.querySelector(".drawer-side .bg-base-200");
-        if (sidebar) {
-          color = getComputedStyle(sidebar).backgroundColor;
-        }
-      }
-
-      if (!color) {
-        // Always set to body background color (sidebar/footer color)
-        color = getComputedStyle(document.body).backgroundColor;
-      }
-
+      // Always set to body background color (navbar color)
+      const color = getComputedStyle(document.body).backgroundColor;
       meta.setAttribute("content", color);
     };
 
@@ -112,7 +101,7 @@ export default function Providers({
     });
 
     return () => observer.disconnect();
-  }, [isDrawerOpen]);
+  }, []);
 
   useEffect(() => {
     logger.info("Providers initialized");
@@ -127,7 +116,7 @@ export default function Providers({
             <Heartbeat>
               <SnowfallWrapper />
               <div
-                className="h-screen flex flex-col overflow-hidden"
+                className="fixed inset-0 flex flex-col overflow-hidden"
                 style={{ paddingTop: "var(--navbar-total-height)" }}
               >
                 <Navbar
