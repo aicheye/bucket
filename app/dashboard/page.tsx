@@ -26,7 +26,6 @@ import CoursesCard from "../components/features/dashboard/CoursesCard";
 import DeliverablesCard from "../components/features/dashboard/DeliverablesCard";
 import TermStatsCard from "../components/features/dashboard/TermStatsCard";
 import ItemFormModal from "../components/features/ItemFormModal";
-import ProsePageContainer from "../components/features/ProsePageContainer";
 import { Item, useCourses } from "../contexts/CourseContext";
 import { useGroupedCourses } from "../hooks/useGroupedCourses";
 
@@ -877,8 +876,8 @@ export default function CoursesPage() {
   }
 
   return (
-    <ProsePageContainer>
+    <div className="card flex flex-col flex-1 gap-6 max-w-3xl sm:p-12 p-8 mx-auto w-full text-base-content text-left bg-base-100 shadow-lg">
       <AddCourseHelp />
-    </ProsePageContainer>
+    </div>
   );
 }
