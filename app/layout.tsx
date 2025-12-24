@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { APP_NAME } from "../lib/constants";
 import "./globals.css";
 import Providers from "./providers";
-import { Snowfall } from "react-snowfall/lib/Snowfall";
 
 export const metadata: Metadata = {
   title: APP_NAME,

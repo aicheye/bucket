@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { APP_NAME, APP_VERSION } from "../../../lib/constants";
 import Profile from "./Profile";
+import SnowToggle from "./SnowToggle";
 import ThemeToggle from "./ThemeToggle";
 
 function closeDrawer() {
@@ -61,7 +62,7 @@ export default function Navbar({
               />
               <span className="flex items-baseline gap-2">
                 {APP_NAME}{" "}
-                <span className="text-sm text-base-content/50 font-semibold italic">
+                <span className="text-sm sm:block hidden text-base-content/50 font-semibold italic">
                   {APP_VERSION}
                 </span>
               </span>
@@ -69,6 +70,7 @@ export default function Navbar({
           </div>
         </div>
         <div className="flex flex-row gap-2 mx-2">
+          <SnowToggle />
           <ThemeToggle />
           {showProfile && <Profile />}
         </div>

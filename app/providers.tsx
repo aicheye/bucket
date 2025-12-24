@@ -12,6 +12,7 @@ import Navbar from "./components/layout/Navbar";
 import Sidebar from "./components/layout/Sidebar";
 import { CourseProvider } from "./contexts/CourseContext";
 import { LoadingProvider } from "./contexts/LoadingContext";
+import { SnowProvider, useSnow } from "./contexts/SnowContext";
 
 // session heartbeat: periodically record active session (client-side)
 const Heartbeat = ({ children }: { children: React.ReactNode }) => {
@@ -39,6 +40,16 @@ const Heartbeat = ({ children }: { children: React.ReactNode }) => {
   }, [session]);
 
   return <>{children}</>;
+};
+
+const SnowfallWrapper = () => {
+  const { isSnowEnabled } = useSnow();
+  if (!isSnowEnabled) return null;
+  return (
+    <div className="absolute top-0 left-0 w-screen h-screen pointer-events-none z-100">
+      <Snowfall />
+    </div>
+  );
 };
 
 export default function Providers({
@@ -110,101 +121,99 @@ export default function Providers({
     <LoadingProvider>
       <SessionProvider session={session} refetchOnWindowFocus={false}>
         <CourseProvider>
-          <Heartbeat>
-            <div className="absolute top-0 left-0 w-screen h-screen pointer-events-none z-100">
-              <Snowfall />
-            </div>
-            <div
-              className="h-screen flex flex-col overflow-hidden"
-              style={{ paddingTop: "var(--navbar-total-height)" }}
-            >
-              <Navbar
-                showMenuButton={showSidebar}
-                showProfile={!authScreen}
-                className="z-50"
-              />
-              <div className="flex flex-1 bg-base-300 min-h-0">
-                {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
-                {showSidebar ? (
-                  <div className="hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:bottom-0 lg:w-64">
-                    <Sidebar
-                      gradesScreen={gradesScreen}
-                      infoScreen={infoScreen}
-                    />
-                  </div>
-                ) : null}
-
-                {/* Main content area is inset on large screens to avoid overlapping the fixed sidebar */}
-                <div
-                  className={`flex flex-1 flex-col min-h-0 w-full ${showSidebar ? "lg:ml-64" : ""}`}
-                >
-                  {/* Mobile: drawer that overlays content and appears below the header */}
+          <SnowProvider>
+            <Heartbeat>
+              <SnowfallWrapper />
+              <div
+                className="h-screen flex flex-col overflow-hidden"
+                style={{ paddingTop: "var(--navbar-total-height)" }}
+              >
+                <Navbar
+                  showMenuButton={showSidebar}
+                  showProfile={!authScreen}
+                  className="z-50"
+                />
+                <div className="flex flex-1 bg-base-300 min-h-0">
+                  {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
                   {showSidebar ? (
-                    <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="drawer flex-1 min-h-0">
-                        <input
-                          id="my-drawer-2"
-                          type="checkbox"
-                          className="drawer-toggle"
-                          checked={isDrawerOpen}
-                          onChange={(e) => setIsDrawerOpen(e.target.checked)}
-                        />
-                        <div className="drawer-content flex flex-col min-h-0 flex-1 h-full">
-                          <div
-                            className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
-                            style={{ WebkitOverflowScrolling: "touch" }}
-                          >
-                            <div className="flex-1 flex flex-col">
-                              {children}
+                    <div className="hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:bottom-0 lg:w-64">
+                      <Sidebar
+                        gradesScreen={gradesScreen}
+                        infoScreen={infoScreen}
+                      />
+                    </div>
+                  ) : null}
+
+                  {/* Main content area is inset on large screens to avoid overlapping the fixed sidebar */}
+                  <div
+                    className={`flex flex-1 flex-col min-h-0 w-full ${showSidebar ? "lg:ml-64" : ""}`}
+                  >
+                    {/* Mobile: drawer that overlays content and appears below the header */}
+                    {showSidebar ? (
+                      <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
+                        <div className="drawer flex-1 min-h-0">
+                          <input
+                            id="my-drawer-2"
+                            type="checkbox"
+                            className="drawer-toggle"
+                            checked={isDrawerOpen}
+                            onChange={(e) => setIsDrawerOpen(e.target.checked)}
+                          />
+                          <div className="drawer-content flex flex-col min-h-0 flex-1 h-full">
+                            <div
+                              className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
+                              style={{ WebkitOverflowScrolling: "touch" }}
+                            >
+                              <div className="flex-1 flex flex-col">
+                                {children}
+                              </div>
+                              <Footer />
                             </div>
-                            <Footer />
                           </div>
-                        </div>
-                        <div className="drawer-side z-50">
-                          <label
-                            htmlFor="my-drawer-2"
-                            className="drawer-overlay"
-                            aria-label="close sidebar"
-                          ></label>
-                          <div className="h-full min-h-0">
-                            <Sidebar
-                              gradesScreen={gradesScreen}
-                              infoScreen={infoScreen}
-                              inDrawer={true}
-                              onClose={() => setIsDrawerOpen(false)}
-                            />
+                          <div className="drawer-side z-50">
+                            <label
+                              htmlFor="my-drawer-2"
+                              className="drawer-overlay"
+                              aria-label="close sidebar"
+                            ></label>
+                            <div className="h-full min-h-0">
+                              <Sidebar
+                                gradesScreen={gradesScreen}
+                                infoScreen={infoScreen}
+                                inDrawer={true}
+                                onClose={() => setIsDrawerOpen(false)}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    // If sidebar is hidden, render a straightforward stacked layout for mobile
-                    <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
+                    ) : (
+                      // If sidebar is hidden, render a straightforward stacked layout for mobile
+                      <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
+                        <div
+                          className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
+                          style={{ WebkitOverflowScrolling: "touch" }}
+                        >
+                          <div className="flex-1 flex flex-col">{children}</div>
+                          <Footer />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Large-screen main content (unchanged layout) */}
+                    <div className="hidden lg:flex flex-1 flex-col w-full min-h-0">
                       <div
-                        className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
+                        className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0"
                         style={{ WebkitOverflowScrolling: "touch" }}
                       >
                         <div className="flex-1 flex flex-col">{children}</div>
-                        <Footer />
                       </div>
+                      <Footer />
                     </div>
-                  )}
-
-                  {/* Large-screen main content (unchanged layout) */}
-                  <div className="hidden lg:flex flex-1 flex-col w-full min-h-0">
-                    <div
-                      className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0"
-                      style={{ WebkitOverflowScrolling: "touch" }}
-                    >
-                      <div className="flex-1 flex flex-col">{children}</div>
-                    </div>
-                    <Footer />
                   </div>
                 </div>
               </div>
-            </div>
-          </Heartbeat>
-        </CourseProvider>
+            </Heartbeat>          </SnowProvider>        </CourseProvider>
         <GlobalLoading />
       </SessionProvider>
     </LoadingProvider>
