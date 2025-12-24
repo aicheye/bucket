@@ -87,8 +87,14 @@ export default function Providers({
           document.head.appendChild(meta);
         }
 
-        // Always set to body background color (navbar color)
-        const color = getComputedStyle(document.body).backgroundColor;
+        // Create a dummy element to get the correct theme color (bg-base-200)
+        // This avoids issues with overlays or body background being different
+        const dummy = document.createElement("div");
+        dummy.className = "bg-base-200 fixed top-0 left-0 w-1 h-1 -z-50 opacity-0 pointer-events-none";
+        document.body.appendChild(dummy);
+        const color = getComputedStyle(dummy).backgroundColor;
+        document.body.removeChild(dummy);
+
         meta.setAttribute("content", color);
       }, 100);
     };
@@ -118,85 +124,55 @@ export default function Providers({
           <SnowProvider>
             <Heartbeat>
               <SnowfallWrapper />
-              <div
-                className="flex flex-col min-h-screen"
-                style={{ paddingTop: "var(--navbar-total-height)" }}
-              >
+              {/* Desktop Navbar: Fixed at top, full width */}
+              <div className="hidden lg:block sticky top-0 z-50 w-full h-[var(--navbar-height)]">
                 <Navbar
-                  showMenuButton={showSidebar}
+                  showMenuButton={false}
                   showProfile={!authScreen}
-                  className="z-50"
+                  className="!relative"
                 />
-                <div className="flex flex-1 bg-base-300 min-h-0">
-                  {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
-                  {showSidebar ? (
-                    <div className="hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:bottom-0 lg:w-64">
+              </div>
+
+              <div className={`drawer ${showSidebar ? "lg:drawer-open" : ""} min-h-screen lg:min-h-0 lg:h-[calc(100dvh-var(--navbar-height))]`}>
+                <input
+                  id="my-drawer-2"
+                  type="checkbox"
+                  className="drawer-toggle"
+                  checked={isDrawerOpen}
+                  onChange={(e) => setIsDrawerOpen(e.target.checked)}
+                />
+                <div className="drawer-content flex flex-col min-h-screen lg:h-full lg:min-h-0 bg-base-300 lg:overflow-hidden">
+                  {/* Mobile Navbar: Scrolls with content */}
+                  <div className="lg:hidden">
+                    <Navbar
+                      showMenuButton={showSidebar}
+                      showProfile={!authScreen}
+                      className="!relative z-40"
+                    />
+                  </div>
+
+                  <div className="flex-1 flex flex-col lg:overflow-y-auto">
+                    {children}
+                    <Footer />
+                  </div>
+                </div>
+                {showSidebar && (
+                  <div className="drawer-side z-50 lg:z-auto lg:h-full">
+                    <label
+                      htmlFor="my-drawer-2"
+                      className="drawer-overlay"
+                      aria-label="close sidebar"
+                    ></label>
+                    <div className="h-full bg-base-200 text-base-content w-64 border-r border-base-content/10">
                       <Sidebar
                         gradesScreen={gradesScreen}
                         infoScreen={infoScreen}
+                        inDrawer={true}
+                        onClose={() => setIsDrawerOpen(false)}
                       />
                     </div>
-                  ) : null}
-
-                  {/* Main content area is inset on large screens to avoid overlapping the fixed sidebar */}
-                  <div
-                    className={`flex flex-1 flex-col min-h-0 w-full ${showSidebar ? "lg:ml-64" : ""}`}
-                  >
-                    {/* Mobile: drawer that overlays content and appears below the header */}
-                    {showSidebar ? (
-                      <div className="block lg:hidden w-full flex-1 flex flex-col">
-                        <div className="drawer flex-1">
-                          <input
-                            id="my-drawer-2"
-                            type="checkbox"
-                            className="drawer-toggle"
-                            checked={isDrawerOpen}
-                            onChange={(e) => setIsDrawerOpen(e.target.checked)}
-                          />
-                          <div className="drawer-content flex flex-col flex-1">
-                            <div className="flex flex-col w-full flex-1 justify-between">
-                              <div className="flex-1 flex flex-col">
-                                {children}
-                              </div>
-                              <Footer />
-                            </div>
-                          </div>
-                          <div className="drawer-side z-50">
-                            <label
-                              htmlFor="my-drawer-2"
-                              className="drawer-overlay"
-                              aria-label="close sidebar"
-                            ></label>
-                            <div className="h-full min-h-0">
-                              <Sidebar
-                                gradesScreen={gradesScreen}
-                                infoScreen={infoScreen}
-                                inDrawer={true}
-                                onClose={() => setIsDrawerOpen(false)}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      // If sidebar is hidden, render a straightforward stacked layout for mobile
-                      <div className="block lg:hidden w-full flex-1 flex flex-col">
-                        <div className="flex flex-col w-full flex-1 justify-between">
-                          <div className="flex-1 flex flex-col">{children}</div>
-                          <Footer />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Large-screen main content (unchanged layout) */}
-                    <div className="hidden lg:flex flex-1 flex-col w-full">
-                      <div className="flex-1 flex flex-col w-full justify-between">
-                        <div className="flex-1 flex flex-col">{children}</div>
-                        <Footer />
-                      </div>
-                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </Heartbeat>          </SnowProvider>        </CourseProvider>
         <GlobalLoading />
