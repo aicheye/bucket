@@ -79,8 +79,8 @@ export default function GradesView() {
           isPlaceholder: item.data?.isPlaceholder ?? false,
           weight:
             item?.data &&
-              item.data.weight !== undefined &&
-              item.data.weight !== null
+            item.data.weight !== undefined &&
+            item.data.weight !== null
               ? item.data.weight
               : "0",
         };
@@ -407,10 +407,10 @@ export default function GradesView() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-      )
-        .toISOString()
-        .split("T")[0]
+          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+        )
+          .toISOString()
+          .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -515,12 +515,12 @@ export default function GradesView() {
   const usedDetails = useMemo(() => {
     return usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-        usedScheme,
-        baseCourseItems,
-        placeholderGrades,
-        dropLowest,
-        bonusPercent,
-      )
+          usedScheme,
+          baseCourseItems,
+          placeholderGrades,
+          dropLowest,
+          bonusPercent,
+        )
       : null;
   }, [
     usedScheme,
@@ -577,9 +577,9 @@ export default function GradesView() {
 
   const isWeightCompleted = useMemo(() => {
     return usedDetails
-      ? (usedDetails.totalWeightCompleted !== undefined
+      ? usedDetails.totalWeightCompleted !== undefined
         ? usedDetails.totalWeightCompleted >= usedDetails.totalSchemeWeight
-        : false)
+        : false
       : false;
   }, [usedDetails]);
 
@@ -587,7 +587,7 @@ export default function GradesView() {
     // Check local officialGrade state (live) or persisted data
     // The persist check is handled by initializing state from data, so checking state is enough
     if (officialGrade !== undefined && officialGrade !== null) return true;
-    
+
     // Fall back to context check if state is undefined (though state is init from context)
     if (selectedCourse && isCourseCompleted(selectedCourse)) return true;
 
@@ -596,7 +596,7 @@ export default function GradesView() {
 
   const showGoalInput = useMemo(() => {
     if (isLiveCompleted) return false;
-    
+
     const hasPending = courseItems.some(
       (it) => it.data.grade === "" && !it.data.isPlaceholder,
     );
@@ -628,8 +628,6 @@ export default function GradesView() {
   );
 
   if (!selectedCourse) return null;
-
-
 
   return (
     <>
@@ -677,7 +675,11 @@ export default function GradesView() {
         courses={courses}
         categoryHasMarks={(courseId: string, type: string) => {
           return baseCourseItems.some(
-            (it) => it.course_id === courseId && it.data.type === type && it.data.grade !== "" && !it.data.isPlaceholder,
+            (it) =>
+              it.course_id === courseId &&
+              it.data.type === type &&
+              it.data.grade !== "" &&
+              !it.data.isPlaceholder,
           );
         }}
       />
@@ -746,7 +748,7 @@ export default function GradesView() {
             </div>
           </div>
           {selectedCourse.data["marking-schemes"]?.length > 0 &&
-            displayItems.length > 0 && (
+            (displayItems.length > 0 || officialGrade !== undefined) && (
               <SchemeSelector
                 schemes={selectedCourse.data["marking-schemes"]}
                 bestOriginalIndex={bestOriginalIndex}

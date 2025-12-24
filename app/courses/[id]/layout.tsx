@@ -1,12 +1,20 @@
 "use client";
 
-import { faExclamationTriangle, faExternalLinkAlt, faFileCode, faFileImport, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faExclamationTriangle,
+  faExternalLinkAlt,
+  faFileCode,
+  faFileImport,
+  faPen,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../../lib/constants";
 import { sendTelemetry } from "../../../lib/telemetry";
+import CourseFormModal from "../../components/features/course/CourseFormModal";
 import ExternalLink from "../../components/ui/ExternalLink";
 import FileUploadZone from "../../components/ui/FileUploadZone";
 import Line from "../../components/ui/Line";
@@ -31,8 +39,8 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
     updateMarkingSchemes,
   } = useCourses();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [credits, setCredits] = useState(0.5);
   const [showImportDetailsModal, setShowImportDetailsModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pendingImportData, setPendingImportData] = useState<any>(null);
@@ -55,12 +63,6 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
     !courses.some((c) => c.id === id) &&
     loading;
 
-  useEffect(() => {
-    if (selectedCourse) {
-      setCredits(selectedCourse.credits ?? 0.5);
-    }
-  }, [selectedCourse]);
-
   const view = searchParams?.get("view") || "grades";
   const isGradesView = view === "grades";
   const isInfoView = view === "info";
@@ -80,17 +82,6 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
 
     document.title = titleText;
   }, [selectedCourse?.code, view, loading, id]);
-
-  async function handleCreditsBlur() {
-    if (!selectedCourse || isNaN(credits)) return;
-    if (credits === selectedCourse.credits) return;
-
-    await updateCourse(selectedCourse.id, { credits });
-    await sendTelemetry("update_course_credits", {
-      course_id: selectedCourse.id,
-      credits,
-    });
-  }
 
   async function handleDelete() {
     if (!selectedCourse) return;
@@ -128,7 +119,10 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
       showLoading();
 
       if (data.data["marking-schemes"]) {
-        await updateMarkingSchemes(selectedCourse.id, data.data["marking-schemes"]);
+        await updateMarkingSchemes(
+          selectedCourse.id,
+          data.data["marking-schemes"],
+        );
       }
 
       const { "marking-schemes": schemes, ...otherData } = data.data;
@@ -148,7 +142,6 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
       setPendingImportData(null);
       // If the import modal was open, close it too
       setShowImportDetailsModal(false);
-
     } catch (err) {
       alert("Failed to import details from outline.");
     } finally {
@@ -184,7 +177,6 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
 
       // If match, proceed directly
       await processImportData(data);
-
     } catch (err) {
       alert("Failed to import details from outline.");
     } finally {
@@ -229,7 +221,6 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
-
       <Modal
         isOpen={showMismatchConfirm}
         onClose={() => {
@@ -265,14 +256,21 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
           <div className="bg-base-200 p-3 rounded-md my-2 text-sm font-mono">
             <div className="flex justify-between">
               <span className="opacity-70">Uploaded:</span>
-              <span className="font-bold">{pendingImportData?.code} ({pendingImportData?.term})</span>
+              <span className="font-bold">
+                {pendingImportData?.code} ({pendingImportData?.term})
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="opacity-70">Current:</span>
-              <span className="font-bold">{selectedCourse?.code} ({selectedCourse?.term})</span>
+              <span className="font-bold">
+                {selectedCourse?.code} ({selectedCourse?.term})
+              </span>
             </div>
           </div>
-          <p className="text-sm opacity-80">Do you want to proceed? This will overwrite the current course data with data from the outline.</p>
+          <p className="text-sm opacity-80">
+            Do you want to proceed? This will overwrite the current course data
+            with data from the outline.
+          </p>
         </div>
       </Modal>
 
@@ -310,7 +308,12 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
         onClose={() => setShowImportDetailsModal(false)}
         title="Import Details from Outline"
         actions={
-          <button className="btn" onClick={() => setShowImportDetailsModal(false)}>Cancel</button>
+          <button
+            className="btn"
+            onClick={() => setShowImportDetailsModal(false)}
+          >
+            Cancel
+          </button>
         }
       >
         <FileUploadZone
@@ -329,8 +332,8 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0">
-          <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center flex-1 min-w-0">
-            <div className="md:justify-start justify-center md:text-left text-center w-full flex-1 min-w-0">
+          <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center justify-start flex-1 min-w-0">
+            <div className="md:justify-start justify-center md:text-left text-center min-w-0">
               <h1
                 className="lead text-xl font-bold mb-0"
                 title={selectedCourse.data.description}
@@ -344,51 +347,32 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
 
             <Line direction="ver" className="h-10 hidden md:block shrink-0" />
 
-            <div className="flex flex-row items-center gap-2 form-control card p-2 bg-base-200/50 border border-base-content/10 shadow-sm shrink-0">
-              <div className="relative flex items-center flex-1 sm:flex-none justify-end">
-                <input
-                  type="number"
-                  step="0.25"
-                  className="input input-sm border border-base-content/30 text-lg w-20 text-center bg-base-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold"
-                  value={credits}
-                  onChange={(e) => setCredits(Number(e.target.value))}
-                  onBlur={handleCreditsBlur}
-                />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-wider text-base-content/50 mr-1">
-                Credits
-              </span>
-            </div>
+            {selectedCourse.data.outline_url && (
+              <>
+                <ExternalLink
+                  href={selectedCourse.data.outline_url}
+                  decorations="none"
+                  className="hidden md:inline-flex btn btn-soft btn-info btn-sm btn-circle shrink-0"
+                  title="View Original Outline"
+                  aria-label="View Original Outline"
+                >
+                  <FontAwesomeIcon icon={faExternalLinkAlt} />
+                </ExternalLink>
+              </>
+            )}
+
+            {!selectedCourse.data.outline_url && (
+              <>
+                <button
+                  className="hidden md:inline-flex btn btn-soft btn-secondary btn-sm btn-circle shrink-0 cursor-pointer"
+                  title="Import Details from Outline"
+                  onClick={toggleImportModal}
+                >
+                  <FontAwesomeIcon icon={faFileImport} />
+                </button>
+              </>
+            )}
           </div>
-
-          {selectedCourse.data.outline_url && (
-            <>
-              <Line direction="ver" className="h-10 hidden md:block shrink-0" />
-
-              <ExternalLink
-                href={selectedCourse.data.outline_url}
-                decorations="none"
-                className="hidden md:inline-flex btn btn-soft btn-info btn-sm btn-circle shrink-0"
-                title="View Original Outline"
-                aria-label="View Original Outline"
-              >
-                <FontAwesomeIcon icon={faExternalLinkAlt} />
-              </ExternalLink>
-            </>
-          )}
-
-          {!selectedCourse.data.outline_url && (
-            <>
-              <Line direction="ver" className="h-10 hidden md:block shrink-0" />
-              <button
-                className="hidden md:inline-flex btn btn-soft btn-secondary btn-sm btn-circle shrink-0 cursor-pointer"
-                title="Import Details from Outline"
-                onClick={toggleImportModal}
-              >
-                <FontAwesomeIcon icon={faFileImport} />
-              </button>
-            </>
-          )}
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
           {selectedCourse.data.outline_url && (
@@ -411,15 +395,31 @@ function CourseLayoutContent({ children }: { children: ReactNode }) {
             </button>
           )}
           <button
-            className="btn btn-error btn-soft btn-sm flex-1 md:flex-none"
+            className="btn btn-soft btn-primary btn-sm flex-1 md:flex-none"
+            onClick={() => setShowEditModal(true)}
+            title="Edit course"
+            aria-label="Edit course"
+          >
+            <FontAwesomeIcon icon={faPen} /> Edit Course
+          </button>
+          <button
+            className="btn btn-error btn-soft btn-sm md:flex-none"
             onClick={() => setShowDeleteConfirm(true)}
             title="Delete course"
             aria-label="Delete course"
           >
-            <FontAwesomeIcon icon={faTrash} /> Delete Course
+            <FontAwesomeIcon icon={faTrash} />
           </button>
         </div>
       </div>
+
+      {selectedCourse && (
+        <CourseFormModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          course={selectedCourse}
+        />
+      )}
 
       <div className="flex flex-row items-center justify-center md:justify-start w-full">
         <div

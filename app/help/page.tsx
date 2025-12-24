@@ -45,9 +45,11 @@ export default function HelpPage() {
           </li>
           <li>
             <strong>Term Average / Term GPA:</strong> Aggregated across all
-            courses in the current term. GPA uses the OUAC scale conversion (see <ExternalLink href="https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table#conversion-table">
+            courses in the current term. GPA uses the OUAC scale conversion (see{" "}
+            <ExternalLink href="https://www.ouac.on.ca/guide/undergraduate-grade-conversion-table#conversion-table">
               Scale 3
-            </ExternalLink>).
+            </ExternalLink>
+            ).
           </li>
           <li>
             <strong>Cumulative Average / CGPA:</strong> Aggregated across all
@@ -75,15 +77,15 @@ export default function HelpPage() {
             Exams, etc.) appear in the marking scheme and affect calculations.
           </li>
           <li>
-            <strong>Official / Final Grade:</strong> You can manually set a final
-            grade in the Grading Settings. This overrides all calculated values
-            and marks the course as complete.
+            <strong>Official / Final Grade:</strong> You can manually set a
+            final grade in the Grading Settings. This overrides all calculated
+            values and marks the course as complete.
           </li>
           <li>
             <strong>Grade Floor:</strong> Individual course grades have a
             minimum display floor of 32%. However, the <em>Required to Goal</em>{" "}
-            calculation still uses your actual raw performance to tell you exactly
-            what is needed.
+            calculation still uses your actual raw performance to tell you
+            exactly what is needed.
           </li>
         </ul>
         <p className="text-sm opacity-70 mt-2">

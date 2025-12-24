@@ -14,7 +14,7 @@ import { DEFAULT_COURSE_VIEW } from "../../../lib/constants";
 import { useCourses } from "../../contexts/CourseContext";
 import { useLoading } from "../../contexts/LoadingContext";
 import { useAlertState } from "../../hooks/useAlertState";
-import AddCourseModal from "../features/dashboard/AddCourseModal";
+import CourseFormModal from "../features/course/CourseFormModal";
 import GradeBadge from "../features/GradeBadge";
 import Line from "../ui/Line";
 import Modal from "../ui/Modal";
@@ -26,7 +26,12 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, onClose }: SidebarProps) {
+export default function Sidebar({
+  gradesScreen,
+  infoScreen,
+  inDrawer = false,
+  onClose,
+}: SidebarProps) {
   const {
     courses,
     addCourse,
@@ -124,11 +129,11 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, on
 
   return (
     <div
-      className="sidebar-container h-full w-64 bg-base-200 flex flex-col border-r border-base-content/10"
+      className="h-full w-64 bg-base-200 flex flex-col border-r border-base-content/10"
       style={{
         WebkitOverflowScrolling: "touch",
         overscrollBehavior: "contain",
-        paddingTop: inDrawer ? 'env(safe-area-inset-top, 0px)' : undefined,
+        paddingTop: inDrawer ? "env(safe-area-inset-top, 0px)" : undefined,
       }}
     >
       <Modal
@@ -145,10 +150,13 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, on
         <p>{alertState.message}</p>
       </Modal>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{
-        overscrollBehavior: "contain",
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
-      }}>
+      <div
+        className="flex-1 overflow-y-auto p-4 flex flex-col gap-4"
+        style={{
+          overscrollBehavior: "contain",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+        }}
+      >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <Link
@@ -263,24 +271,32 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, on
                                   }
                                   closeDrawer();
                                 }}
-                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${pathname?.startsWith(`/courses/${course.id}`)
-                                  ? "btn-primary"
-                                  : "btn-base"
-                                  } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
+                                className={`btn btn-sm shadow-sm justify-start h-auto py-2 font-normal ${
+                                  pathname?.startsWith(`/courses/${course.id}`)
+                                    ? "btn-primary"
+                                    : "btn-base"
+                                } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
                                 title="View course"
                               >
                                 <div className="text-left w-full flex justify-between items-center gap-2">
                                   <div className="min-w-fit font-bold text-[14px] flex items-center gap-1 flex-1">
                                     {course.code}
-                                    <div className="text-xs font-mono font-normal opacity-70">({course.credits})</div>
+                                    <div className="text-xs font-mono font-normal opacity-70">
+                                      ({course.credits})
+                                    </div>
                                   </div>
                                   <div className="flex font-mono text-xs items-center justify-between gap-4 opacity-70">
                                     <div className="font-semibold">
-                                      {details ? (
-                                        details.currentGrade.toFixed(course.data.official_grade !== undefined && course.data.official_grade !== null ? 0 : 1) + "%"
-                                      ) : (
-                                        ""
-                                      )}
+                                      {details
+                                        ? details.currentGrade.toFixed(
+                                            course.data.official_grade !==
+                                              undefined &&
+                                              course.data.official_grade !==
+                                                null
+                                              ? 0
+                                              : 1,
+                                          ) + "%"
+                                        : ""}
                                     </div>
                                   </div>
                                 </div>
@@ -320,10 +336,11 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, on
                         }
                         closeDrawer();
                       }}
-                      className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${pathname?.startsWith(`/courses/${course.id}`)
-                        ? "btn-primary bg-primary"
-                        : ""
-                        } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
+                      className={`btn btn-neutral bg-base-300 justify-start h-auto py-3 ${
+                        pathname?.startsWith(`/courses/${course.id}`)
+                          ? "btn-primary bg-primary"
+                          : ""
+                      } ${isCompleted ? "opacity-60 grayscale-[0.5]" : ""}`}
                     >
                       <div className="text-left w-full text-primary-content">
                         <div className="font-bold">{course.code}</div>
@@ -361,7 +378,7 @@ export default function Sidebar({ gradesScreen, infoScreen, inDrawer = false, on
           Help & FAQ
         </Link>
       </div>
-      <AddCourseModal
+      <CourseFormModal
         isOpen={showAddCourseModal}
         onClose={() => setShowAddCourseModal(false)}
       />

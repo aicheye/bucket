@@ -22,7 +22,7 @@ export default function FileUploadZone({
   icon,
   error: externalError,
   helpLink,
-  helpText = "Need help?"
+  helpText = "Need help?",
 }: FileUploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isDragError, setIsDragError] = useState(false);
@@ -93,7 +93,11 @@ export default function FileUploadZone({
           {description}
         </p>
         {helpLink && (
-          <Link href={helpLink} target="_blank" className="link link-info text-sm z-10">
+          <Link
+            href={helpLink}
+            target="_blank"
+            className="link link-info text-sm z-10"
+          >
             {helpText}
           </Link>
         )}
@@ -106,9 +110,7 @@ export default function FileUploadZone({
         onChange={handleInputChange}
       />
       {finalError && (
-        <div className="text-error text-sm mt-2 font-bold">
-          {finalError}
-        </div>
+        <div className="text-error text-sm mt-2 font-bold">{finalError}</div>
       )}
     </div>
   );

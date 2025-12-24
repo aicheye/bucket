@@ -101,7 +101,8 @@ export default function ItemFormModal({
             value={itemData.type}
             onChange={(e) => {
               const newType = e.target.value;
-              const selectedCourseId = addingItemCourseId || itemData.course_id || "";
+              const selectedCourseId =
+                addingItemCourseId || itemData.course_id || "";
 
               // If currently creating a placeholder, check whether the
               // newly selected type can have placeholders (i.e. already has marks).
@@ -140,37 +141,43 @@ export default function ItemFormModal({
               ).map((t: string) => <option key={t}>{t}</option>)}
           </select>
         </div>
-        {editingItem === null && (() => {
-          const selectedCourseId = addingItemCourseId || itemData.course_id || "";
-          const shouldShow =
-            selectedCourseId &&
-            (typeof categoryHasMarks === "function"
-              ? !categoryHasMarks(selectedCourseId, itemData.type)
-              : true);
-          if (!shouldShow) return null;
+        {editingItem === null &&
+          (() => {
+            const selectedCourseId =
+              addingItemCourseId || itemData.course_id || "";
+            const shouldShow =
+              selectedCourseId &&
+              (typeof categoryHasMarks === "function"
+                ? !categoryHasMarks(selectedCourseId, itemData.type)
+                : true);
+            if (!shouldShow) return null;
 
-          return (
-            <div className="form-control w-full">
-              <label className="label mb-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="checkbox"
-                  checked={!!itemData.isPlaceholder}
-                  onChange={(e) =>
-                    setItemData({
-                      ...itemData,
-                      isPlaceholder: e.target.checked,
-                      due_date: e.target.checked ? "" : itemData.due_date,
-                      name: e.target.checked ? `${itemData.type} Placeholder` : itemData.name,
-                      max_grade: e.target.checked ? "100" : itemData.max_grade,
-                    })
-                  }
-                />
-                <span className="label-text">Create as placeholder</span>
-              </label>
-            </div>
-          );
-        })()}
+            return (
+              <div className="form-control w-full">
+                <label className="label mb-2 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={!!itemData.isPlaceholder}
+                    onChange={(e) =>
+                      setItemData({
+                        ...itemData,
+                        isPlaceholder: e.target.checked,
+                        due_date: e.target.checked ? "" : itemData.due_date,
+                        name: e.target.checked
+                          ? `${itemData.type} Placeholder`
+                          : itemData.name,
+                        max_grade: e.target.checked
+                          ? "100"
+                          : itemData.max_grade,
+                      })
+                    }
+                  />
+                  <span className="label-text">Create as placeholder</span>
+                </label>
+              </div>
+            );
+          })()}
         <div className="grid grid-cols-2 gap-4">
           <div className="form-control w-full">
             <label className="label mb-2">
@@ -195,7 +202,8 @@ export default function ItemFormModal({
               value={itemData.isPlaceholder ? "100" : itemData.max_grade}
               disabled={!!itemData.isPlaceholder}
               onChange={(e) =>
-                !itemData.isPlaceholder && setItemData({ ...itemData, max_grade: e.target.value })
+                !itemData.isPlaceholder &&
+                setItemData({ ...itemData, max_grade: e.target.value })
               }
             />
           </div>

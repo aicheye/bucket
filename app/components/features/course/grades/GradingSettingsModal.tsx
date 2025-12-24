@@ -92,7 +92,9 @@ export default function GradingSettingsModal({
             <label className="text-sm opacity-80 uppercase font-bold ">
               Official / Final Grade
             </label>
-            <span className="text-xs opacity-50">Overrides all calculations</span>
+            <span className="text-xs opacity-50">
+              Overrides all calculations
+            </span>
           </div>
           <div className="input-group flex items-center ml-auto">
             <input

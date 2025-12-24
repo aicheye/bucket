@@ -9,7 +9,11 @@ import { unauthorized, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { APP_NAME } from "../../lib/constants";
 import { getCourseTypes } from "../../lib/course-utils";
-import { formatDateParam, getDefaultTerm, parseDateParam } from "../../lib/date-utils";
+import {
+  formatDateParam,
+  getDefaultTerm,
+  parseDateParam,
+} from "../../lib/date-utils";
 import { gradeToGPA } from "../../lib/grade-utils";
 import { sendQuery } from "../../lib/graphql";
 import { UPDATE_USER_DATA } from "../../lib/graphql/mutations";
@@ -272,14 +276,23 @@ export default function CoursesPage() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const currentTerm = selectedTerm && sortedFolders.includes(selectedTerm) ? selectedTerm : (sortedFolders.length > 0 ? sortedFolders[0] : null);
+  const currentTerm =
+    selectedTerm && sortedFolders.includes(selectedTerm)
+      ? selectedTerm
+      : sortedFolders.length > 0
+        ? sortedFolders[0]
+        : null;
 
   // Handle term change and update URL
   const handleTermChange = (term: string) => {
     setSelectedTerm(term);
     const url = new URL(window.location.href);
     url.searchParams.set("term", term);
-    window.history.replaceState(null, "", url.pathname + "?" + url.searchParams.toString());
+    window.history.replaceState(
+      null,
+      "",
+      url.pathname + "?" + url.searchParams.toString(),
+    );
   };
 
   useEffect(() => {
@@ -383,8 +396,6 @@ export default function CoursesPage() {
             totalGPACredits += credits;
           }
 
-
-
           const bonus = details.bonusPercent || 0;
           const minRaw = details.currentScore + bonus;
           const maxRaw =
@@ -451,7 +462,10 @@ export default function CoursesPage() {
             const R = W - details.totalWeightGraded;
 
             // If fully graded (or official grade override effectively makes it fully graded)
-            if (R <= 0 || details.totalWeightGraded >= details.totalSchemeWeight) {
+            if (
+              R <= 0 ||
+              details.totalWeightGraded >= details.totalSchemeWeight
+            ) {
               const finalGrade = details.currentGrade ?? 0;
               // The contribution is the final grade * credits.
               // We treat this as "achieved" so it subtracts from the target.
@@ -476,7 +490,7 @@ export default function CoursesPage() {
             // `p` is the percent (0-100) required on remaining items across
             // courses (applied uniformly). This aligns with per-course
             // `calculateRequired` which expects a percent for remaining items.
-            requiredAverage = (numerator / lhsFactor);
+            requiredAverage = numerator / lhsFactor;
           }
         }
       }
@@ -707,7 +721,11 @@ export default function CoursesPage() {
           getCourseTypes={getTypesForCourse}
           categoryHasMarks={(courseId: string, type: string) => {
             return items.some(
-              (it) => it.course_id === courseId && it.data.type === type && it.data.grade !== "" && !it.data.isPlaceholder,
+              (it) =>
+                it.course_id === courseId &&
+                it.data.type === type &&
+                it.data.grade !== "" &&
+                !it.data.isPlaceholder,
             );
           }}
         />

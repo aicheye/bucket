@@ -99,9 +99,8 @@ export function calculateSchemeGradeDetails(
       ? Math.min(100, baseCurrentGrade + bonusPercent)
       : baseCurrentGrade;
 
-  const currentGrade = adjustedGrade !== null 
-    ? Math.max(32, adjustedGrade)
-    : null;
+  const currentGrade =
+    adjustedGrade !== null ? Math.max(32, adjustedGrade) : null;
 
   return {
     // `currentGrade` is the adjusted grade (includes bonus and 32% floor)
@@ -298,7 +297,7 @@ export function computeTypeStats(
         : 0;
     let earnedContributionSum = 0;
     let hasAnyContribution = false;
-    
+
     includedItems.forEach((it) => {
       if (it.data.isPlaceholder) {
         const g = parseFloat(it.data.grade || "0");
@@ -342,7 +341,10 @@ export function getBestCourseGrade(
   const placeholderGrades = course.data.placeholder_grades || {};
   const dropLowest = course.data.drop_lowest || {};
 
-  if (course.data.official_grade !== undefined && course.data.official_grade !== null) {
+  if (
+    course.data.official_grade !== undefined &&
+    course.data.official_grade !== null
+  ) {
     return course.data.official_grade;
   }
 
@@ -385,22 +387,25 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
   }
 
   if (!schemes || schemes.length === 0) {
-    if (course.data.official_grade !== undefined && course.data.official_grade !== null) {
-       const official = Number(course.data.official_grade);
-       return {
-         currentGrade: official,
-         baseCurrentGrade: official,
-         currentScore: official,
-         totalWeightGraded: 100,
-         totalSchemeWeight: 100,
-         totalWeightCompleted: 100,
-         droppedItemIds: [],
-         bonusPercent: 0,
-       };
+    if (
+      course.data.official_grade !== undefined &&
+      course.data.official_grade !== null
+    ) {
+      const official = Number(course.data.official_grade);
+      return {
+        currentGrade: official,
+        baseCurrentGrade: official,
+        currentScore: official,
+        totalWeightGraded: 100,
+        totalSchemeWeight: 100,
+        totalWeightCompleted: 100,
+        droppedItemIds: [],
+        bonusPercent: 0,
+      };
     }
     return null;
   }
-  
+
   const enforceOfficial = (d: any) => {
     if (
       course.data.official_grade !== undefined &&
@@ -429,13 +434,15 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
     preferredIndex >= 0 &&
     preferredIndex < schemes.length
   ) {
-    return enforceOfficial(calculateSchemeGradeDetails(
-      schemes[preferredIndex],
-      courseItems,
-      placeholderGrades,
-      dropLowest,
-      course.data?.bonus_percent,
-    ));
+    return enforceOfficial(
+      calculateSchemeGradeDetails(
+        schemes[preferredIndex],
+        courseItems,
+        placeholderGrades,
+        dropLowest,
+        course.data?.bonus_percent,
+      ),
+    );
   }
 
   // Otherwise, fall back to the best scheme (highest current grade)
@@ -458,7 +465,27 @@ export function getCourseGradeDetails(course: Course, allItems: Item[]) {
     }
   }
 
-  return bestDetails ? enforceOfficial(bestDetails) : null;
+  if (bestDetails) {
+    return enforceOfficial(bestDetails);
+  }
+
+  if (
+    course.data.official_grade !== undefined &&
+    course.data.official_grade !== null
+  ) {
+    return enforceOfficial({
+      currentGrade: null,
+      baseCurrentGrade: null,
+      currentScore: 0,
+      totalWeightGraded: 0,
+      totalSchemeWeight: 100,
+      totalWeightCompleted: 0,
+      droppedItemIds: [],
+      bonusPercent: 0,
+    });
+  }
+
+  return null;
 }
 
 /**

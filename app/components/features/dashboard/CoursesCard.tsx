@@ -37,12 +37,14 @@ export default function CoursesCard({
           {courses.map((course) => {
             const details = courseGrades.get(course.id);
             const currentGrade = details?.currentGrade;
-            const minRaw = details ? details.currentScore + (details.bonusPercent || 0) : 0;
+            const minRaw = details
+              ? details.currentScore + (details.bonusPercent || 0)
+              : 0;
             const min = Math.max(32, minRaw);
             const max = details
               ? details.currentScore +
-              (details.bonusPercent || 0) +
-              (details.totalSchemeWeight - details.totalWeightGraded)
+                (details.bonusPercent || 0) +
+                (details.totalSchemeWeight - details.totalWeightGraded)
               : 0;
 
             const isCompleted = isCompletedFunc(course);
@@ -51,8 +53,9 @@ export default function CoursesCard({
               <Link
                 key={course.id}
                 href={`/courses/${course.id}`}
-                className={`card bg-base-200 hover:bg-base-300 transition-colors shadow-sm ${isCompleted ? "opacity-75 grayscale-[0.5]" : ""
-                  }`}
+                className={`card bg-base-200 hover:bg-base-300 transition-colors shadow-sm ${
+                  isCompleted ? "opacity-75 grayscale-[0.5]" : ""
+                }`}
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigateToCourse(course.id, course);
@@ -70,7 +73,10 @@ export default function CoursesCard({
                           className="badge badge-success badge-sm w-5 h-5 p-0 flex items-center justify-center rounded-full"
                           title="Completed"
                         >
-                          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+                          <FontAwesomeIcon
+                            icon={faCheck}
+                            className="text-[10px]"
+                          />
                         </div>
                       )}
                     </div>
@@ -93,7 +99,12 @@ export default function CoursesCard({
                         <GradeBadge
                           grade={currentGrade}
                           size="sm"
-                          toFixed={course.data.official_grade !== undefined && course.data.official_grade !== null ? 0 : 1}
+                          toFixed={
+                            course.data.official_grade !== undefined &&
+                            course.data.official_grade !== null
+                              ? 0
+                              : 1
+                          }
                         />
                       )}
                     </div>

@@ -11,9 +11,9 @@ export default function Footer() {
     <footer
       className="bg-base-200 border-t border-base-content/10 flex-shrink-0"
       role="contentinfo"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="mx-auto pl-2 pr-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2">
+      <div className="mx-auto pl-2 pr-4 py-2 flex flex-col md:flex-row items-center justify-between gap-2">
         {/* Left: action links */}
         <div className="flex flex-wrap items-center gap-2">
           <ExternalLink

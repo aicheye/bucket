@@ -2,7 +2,11 @@ import crypto from "crypto";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { INSERT_TELEMETRY } from "../../../lib/graphql/mutations";
-import { COUNT_RECENT_TELEMETRY, GET_USER, LAST_TELEMETRY } from "../../../lib/graphql/queries";
+import {
+  COUNT_RECENT_TELEMETRY,
+  GET_USER,
+  LAST_TELEMETRY,
+} from "../../../lib/graphql/queries";
 import {
   executeHasuraAdminQuery,
   executeHasuraQuery,
@@ -156,7 +160,8 @@ export async function POST(request: Request) {
       { anon, since: globalLimitSince },
       session.user.id,
     );
-    const recentCount = countRes?.data?.telemetry_aggregate?.aggregate?.count || 0;
+    const recentCount =
+      countRes?.data?.telemetry_aggregate?.aggregate?.count || 0;
     if (recentCount >= GLOBAL_RATE_LIMIT_MAX_EVENTS) {
       logger.warn("Global telemetry rate limit exceeded", {
         userId: session.user.id,

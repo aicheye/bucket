@@ -103,9 +103,9 @@ export default function LicensesPage() {
             </ExternalLink>
             .
           </li>
-
           <li>
-            <strong>pdf2json:</strong> PDF text extraction (v3.1.3). License: Apache 2.0.{" "}
+            <strong>pdf2json:</strong> PDF text extraction (v3.1.3). License:
+            Apache 2.0.{" "}
             <ExternalLink href="https://github.com/modesty/pdf2json/blob/master/license.txt">
               Full license text
             </ExternalLink>
@@ -115,6 +115,13 @@ export default function LicensesPage() {
             <strong>Font Awesome Free Icons:</strong> UI Icons. License: CC BY
             4.0.{" "}
             <ExternalLink href="https://github.com/FortAwesome/Font-Awesome/blob/master/LICENSE.txt">
+              Full license text
+            </ExternalLink>
+            .
+          </li>
+          <li>
+            <strong>react-snowfall:</strong> Snowfall effect. License: MIT.{" "}
+            <ExternalLink href="https://github.com/cahilfoley/react-snowfall/blob/main/LICENSE">
               Full license text
             </ExternalLink>
             .
@@ -216,10 +223,12 @@ export default function LicensesPage() {
           order of usage):
         </p>
         <ul className="ml-4 list-disc list-inside">
+          <li>Google Gemini 3 Pro</li>
           <li>OpenAI GPT-5 mini</li>
           <li>Google Gemini 2.5 Pro</li>
+          <li>Anthropic Claude 4.5 Opus</li>
+          <li>Google Gemini 3 Flash</li>
           <li>Anthropic Claude 4.5 Haiku</li>
-          <li>Google Gemini 3 Pro</li>
           <li>GitHub Copilot Raptor Mini</li>
         </ul>
       </div>
@@ -229,7 +238,7 @@ export default function LicensesPage() {
         <p>
           As a thanks to the open-source community and the creators of the
           third-party libraries used in this application, this application is
-          solely licensed under the{" "}
+          fully open-source and solely licensed under the{" "}
           <ExternalLink href="https://opensource.org/licenses/MIT">
             MIT License
           </ExternalLink>

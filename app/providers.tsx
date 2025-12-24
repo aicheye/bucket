@@ -3,6 +3,7 @@ import type { Session } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import Snowfall from "react-snowfall";
 import { logger } from "../lib/logger";
 import { sendTelemetry } from "../lib/telemetry";
 import Footer from "./components/layout/Footer";
@@ -110,19 +111,22 @@ export default function Providers({
       <SessionProvider session={session} refetchOnWindowFocus={false}>
         <CourseProvider>
           <Heartbeat>
-            <div className="min-h-screen flex flex-col overflow-x-hidden">
+            <div className="absolute top-0 left-0 w-screen h-screen pointer-events-none z-100">
+              <Snowfall />
+            </div>
+            <div
+              className="h-screen flex flex-col overflow-hidden"
+              style={{ paddingTop: "var(--navbar-total-height)" }}
+            >
               <Navbar
                 showMenuButton={showSidebar}
                 showProfile={!authScreen}
                 className="z-50"
               />
-              <div
-                className="flex flex-1 bg-base-300 min-h-0"
-                style={{ marginTop: "var(--navbar-total-height)" }}
-              >
+              <div className="flex flex-1 bg-base-300 min-h-0">
                 {/* Desktop: fixed sidebar so it does not participate in page scrolling */}
                 {showSidebar ? (
-                  <div className="h-full hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:h-[calc(100dvh - var(--navbar-total-height))] lg:w-64 lg:overflow-y-auto">
+                  <div className="hidden lg:block lg:fixed lg:top-[var(--navbar-total-height)] lg:left-0 lg:bottom-0 lg:w-64">
                     <Sidebar
                       gradesScreen={gradesScreen}
                       infoScreen={infoScreen}
@@ -132,12 +136,12 @@ export default function Providers({
 
                 {/* Main content area is inset on large screens to avoid overlapping the fixed sidebar */}
                 <div
-                  className={`flex flex-1 flex-col w-full ${showSidebar ? "lg:ml-64" : ""}`}
+                  className={`flex flex-1 flex-col min-h-0 w-full ${showSidebar ? "lg:ml-64" : ""}`}
                 >
                   {/* Mobile: drawer that overlays content and appears below the header */}
                   {showSidebar ? (
-                    <div className="block lg:hidden w-full flex-1 flex flex-col">
-                      <div className="drawer flex-1 flex flex-col">
+                    <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
+                      <div className="drawer flex-1 min-h-0">
                         <input
                           id="my-drawer-2"
                           type="checkbox"
@@ -145,13 +149,16 @@ export default function Providers({
                           checked={isDrawerOpen}
                           onChange={(e) => setIsDrawerOpen(e.target.checked)}
                         />
-                        <div className="drawer-content flex flex-col min-h-0 flex-1">
-                          <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <div className="drawer-content flex flex-col min-h-0 flex-1 h-full">
+                          <div
+                            className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
+                            style={{ WebkitOverflowScrolling: "touch" }}
+                          >
                             <div className="flex-1 flex flex-col">
                               {children}
                             </div>
+                            <Footer />
                           </div>
-                          <Footer />
                         </div>
                         <div className="drawer-side z-50">
                           <label
@@ -173,16 +180,22 @@ export default function Providers({
                   ) : (
                     // If sidebar is hidden, render a straightforward stacked layout for mobile
                     <div className="block lg:hidden w-full flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div
+                        className="flex flex-col w-full flex-1 overflow-y-auto justify-between overflow-x-hidden min-h-0"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                      >
                         <div className="flex-1 flex flex-col">{children}</div>
+                        <Footer />
                       </div>
-                      <Footer />
                     </div>
                   )}
 
                   {/* Large-screen main content (unchanged layout) */}
                   <div className="hidden lg:flex flex-1 flex-col w-full min-h-0">
-                    <div className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div
+                      className="flex-1 flex flex-col w-full overflow-y-auto justify-between min-h-0"
+                      style={{ WebkitOverflowScrolling: "touch" }}
+                    >
                       <div className="flex-1 flex flex-col">{children}</div>
                     </div>
                     <Footer />
