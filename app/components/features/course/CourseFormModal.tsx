@@ -383,6 +383,8 @@ export default function CourseFormModal({
 
     try {
       showLoading();
+      onClose();
+
       const res = await fetch("/api/parse_outline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -393,7 +395,7 @@ export default function CourseFormModal({
         let msg = "Failed to parse outline";
         try {
           msg = (await res.json()).error || msg;
-        } catch {}
+        } catch { }
         throw new Error(msg);
       }
 
@@ -420,7 +422,6 @@ export default function CourseFormModal({
       );
       sendTelemetry("parse_outline", { code: data.code, term: data.term });
 
-      handleClose();
       if (newId) router.push(`/courses/${newId}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error importing outline");
@@ -567,9 +568,9 @@ export default function CourseFormModal({
                 step === 0 || isEditMode
                   ? handleClose
                   : () => {
-                      setStep(0);
-                      setMode(null);
-                    }
+                    setStep(0);
+                    setMode(null);
+                  }
               }
             >
               {step === 0 || isEditMode ? "Cancel" : "Back"}
