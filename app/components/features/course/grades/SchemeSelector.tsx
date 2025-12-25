@@ -124,10 +124,9 @@ export default function SchemeSelector({
         )}
         {sortable.map(({ scheme, originalIndex, details, required }) => {
           const isActive =
-            officialGrade === undefined &&
-            (activeSchemeIndex !== null
+            activeSchemeIndex !== null
               ? originalIndex === activeSchemeIndex
-              : originalIndex === bestOriginalIndex);
+              : originalIndex === bestOriginalIndex;
 
           const bonus = details.bonusPercent || 0;
           const minRaw = details.currentScore + bonus;
@@ -141,7 +140,7 @@ export default function SchemeSelector({
 
           const isCompleted = courseCompleted;
 
-          const isDisabled = officialGrade !== undefined;
+          const isDisabled = false;
 
           return (
             <div key={originalIndex} className="relative group w-full">
