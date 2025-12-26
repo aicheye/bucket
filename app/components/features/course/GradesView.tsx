@@ -28,6 +28,7 @@ import { Item, useCourses } from "../../../contexts/CourseContext";
 import { useLoading } from "../../../contexts/LoadingContext";
 import GoalInput from "../GoalInput";
 import ItemFormModal from "../ItemFormModal";
+import AddSchemeModal from "./grades/AddSchemeModal";
 import GradeTable from "./grades/GradeTable";
 import GradingSettingsModal from "./grades/GradingSettingsModal";
 import ImportGradesModal from "./grades/ImportGradesModal";
@@ -79,8 +80,8 @@ export default function GradesView() {
           isPlaceholder: item.data?.isPlaceholder ?? false,
           weight:
             item?.data &&
-            item.data.weight !== undefined &&
-            item.data.weight !== null
+              item.data.weight !== undefined &&
+              item.data.weight !== null
               ? item.data.weight
               : "0",
         };
@@ -124,6 +125,7 @@ export default function GradesView() {
     undefined,
   );
 
+  const [isAddingScheme, setIsAddingScheme] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [itemData, setItemData] = useState<ItemFormData>({
@@ -407,10 +409,10 @@ export default function GradesView() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-        )
-          .toISOString()
-          .split("T")[0]
+        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+      )
+        .toISOString()
+        .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -418,6 +420,18 @@ export default function GradesView() {
       due_date: newDate,
     };
     await addItem(id as string, newItemData, session.user.id);
+  }
+
+  async function handleUpdateOfficialGrade(newGrade: number | undefined) {
+    if (!selectedCourse) return;
+    setOfficialGrade(newGrade);
+    await updateCourseData(selectedCourse.id, {
+      official_grade: newGrade,
+    });
+    sendTelemetry("edit_official_grade", {
+      course_id: selectedCourse.id,
+      grade: newGrade,
+    });
   }
 
   async function handleSaveGradingSettings() {
@@ -433,6 +447,19 @@ export default function GradesView() {
       drops: JSON.stringify(dropLowest),
     });
     setShowGradingSettings(false);
+  }
+
+  async function handleAddScheme(scheme: { Component: string; Weight: number }[]) {
+    if (!selectedCourse) return;
+    const currentSchemes = selectedCourse.data["marking-schemes"] || [];
+    const newSchemes = [...currentSchemes, scheme];
+
+    await updateCourseData(selectedCourse.id, {
+      "marking-schemes": newSchemes,
+    });
+    sendTelemetry("add_marking_scheme", {
+      course_id: selectedCourse.id,
+    });
   }
 
   const [targetGrade, setTargetGrade] = useState<string>("");
@@ -466,6 +493,14 @@ export default function GradesView() {
           }
         },
       );
+
+      if (
+        bestOriginalIndex === null &&
+        selectedCourse.data["marking-schemes"].length > 0
+      ) {
+        bestOriginalIndex = 0;
+        bestScheme = selectedCourse.data["marking-schemes"][0];
+      }
     }
     return { bestScheme, bestOriginalIndex };
   }, [
@@ -515,12 +550,12 @@ export default function GradesView() {
   const usedDetails = useMemo(() => {
     return usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-          usedScheme,
-          baseCourseItems,
-          placeholderGrades,
-          dropLowest,
-          bonusPercent,
-        )
+        usedScheme,
+        baseCourseItems,
+        placeholderGrades,
+        dropLowest,
+        bonusPercent,
+      )
       : null;
   }, [
     usedScheme,
@@ -663,6 +698,16 @@ export default function GradesView() {
         courseItems={courseItems}
       />
 
+      <AddSchemeModal
+        isOpen={isAddingScheme}
+        onClose={() => setIsAddingScheme(false)}
+        onSaveScheme={handleAddScheme}
+        onSaveOfficialGrade={handleUpdateOfficialGrade}
+        existingSchemes={selectedCourse.data["marking-schemes"] || []}
+        officialGrade={officialGrade}
+        availableComponents={allTypes}
+      />
+
       <ItemFormModal
         isOpen={isAddingItem}
         onClose={() => setIsAddingItem(false)}
@@ -747,38 +792,39 @@ export default function GradesView() {
               </button>
             </div>
           </div>
-          {selectedCourse.data["marking-schemes"]?.length > 0 &&
-            (displayItems.length > 0 || officialGrade !== undefined) && (
-              <SchemeSelector
-                schemes={selectedCourse.data["marking-schemes"]}
-                bestOriginalIndex={bestOriginalIndex}
-                activeSchemeIndex={activeSchemeIndex}
-                setActiveSchemeIndex={setActiveSchemeIndex}
-                officialGrade={officialGrade}
-                isCompleted={isLiveCompleted}
-                calculateDetails={(scheme) =>
-                  calculateSchemeGradeDetails(
-                    scheme,
-                    courseItems,
-                    placeholderGrades,
-                    dropLowest,
-                    bonusPercent,
-                  )
-                }
-                calculateRequired={(scheme) => calculateRequired(scheme)}
-                getCourseTypes={getCourseTypes}
-                onSelectPersist={async (index: number) => {
-                  if (!selectedCourse) return;
-                  await updateCourseData(selectedCourse.id, {
-                    "preferred-marking-scheme": index,
-                  });
-                  sendTelemetry("select_marking_scheme", {
-                    course_id: selectedCourse.id,
-                    scheme_index: index,
-                  });
-                }}
-              />
-            )}
+          {selectedCourse.data["marking-schemes"]?.length > 0 && (
+            <SchemeSelector
+              schemes={selectedCourse.data["marking-schemes"]}
+              bestOriginalIndex={bestOriginalIndex}
+              activeSchemeIndex={activeSchemeIndex}
+              setActiveSchemeIndex={setActiveSchemeIndex}
+              officialGrade={officialGrade}
+              onUpdateOfficialGrade={handleUpdateOfficialGrade}
+              onAddScheme={() => setIsAddingScheme(true)}
+              isCompleted={isLiveCompleted}
+              calculateDetails={(scheme) =>
+                calculateSchemeGradeDetails(
+                  scheme,
+                  courseItems,
+                  placeholderGrades,
+                  dropLowest,
+                  bonusPercent,
+                )
+              }
+              calculateRequired={(scheme) => calculateRequired(scheme)}
+              getCourseTypes={getCourseTypes}
+              onSelectPersist={async (index: number) => {
+                if (!selectedCourse) return;
+                await updateCourseData(selectedCourse.id, {
+                  "preferred-marking-scheme": index,
+                });
+                sendTelemetry("select_marking_scheme", {
+                  course_id: selectedCourse.id,
+                  scheme_index: index,
+                });
+              }}
+            />
+          )}
 
           <TypeStatsTable
             stats={typeStats}

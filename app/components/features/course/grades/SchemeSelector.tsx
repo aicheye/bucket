@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faInfoCircle, faPen, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useState } from "react";
 import { getCategoryColor } from "../../../../contexts/CourseContext";
 import GradeBadge from "../../GradeBadge";
 import RangeBadge from "../../RangeBadge";
@@ -25,6 +26,8 @@ interface SchemeSelectorProps {
   getCourseTypes: () => string[];
   onSelectPersist?: (index: number) => Promise<void> | void;
   officialGrade?: number;
+  onUpdateOfficialGrade?: (grade: number | undefined) => void;
+  onAddScheme?: () => void;
   isCompleted?: boolean;
 }
 
@@ -38,8 +41,34 @@ export default function SchemeSelector({
   getCourseTypes,
   onSelectPersist,
   officialGrade,
+  onUpdateOfficialGrade,
+  onAddScheme,
   isCompleted: courseCompleted,
 }: SchemeSelectorProps) {
+  const [isEditingOfficial, setIsEditingOfficial] = useState(false);
+  const [editOfficialValue, setEditOfficialValue] = useState<string>("");
+
+  const startEditingOfficial = () => {
+    setEditOfficialValue(officialGrade?.toString() || "");
+    setIsEditingOfficial(true);
+  };
+
+  const saveOfficial = () => {
+    if (onUpdateOfficialGrade) {
+      const val = parseFloat(editOfficialValue);
+      if (!isNaN(val)) {
+        onUpdateOfficialGrade(val);
+      } else if (editOfficialValue === "") {
+        onUpdateOfficialGrade(undefined);
+      }
+    }
+    setIsEditingOfficial(false);
+  };
+
+  const cancelOfficial = () => {
+    setIsEditingOfficial(false);
+  };
+
   const sortable = schemes
     .map((scheme, idx) => {
       const details = calculateDetails(scheme);
@@ -73,10 +102,6 @@ export default function SchemeSelector({
         isFilled,
       };
     })
-    .filter(
-      (item) =>
-        item.details.currentGrade !== null || officialGrade !== undefined,
-    )
     .sort((a, b) => {
       // 1. Filled schemes first
       if (a.isFilled && !b.isFilled) return -1;
@@ -115,8 +140,39 @@ export default function SchemeSelector({
                     OFFICIAL GRADE
                   </span>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <GradeBadge grade={officialGrade} toFixed={0} />
+                <div className="flex items-baseline gap-2">
+                  {isEditingOfficial ? (
+                    <>
+                      <input
+                        type="number"
+                        className="input input-md input-bordered w-16 text-lg no-spinners"
+                        value={editOfficialValue}
+                        onChange={(e) => setEditOfficialValue(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveOfficial();
+                          if (e.key === "Escape") cancelOfficial();
+                        }}
+                      />
+                      <button
+                        className="btn btn-sm btn-success btn-square"
+                        onClick={saveOfficial}
+                      >
+                        <FontAwesomeIcon icon={faCheck} />
+                      </button>
+                    </>
+                  ) : (
+                    <GradeBadge grade={officialGrade} toFixed={0} />
+                  )}
+                  {onUpdateOfficialGrade && !isEditingOfficial && (
+                    <button
+                      className="btn btn-sm btn-soft btn-square"
+                      onClick={startEditingOfficial}
+                      title="Edit official grade"
+                    >
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -143,7 +199,7 @@ export default function SchemeSelector({
           const isDisabled = false;
 
           return (
-            <div key={originalIndex} className="relative group w-full">
+            <div key={originalIndex} className="relative w-full">
               <button
                 type="button"
                 onClick={async () => {
@@ -157,29 +213,62 @@ export default function SchemeSelector({
                 }}
                 disabled={isDisabled}
                 aria-pressed={isActive}
-                title={
-                  isDisabled ? null : `Activate scheme ${originalIndex + 1}`
-                }
-                className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full ${isDisabled ? "cursor-default" : "cursor-pointer"} ${!isActive && !isDisabled ? "opacity-60 grayscale" : ""}`}
+                className={`h-[6rem] flex flex-row justify-between items-stretch p-4 bg-base-100 card border border-base-content/10 shadow-sm hover:shadow-md transition-all w-full overflow-visible ${isDisabled ? "cursor-default" : "cursor-pointer"} ${!isActive && !isDisabled ? "opacity-60 grayscale" : ""}`}
               >
                 <div className="flex flex-col justify-between h-full">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-baseline gap-2 mb-1">
                     <span className="text-[10px] uppercase tracking-wider font-bold opacity-50">
                       Scheme {originalIndex + 1}
                     </span>
-                    <FontAwesomeIcon
-                      icon={faInfoCircle}
-                      className="text-xs opacity-20"
-                    />
+                    <span className="relative group/tooltip leading-none">
+                      <FontAwesomeIcon
+                        icon={faInfoCircle}
+                        className="text-xs opacity-20 hover:opacity-100 transition-opacity"
+                      />
+                      <div
+                        className="absolute left-0 bottom-full mb-2 hidden group-hover/tooltip:block z-[100] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/5 cursor-auto text-left"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">
+                          Scheme Breakdown
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {scheme.map((s: any, i: number) => (
+                            <div
+                              key={i}
+                              className="flex justify-between items-center"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`badge badge-xs ${getCategoryColor(s.Component, getCourseTypes())}`}
+                                ></div>
+                                <span className="font-medium">
+                                  {s.Component}
+                                </span>
+                              </div>
+                              <span className="opacity-70 font-mono">
+                                {s.Weight}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </span>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    {isActive ? (
-                      <GradeBadge grade={details.currentGrade ?? undefined} />
+                    {details.currentGrade !== null ? (
+                      isActive ? (
+                        <GradeBadge grade={details.currentGrade} />
+                      ) : (
+                        <GradeBadge
+                          grade={details.currentGrade}
+                          disabled={true}
+                        />
+                      )
                     ) : (
-                      <GradeBadge
-                        grade={details.currentGrade ?? undefined}
-                        disabled={true}
-                      />
+                      <span className="text-sm italic opacity-50">
+                        No Grades
+                      </span>
                     )}
                   </div>
                 </div>
@@ -211,28 +300,23 @@ export default function SchemeSelector({
                     </div>
                   ))}
               </button>
-
-              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[1] w-64 p-4 bg-base-300 text-base-content text-xs card shadow-2xl border border-base-content/5">
-                <div className="font-bold mb-3 border-b border-base-content/10 pb-2 text-sm">
-                  Scheme Breakdown
-                </div>
-                <div className="flex flex-col gap-2">
-                  {scheme.map((s: any, i: number) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`badge badge-xs ${getCategoryColor(s.Component, getCourseTypes())}`}
-                        ></div>
-                        <span className="font-medium">{s.Component}</span>
-                      </div>
-                      <span className="opacity-70 font-mono">{s.Weight}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           );
         })}
+        {onAddScheme && (
+          <button
+            className="h-[6rem] flex flex-col justify-center items-center p-4 bg-base-200/50 card border border-dashed border-base-content/20 shadow-sm hover:shadow-md hover:bg-base-200 transition-all w-full cursor-pointer gap-2 group"
+            onClick={onAddScheme}
+            title="Add grading option"
+          >
+            <div className="w-8 h-8 rounded-full bg-base-content/5 flex items-center justify-center group-hover:bg-base-content/10 transition-colors">
+              <FontAwesomeIcon icon={faPlus} className="text-base-content/40" />
+            </div>
+            <span className="text-xs font-semibold text-base-content/40 uppercase tracking-wider">
+              Add Grading
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );
