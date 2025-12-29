@@ -23,7 +23,6 @@ interface MarkingSchemesCardProps {
   onRemoveComponent: (index: number) => void;
   onAddScheme: () => void;
   onRemoveScheme: (index: number) => void;
-  onResetToDefault: () => void;
   allComponents: string[];
 }
 
@@ -38,7 +37,6 @@ export default function MarkingSchemesCard({
   onRemoveComponent,
   onAddScheme,
   onRemoveScheme,
-  onResetToDefault,
   allComponents,
 }: MarkingSchemesCardProps) {
   if (!markingSchemes && !isEditing) return null;
@@ -92,7 +90,6 @@ export default function MarkingSchemesCard({
               onAddComponent={onAddComponent}
               onRemoveComponent={onRemoveComponent}
               onRemoveScheme={() => onRemoveScheme(i)}
-              onResetToDefault={onResetToDefault}
               allComponents={allComponents}
             />
           ))}

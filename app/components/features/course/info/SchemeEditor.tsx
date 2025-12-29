@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   faPlus,
-  faRotateRight,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,7 +15,6 @@ interface SchemeEditorProps {
   onAddComponent: () => void;
   onRemoveComponent: (componentIndex: number) => void;
   onRemoveScheme?: () => void;
-  onResetToDefault?: () => void;
   allComponents: string[];
   canAdd?: boolean;
 }
@@ -30,31 +28,18 @@ export default function SchemeEditor({
   onAddComponent,
   onRemoveComponent,
   onRemoveScheme,
-  onResetToDefault,
   allComponents,
   canAdd = true,
 }: SchemeEditorProps) {
   return (
     <div className="relative group">
-      {isEditing && index > 0 && onRemoveScheme && (
+      {isEditing && onRemoveScheme && (
         <button
           className="btn btn-xs btn-circle btn-error border-base-content/20 absolute -top-2 -right-2 z-10 shadow-md"
           onClick={onRemoveScheme}
           title="Remove scheme"
         >
           ✕
-        </button>
-      )}
-      {isEditing && index === 0 && onResetToDefault && (
-        <button
-          className="btn btn-xs btn-circle btn-ghost border-base-content/20 absolute -top-2 -right-2 z-10 shadow-md bg-base-100"
-          onClick={onResetToDefault}
-          title="Reset to default"
-        >
-          <FontAwesomeIcon
-            icon={faRotateRight}
-            className="w-3 h-3 text-base-content/50"
-          />
         </button>
       )}
       <div className="overflow-x-auto border border-base-content/10 rounded-box">

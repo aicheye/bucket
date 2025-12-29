@@ -211,20 +211,6 @@ export default function InfoView() {
     sendTelemetry("remove_component", { index });
   }
 
-  function resetToDefault() {
-    if (
-      !selectedCourse?.data["marking-schemes"] ||
-      selectedCourse.data["marking-schemes"].length === 0
-    )
-      return;
-    const defaultScheme = JSON.parse(
-      JSON.stringify(selectedCourse.data["marking-schemes"][0]),
-    );
-    const newSchemes = [...tempMarkingSchemes];
-    newSchemes[0] = defaultScheme;
-    setTempMarkingSchemes(newSchemes);
-  }
-
   return (
     <>
       <Modal
@@ -276,7 +262,6 @@ export default function InfoView() {
         onRemoveComponent={removeComponent}
         onAddScheme={addScheme}
         onRemoveScheme={removeScheme}
-        onResetToDefault={resetToDefault}
         allComponents={
           selectedCourse?.data["marking-schemes"]
             ?.flat()

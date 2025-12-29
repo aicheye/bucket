@@ -28,7 +28,6 @@ import { Item, useCourses } from "../../../contexts/CourseContext";
 import { useLoading } from "../../../contexts/LoadingContext";
 import GoalInput from "../GoalInput";
 import ItemFormModal from "../ItemFormModal";
-import AddSchemeModal from "./grades/AddSchemeModal";
 import GradeTable from "./grades/GradeTable";
 import GradingSettingsModal from "./grades/GradingSettingsModal";
 import ImportGradesModal from "./grades/ImportGradesModal";
@@ -125,7 +124,6 @@ export default function GradesView() {
     undefined,
   );
 
-  const [isAddingScheme, setIsAddingScheme] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [itemData, setItemData] = useState<ItemFormData>({
@@ -463,9 +461,22 @@ export default function GradesView() {
   }
 
   const [targetGrade, setTargetGrade] = useState<string>("");
+  const [officialGradeInput, setOfficialGradeInput] = useState<string>(
+    officialGrade !== undefined && officialGrade !== null
+      ? String(officialGrade)
+      : "",
+  );
   const [activeSchemeIndex, setActiveSchemeIndex] = useState<number | null>(
     null,
   );
+
+  useEffect(() => {
+    setOfficialGradeInput(
+      officialGrade !== undefined && officialGrade !== null
+        ? String(officialGrade)
+        : "",
+    );
+  }, [officialGrade]);
 
   // Find best scheme index (used as default active) and its dropped items
   const { bestScheme, bestOriginalIndex } = useMemo(() => {
@@ -698,16 +709,6 @@ export default function GradesView() {
         courseItems={courseItems}
       />
 
-      <AddSchemeModal
-        isOpen={isAddingScheme}
-        onClose={() => setIsAddingScheme(false)}
-        onSaveScheme={handleAddScheme}
-        onSaveOfficialGrade={handleUpdateOfficialGrade}
-        existingSchemes={selectedCourse.data["marking-schemes"] || []}
-        officialGrade={officialGrade}
-        availableComponents={allTypes}
-      />
-
       <ItemFormModal
         isOpen={isAddingItem}
         onClose={() => setIsAddingItem(false)}
@@ -757,15 +758,39 @@ export default function GradesView() {
                   </a>
                 </div>
               </div>
-              {showGoalInput && (
-                <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
-                  <GoalInput
-                    handleSaveTargetGrade={handleSaveTargetGrade}
-                    targetGrade={targetGrade}
-                    setTargetGrade={setTargetGrade}
-                  />
+              <div className="flex items-center gap-2 flex-wrap w-full">
+                {showGoalInput && (
+                  <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
+                    <GoalInput
+                      handleSaveTargetGrade={handleSaveTargetGrade}
+                      targetGrade={targetGrade}
+                      setTargetGrade={setTargetGrade}
+                    />
+                  </div>
+                )}
+                <div className={`flex-1 flex items-center justify-between sm:justify-start gap-2 p-1.5 card flex-row border w-full sm:w-auto
+                  ${officialGrade ? "text-accent-content border-accent/5 shadow-xl shadow-accent/10 bg-accent/80" : "text-base-content/50 border-base-content/5 shadow-sm bg-base-200/50"}`}>
+                  <div>
+                    <span className="text-md font-bold uppercase tracking-wider ml-1">
+                      Official
+                    </span>
+                  </div>
+                  <div className="relative flex items-center justify-end gap-1">
+                    <input
+                      type="number"
+                      className={`text-base-content input input-md text-xl w-20 text-right outline-none border border-base-content/30 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold`}
+                      placeholder="--"
+                      value={officialGradeInput}
+                      onChange={(e) => setOfficialGradeInput(e.target.value)}
+                      onBlur={async () => {
+                        const val = officialGradeInput === "" ? undefined : parseFloat(officialGradeInput);
+                        await handleUpdateOfficialGrade(val);
+                      }}
+                    />
+                    <span className={`right-2 text-lg font-bold`}>%</span>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex gap-2 w-full md:w-auto">
@@ -799,8 +824,9 @@ export default function GradesView() {
               activeSchemeIndex={activeSchemeIndex}
               setActiveSchemeIndex={setActiveSchemeIndex}
               officialGrade={officialGrade}
-              onUpdateOfficialGrade={handleUpdateOfficialGrade}
-              onAddScheme={() => setIsAddingScheme(true)}
+              onUpdateSchemes={async (newSchemes) => {
+                await updateCourseData(selectedCourse.id, { "marking-schemes": newSchemes });
+              }}
               isCompleted={isLiveCompleted}
               calculateDetails={(scheme) =>
                 calculateSchemeGradeDetails(
