@@ -79,8 +79,8 @@ export default function GradesView() {
           isPlaceholder: item.data?.isPlaceholder ?? false,
           weight:
             item?.data &&
-            item.data.weight !== undefined &&
-            item.data.weight !== null
+              item.data.weight !== undefined &&
+              item.data.weight !== null
               ? item.data.weight
               : "0",
         };
@@ -407,10 +407,10 @@ export default function GradesView() {
     if (!session?.user?.id || !id) return;
     const newDate = item.data.due_date
       ? new Date(
-          new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
-        )
-          .toISOString()
-          .split("T")[0]
+        new Date(item.data.due_date).getTime() + 7 * 24 * 60 * 60 * 1000,
+      )
+        .toISOString()
+        .split("T")[0]
       : "";
     const newItemData = {
       ...item.data,
@@ -418,6 +418,18 @@ export default function GradesView() {
       due_date: newDate,
     };
     await addItem(id as string, newItemData, session.user.id);
+  }
+
+  async function handleUpdateOfficialGrade(newGrade: number | undefined) {
+    if (!selectedCourse) return;
+    setOfficialGrade(newGrade);
+    await updateCourseData(selectedCourse.id, {
+      official_grade: newGrade,
+    });
+    sendTelemetry("edit_official_grade", {
+      course_id: selectedCourse.id,
+      grade: newGrade,
+    });
   }
 
   async function handleSaveGradingSettings() {
@@ -435,10 +447,36 @@ export default function GradesView() {
     setShowGradingSettings(false);
   }
 
+  async function handleAddScheme(scheme: { Component: string; Weight: number }[]) {
+    if (!selectedCourse) return;
+    const currentSchemes = selectedCourse.data["marking-schemes"] || [];
+    const newSchemes = [...currentSchemes, scheme];
+
+    await updateCourseData(selectedCourse.id, {
+      "marking-schemes": newSchemes,
+    });
+    sendTelemetry("add_marking_scheme", {
+      course_id: selectedCourse.id,
+    });
+  }
+
   const [targetGrade, setTargetGrade] = useState<string>("");
+  const [officialGradeInput, setOfficialGradeInput] = useState<string>(
+    officialGrade !== undefined && officialGrade !== null
+      ? String(officialGrade)
+      : "",
+  );
   const [activeSchemeIndex, setActiveSchemeIndex] = useState<number | null>(
     null,
   );
+
+  useEffect(() => {
+    setOfficialGradeInput(
+      officialGrade !== undefined && officialGrade !== null
+        ? String(officialGrade)
+        : "",
+    );
+  }, [officialGrade]);
 
   // Find best scheme index (used as default active) and its dropped items
   const { bestScheme, bestOriginalIndex } = useMemo(() => {
@@ -466,6 +504,14 @@ export default function GradesView() {
           }
         },
       );
+
+      if (
+        bestOriginalIndex === null &&
+        selectedCourse.data["marking-schemes"].length > 0
+      ) {
+        bestOriginalIndex = 0;
+        bestScheme = selectedCourse.data["marking-schemes"][0];
+      }
     }
     return { bestScheme, bestOriginalIndex };
   }, [
@@ -515,12 +561,12 @@ export default function GradesView() {
   const usedDetails = useMemo(() => {
     return usedScheme && selectedCourse
       ? calculateSchemeGradeDetails(
-          usedScheme,
-          baseCourseItems,
-          placeholderGrades,
-          dropLowest,
-          bonusPercent,
-        )
+        usedScheme,
+        baseCourseItems,
+        placeholderGrades,
+        dropLowest,
+        bonusPercent,
+      )
       : null;
   }, [
     usedScheme,
@@ -712,15 +758,39 @@ export default function GradesView() {
                   </a>
                 </div>
               </div>
-              {showGoalInput && (
-                <div className="flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
-                  <GoalInput
-                    handleSaveTargetGrade={handleSaveTargetGrade}
-                    targetGrade={targetGrade}
-                    setTargetGrade={setTargetGrade}
-                  />
+              <div className="flex items-center gap-2 flex-wrap w-full">
+                {showGoalInput && (
+                  <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 bg-base-200/50 p-1.5 card flex-row border border-base-content/5 w-full sm:w-auto shadow-sm">
+                    <GoalInput
+                      handleSaveTargetGrade={handleSaveTargetGrade}
+                      targetGrade={targetGrade}
+                      setTargetGrade={setTargetGrade}
+                    />
+                  </div>
+                )}
+                <div className={`flex-1 flex items-center justify-between sm:justify-start gap-2 p-1.5 card flex-row border w-full sm:w-auto
+                  ${officialGrade ? "text-accent-content border-accent/5 shadow-xl shadow-accent/10 bg-accent/80" : "text-base-content/50 border-base-content/5 shadow-sm bg-base-200/50"}`}>
+                  <div>
+                    <span className="text-md font-bold uppercase tracking-wider ml-1">
+                      Official
+                    </span>
+                  </div>
+                  <div className="relative flex items-center justify-end gap-1">
+                    <input
+                      type="number"
+                      className={`text-base-content input input-md text-xl w-20 text-right outline-none border border-base-content/30 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold`}
+                      placeholder="--"
+                      value={officialGradeInput}
+                      onChange={(e) => setOfficialGradeInput(e.target.value)}
+                      onBlur={async () => {
+                        const val = officialGradeInput === "" ? undefined : parseFloat(officialGradeInput);
+                        await handleUpdateOfficialGrade(val);
+                      }}
+                    />
+                    <span className={`right-2 text-lg font-bold`}>%</span>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex gap-2 w-full md:w-auto">
@@ -747,38 +817,40 @@ export default function GradesView() {
               </button>
             </div>
           </div>
-          {selectedCourse.data["marking-schemes"]?.length > 0 &&
-            (displayItems.length > 0 || officialGrade !== undefined) && (
-              <SchemeSelector
-                schemes={selectedCourse.data["marking-schemes"]}
-                bestOriginalIndex={bestOriginalIndex}
-                activeSchemeIndex={activeSchemeIndex}
-                setActiveSchemeIndex={setActiveSchemeIndex}
-                officialGrade={officialGrade}
-                isCompleted={isLiveCompleted}
-                calculateDetails={(scheme) =>
-                  calculateSchemeGradeDetails(
-                    scheme,
-                    courseItems,
-                    placeholderGrades,
-                    dropLowest,
-                    bonusPercent,
-                  )
-                }
-                calculateRequired={(scheme) => calculateRequired(scheme)}
-                getCourseTypes={getCourseTypes}
-                onSelectPersist={async (index: number) => {
-                  if (!selectedCourse) return;
-                  await updateCourseData(selectedCourse.id, {
-                    "preferred-marking-scheme": index,
-                  });
-                  sendTelemetry("select_marking_scheme", {
-                    course_id: selectedCourse.id,
-                    scheme_index: index,
-                  });
-                }}
-              />
-            )}
+          {selectedCourse.data["marking-schemes"]?.length > 0 && (
+            <SchemeSelector
+              schemes={selectedCourse.data["marking-schemes"]}
+              bestOriginalIndex={bestOriginalIndex}
+              activeSchemeIndex={activeSchemeIndex}
+              setActiveSchemeIndex={setActiveSchemeIndex}
+              officialGrade={officialGrade}
+              onUpdateSchemes={async (newSchemes) => {
+                await updateCourseData(selectedCourse.id, { "marking-schemes": newSchemes });
+              }}
+              isCompleted={isLiveCompleted}
+              calculateDetails={(scheme) =>
+                calculateSchemeGradeDetails(
+                  scheme,
+                  courseItems,
+                  placeholderGrades,
+                  dropLowest,
+                  bonusPercent,
+                )
+              }
+              calculateRequired={(scheme) => calculateRequired(scheme)}
+              getCourseTypes={getCourseTypes}
+              onSelectPersist={async (index: number) => {
+                if (!selectedCourse) return;
+                await updateCourseData(selectedCourse.id, {
+                  "preferred-marking-scheme": index,
+                });
+                sendTelemetry("select_marking_scheme", {
+                  course_id: selectedCourse.id,
+                  scheme_index: index,
+                });
+              }}
+            />
+          )}
 
           <TypeStatsTable
             stats={typeStats}

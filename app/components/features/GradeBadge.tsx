@@ -1,23 +1,6 @@
 "use client";
 
-import { GRADE_CUTOFFS } from "../../../lib/constants";
-
-const successCutoff = GRADE_CUTOFFS.A_MINUS; // 80
-const warningCutoff = GRADE_CUTOFFS.C_MINUS; // 60
-
-const bgMap: Record<string, string> = {
-  success: "bg-success/70",
-  warning: "bg-warning/70",
-  error: "bg-error/70",
-  accent: "bg-accent/70",
-};
-
-const textMap: Record<string, string> = {
-  success: "text-success-content",
-  warning: "text-warning-content",
-  error: "text-error-content",
-  accent: "text-neutral-content",
-};
+import { GRADE_COLOR_CUTOFFS, getGradeColorClasses } from "../../../lib/constants";
 
 function LegendTooltip() {
   return (
@@ -28,15 +11,15 @@ function LegendTooltip() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-success"></div>
-          <span>≥ {successCutoff}%</span>
+          <span>≥ {GRADE_COLOR_CUTOFFS.successCutoff}%</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-warning"></div>
-          <span>≥ {warningCutoff}%</span>
+          <span>≥ {GRADE_COLOR_CUTOFFS.warningCutoff}%</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-error"></div>
-          <span>&lt; {warningCutoff}%</span>
+          <span>&lt; {GRADE_COLOR_CUTOFFS.warningCutoff}%</span>
         </div>
       </div>
     </div>
@@ -56,34 +39,9 @@ export default function GradeBadge({
   size?: "sm" | "lg";
   toFixed?: number;
 }) {
-  let colorKey = "accent";
-
-  if (grade !== undefined) {
-    if (grade >= successCutoff) {
-      colorKey = "success";
-    } else if (grade >= warningCutoff) {
-      colorKey = "warning";
-    } else {
-      colorKey = "error";
-    }
-  } else {
-    colorKey = "accent";
-  }
-
-  let bgClass = bgMap[colorKey];
-  let textClass = textMap[colorKey];
-
-  // If this badge is displaying a GPA, always use neutral background
-  // and neutral text so the GPA appearance is consistent.
-  if (gpa !== undefined) {
-    bgClass = "bg-neutral/70";
-    textClass = "text-neutral-content";
-  }
-
-  if (disabled) {
-    bgClass = "bg-base-content/10";
-    textClass = "text-base-content opacity-70";
-  }
+  const color = getGradeColorClasses(grade, { disabled, gpa });
+  let bgClass = color.bgClass;
+  let textClass = color.textClass;
 
   if (size === "sm") {
     if (!grade && !gpa) {

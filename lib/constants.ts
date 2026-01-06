@@ -72,3 +72,54 @@ export const DEFAULT_ITEM_TYPES = [
 
 // Passing grade threshold
 export const PASSING_GRADE = 50;
+
+// Grade color classes and helper
+export const GRADE_COLOR_BG: Record<string, string> = {
+  success: "bg-success/70",
+  warning: "bg-warning/70",
+  error: "bg-error/70",
+  accent: "bg-accent/70",
+  neutral: "bg-neutral/70",
+};
+
+export const GRADE_COLOR_TEXT: Record<string, string> = {
+  success: "text-success-content",
+  warning: "text-warning-content",
+  error: "text-error-content",
+  accent: "text-neutral-content",
+  neutral: "text-neutral-content",
+};
+
+export const GRADE_COLOR_CUTOFFS = {
+  successCutoff: GRADE_CUTOFFS.A_MINUS,
+  warningCutoff: GRADE_CUTOFFS.C_MINUS,
+};
+
+export function getGradeColorClasses(
+  grade?: number,
+  options?: { disabled?: boolean; gpa?: number },
+): { bgClass: string | undefined; textClass: string | undefined } {
+  const disabled = options?.disabled ?? false;
+  const gpa = options?.gpa;
+
+  if (gpa !== undefined) {
+    return { bgClass: GRADE_COLOR_BG.neutral, textClass: GRADE_COLOR_TEXT.neutral };
+  }
+
+  if (disabled) {
+    return { bgClass: "bg-base-content/10", textClass: "text-base-content opacity-70" };
+  }
+
+  let colorKey = undefined
+  if (grade !== undefined && !isNaN(grade)) {
+    if (grade >= GRADE_CUTOFFS.A_MINUS) {
+      colorKey = "success";
+    } else if (grade >= GRADE_CUTOFFS.C_MINUS) {
+      colorKey = "warning";
+    } else {
+      colorKey = "error";
+    }
+  }
+
+  return { bgClass: GRADE_COLOR_BG[colorKey], textClass: GRADE_COLOR_TEXT[colorKey] };
+}
