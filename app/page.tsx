@@ -9,21 +9,6 @@ export default function Home() {
   const { status } = useSession();
   const router = useRouter();
 
-  return (
-    <div className="flex flex-col h-full w-full items-center justify-center">
-      <div className="alert alert-error shadow-xl max-w-lg">
-        <FontAwesomeIcon icon={faTriangleExclamation} />
-        <div className="alert-content">
-          <div className="font-bold text-lg">Important Notice:</div>
-          Bucket is currently undergoing a hosting migration. Until further notice,
-          all services are temporarily unavailable. Contact{" "}
-          <a href="mailto:sean@seanyang.me" className="link">sean@seanyang.me</a>
-          {" "}for more information.
-        </div>
-      </div>
-    </div>
-  );
-
   useEffect(() => {
     if (status === "loading") return;
 
